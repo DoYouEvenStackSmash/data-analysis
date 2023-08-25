@@ -1,35 +1,35 @@
 import numpy as np
 from collections import deque
 
+M = np.random.randint(0, 500, (10000, 1, 2))
+
+
 def weighted_sample(weights):
     """
     Sample a weighted probability distribution
     returns an index
     """
     total_w = weights / np.sum(weights)
+    # print(total_w)
     sample_val = np.random.uniform(0, 1)
+    # print(sample_val)
     for idx, w in enumerate(total_w):
         sample_val -= w
+
         if sample_val <= 0:
             return idx
     return len(weights) - 1
 
-M = np.random.randint(0, 500, (10000, 1, 2))
 
-# initialize not chosen
+def distance(k, m):
+    return np.sqrt(np.sum(np.power(k - m, 2)))
 
-def distance(k,m):
-    """
-    Distance function between k,m
-    """
-    return np.sqrt(np.sum(np.array([np.power(i, 2) for i in (k - m).flatten()])))
-    # return D(k,m)
 
 def assign_clusters(data, centroids):
-    """
-    Assign data to clusters using distance from nearest centroid
-    """
     clusters = [[] for _ in centroids]
+    min_dist = float("inf")
+    nn = None
+    pdist = None
     for img in data:
         min_dist = float("inf")
         nn = None
@@ -42,31 +42,30 @@ def assign_clusters(data, centroids):
                 nn = idx
         if nn != None:
             clusters[nn].append(img)
-    ret_clus = []
+    # ret_clus = []
     for i in range(len(clusters)):
         if not len(clusters[i]):
             continue
-        
+
         clusters[i] = np.stack([j for j in clusters[i]])
 
     return clusters
 
-def update_centroids(clusters, old_centroids):
-    """
-    Recenter the old centroids to be the mean of the new clusters
-    """
-    centroids = [np.zeros((1, 2)) for _ in clusters]
-    for idx, cluster in enumerate(clusters):
-        rep = old_centroids[idx]
-        if len(cluster) and len(cluster[0]):
-            rep = np.mean(cluster, axis=0)
-        centroids[idx] = rep
-    return np.array(centroids)
+
+def update_centroids(clusters):
+    return np.array(
+        [
+            np.mean(cluster, axis=0) if len(cluster) else np.zeros_like(cluster[0])
+            for cluster in clusters
+        ]
+    )
+
 
 def kmeanspp(M, k, centroids, not_chosen, chosen):
     """
     Compute a probably-better-than-random set of k centroids given an arr
     """
+
     for _ in range(k):
         weights = np.zeros(len(not_chosen))
         D = lambda ck, m: np.sqrt(
@@ -88,36 +87,25 @@ def kmeanspp(M, k, centroids, not_chosen, chosen):
     centroids = np.array(centroids)
     return centroids
 
-def kmeans(M, k, max_iters=100):
-    """
-    Implementation of k means algorithm
-    """
-    start_center = np.random.randint(M.shape[0])
 
+def kmeans(M, k, max_iters=100):
+    start_center = np.random.randint(M.shape[0])
     centroids = [M[start_center]]
 
-    not_chosen = deque()
-    chosen = set()
-    chosen.add(start_center)
+    not_chosen = deque(i for i in range(len(M)) if i != start_center)
+    chosen = {start_center}
 
-    for i in range(len(M)):
-        if i == start_center:
-            continue
-        not_chosen.append(i)
-
-    # initialize centroids using kmeans++
     centroids = kmeanspp(M, k, centroids, not_chosen, chosen)
-    # centroids = M[np.random.choice(1000, k, replace=False)]
 
     for _ in range(max_iters):
         clusters = assign_clusters(M, centroids)
-        new_centroids = update_centroids(clusters, centroids)
-        if np.array_equal(centroids,new_centroids):
+        new_centroids = update_centroids(clusters)
+        if np.array_equal(centroids, new_centroids):
             break
 
         centroids = new_centroids
-    return clusters, centroids
 
+    return clusters, centroids
 
 
 k = 15
@@ -125,7 +113,7 @@ clusters, centroids = kmeans(M, k)
 centers = []
 reclus = []
 # print(clusters)
-for idx,k in enumerate(clusters):
+for idx, k in enumerate(clusters):
     if not len(k):
         continue
     reclus.append(np.array(clusters[idx]))

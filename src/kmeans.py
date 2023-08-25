@@ -1,32 +1,32 @@
-"""
-Optimized k means
-"""
+#!/usr/bin/python3
 import numpy as np
 from collections import deque
-# M = np.random.randint(0, 500, (10000, 1, 2))
+
 
 def weighted_sample(weights):
     """
     Sample a weighted probability distribution
     returns an index
     """
+    # normalize total_w to be in [0,1]
     total_w = weights / np.sum(weights)
-    # print(total_w)
-    sample_val = np.random.uniform(0,1)
-    # print(sample_val)
+    sample_val = np.random.uniform(0, 1)
     for idx, w in enumerate(total_w):
-
         sample_val -= w
-        
         if sample_val <= 0:
             return idx
     return len(weights) - 1
+
 
 def distance(k, m):
     return np.sqrt(np.sum(np.power(k - m, 2)))
 
 
 def assign_kmeans_clusters(data, centroids):
+    """
+    Create clusters by assigning data to centroids
+    Returns a list of np array clusters
+    """
     clusters = [[] for _ in centroids]
     min_dist = float("inf")
     nn = None
@@ -43,27 +43,39 @@ def assign_kmeans_clusters(data, centroids):
                 nn = idx
         if nn != None:
             clusters[nn].append(img)
-    # ret_clus = []
+
+    # convert clusters lists to numpy arrays
     for i in range(len(clusters)):
         if not len(clusters[i]):
             continue
-        
         clusters[i] = np.stack([j for j in clusters[i]])
-
 
     return clusters
 
 
 def update_centroids(clusters):
-    return np.array([np.mean(cluster, axis=0) if len(cluster) else np.zeros_like(cluster[0]) for cluster in clusters])
+    """
+    Evaluate new centroids based on the existing clusters
+    Returns an array of np arrays
+    """
+    return np.array(
+        [
+            np.mean(cluster, axis=0) if len(cluster) else np.zeros_like(cluster[0])
+            for cluster in clusters
+        ]
+    )
+
 
 def kmeanspp(M, k, centroids, not_chosen, chosen):
     """
-    Compute a probably-better-than-random set of k centroids given an arr
+    Compute a probably-better-than-random set of k centroids using kmeans++
+    Returns a np array of k centroids
     """
-    
-    for _ in range(k):
+
+    for _ in range(k - 1):
         weights = np.zeros(len(not_chosen))
+
+        # distance lambda function
         D = lambda ck, m: np.sqrt(
             np.sum(np.array([np.power(i, 2) for i in (ck - m).flatten()]))
         )
@@ -85,14 +97,21 @@ def kmeanspp(M, k, centroids, not_chosen, chosen):
 
 
 def kmeans(M, k, max_iter=100):
+    """
+    K means clustering algorithm. Given an array M, constructs k clusters over max_iter iterations
+    Returns a numpy array of centroids, and an array of np arrays of clusters
+    """
+    # initialize a random starting centroid
     start_center = np.random.randint(M.shape[0])
     centroids = [M[start_center]]
 
     not_chosen = deque(i for i in range(len(M)) if i != start_center)
     chosen = {start_center}
 
+    # compute initial centroids
     centroids = kmeanspp(M, k, centroids, not_chosen, chosen)
 
+    # run k means for max_iter iterations
     for _ in range(max_iter):
         clusters = assign_kmeans_clusters(M, centroids)
         new_centroids = update_centroids(clusters)
@@ -102,4 +121,3 @@ def kmeans(M, k, max_iter=100):
         centroids = new_centroids
 
     return clusters, centroids
-
