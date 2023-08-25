@@ -21,7 +21,6 @@ def dataloader(filename):
         print(loaded_array.shape)
         return loaded_array
 
-
 def D_vect(di, dj):
     """
     Euclidean distance between two elements
@@ -34,19 +33,8 @@ def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=3):
     Wrapper function for execution of clustering
     """
     M = dataloader(filename)
-    nested_kmeans(M)
-    # # kmeans_clusters, kmeans_mlist = kmeans(M, k, max_iter=100)
-    # # print("kmeans")
-    # # eval_clustering(kmeans_clusters, kmeans_mlist)
-    # kmedioids_clusters, kmedioids_mlist = kmedioids(M, k, max_iter=100)
-    # print("kmedioids")
-    # thres = eval_clustering(kmedioids_clusters, kmedioids_mlist)
-    # print(thres)
-    # second_layer_M = sift_data(kmedioids_clusters, kmedioids_mlist, thres)
-    # print(second_layer_M.shape)
-    # print(second_layer_M)
-    # kmedioids_clusters_2, kmedioids_mlist_2 = kmedioids(second_layer_M, 6, max_iter=100)
-    # display_clusters([kmedioids_clusters,kmedioids_clusters_2],[kmedioids_mlist,kmedioids_mlist_2])
+    clusters, centroids = nested_kmeans(M)
+    display_clusters(clusters, np.array(centroids))
 
 
 
@@ -115,39 +103,48 @@ def eval_clustering(clusters, centroids):
     return 15
 
 def nested_kmeans(M):
-    k = 3
-    max_iter = 30
-    start_center = np.random.randint(M.shape[0])
-    centroids = [M[start_center]]
+    """
+    Builds a hierarchical clustering on input space M
+    
+    """
+    k = 3  # Number of clusters for k-means
+    max_iter = 30  # Maximum number of iterations for k-means
+    start_center = np.random.randint(M.shape[0])  # Choose a random starting center index
+    centroids = [M[start_center]]  # Initialize centroids list with the starting center
 
+    # Create a deque of indices for non-center points
     not_chosen = deque(i for i in range(len(M)) if i != start_center)
-    chosen = {start_center}
+    chosen = {start_center}  # Set containing chosen center indices
 
-    # compute initial centroids
+    # Compute initial centroids using k-means++
     centroids = kmeanspp(M, k, centroids, not_chosen, chosen)
 
-    cdict = {}
-    cq = deque()
-    dq = deque()
+    cdict = {}  # Dictionary to store clusters at each level
+    cq = deque()  # Queue for centroids
+    dq = deque()  # Queue for data
 
-    cq.append(centroids)
-    dq.append(M)
-    centroid_arr = []
+    cq.append(centroids)  # Enqueue initial centroids
+    dq.append(M)  # Enqueue the entire data array
+    centroid_arr = []  # List to store all centroids
     
-    cutoff = 65
+    cutoff = 65  # Cutoff point for switching to k-medioids
     while bool(cq):
-        centroids = cq.popleft()
-        data = dq.popleft()
+        centroids = cq.popleft()  # Dequeue centroids
+        data = dq.popleft()  # Dequeue data
+
+        # If data size is below the cutoff, use k-medioids clustering
         if len(data) < cutoff:
             clusters, centroids = kmedioids(data, k, max_iter=100)
-            for i,ctr in enumerate(centroids):
+            for i, ctr in enumerate(centroids):
                 ci = np.array(clusters[i])
                 
+                # Store the cluster data in cdict and the centroid in centroid_arr
                 cdict[len(centroid_arr)] = ci
                 centroid_arr.append(ctr)
-            continue
+            continue  # Skip further processing for this level
 
         else:
+            # Apply regular k-means clustering
             for _ in range(max_iter):
                 clusters = assign_kmeans_clusters(data, centroids)
                 new_centroids = update_centroids(clusters)
@@ -155,19 +152,25 @@ def nested_kmeans(M):
                     break
                 centroids = new_centroids
         
-        for i,ctr in enumerate(centroids):
+        # Process clusters and enqueue data for the next level
+        for i, ctr in enumerate(centroids):
             ci = np.array(clusters[i])
             
+            # Store the cluster data in cdict and the centroid in centroid_arr
             cdict[len(centroid_arr)] = ci
             centroid_arr.append(ctr)
+            
+            # Enqueue the centroid and cluster data for the next level
             cq.append(ctr)
             dq.append(ci)
+    
     clusters = []
     centroids = []
-    for k,v in cdict.items():
+    for k, v in cdict.items():
         centroids.append(centroid_arr[k])
         clusters.append(v)
-    display_clusters(clusters, np.array(centroids))
+    
+    return clusters, centroids  # Return the final clusters and centroids
 
 def main():
     # Create the argument parser
