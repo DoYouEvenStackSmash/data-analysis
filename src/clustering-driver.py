@@ -4,6 +4,8 @@ import os
 import sys
 import argparse
 from kmedoids import *
+from kmeans import *
+# from kmeans import *
 
 def dataloader(filename):
   # Check if the file exists
@@ -21,8 +23,10 @@ def dataloader(filename):
 
 def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=3):
   M = dataloader(filename)
-  clusters, mlist = kmedioids(M, k, max_iter=100)
+  clusters, mlist = kmeans(M, k, max_iter=100)
   print(mlist)
+
+
 
 
 def main():

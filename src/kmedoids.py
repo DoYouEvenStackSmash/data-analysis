@@ -28,8 +28,7 @@ def update_medioids(clusters, mlist, distances):
     
     return new_mlist
 
-def preprocess(M,k=3):
-
+def preprocess(M, k=3):
     n = M.shape[0]
 
     distances = np.sqrt(np.sum(np.square(M[:, np.newaxis, :] - M), axis=2))
@@ -55,9 +54,13 @@ def preprocess(M,k=3):
     mlist = list(medioid_indices)
     return mlist,distances
 
-
+def postprocess(M, clusters, mlist):
+    medioids = np.array([M[idx] for idx in mlist])
+    for i in range(len(mlist)):
+      clusters[i] = np.stack(np.array([M[j] for j in clusters[i]]))
+    return clusters, medioids
+  
 def kmedioids(M, k=5, max_iter=100):
-
     n = M.shape[0]
     mlist, distances = preprocess(M, k)
 
@@ -72,8 +75,9 @@ def kmedioids(M, k=5, max_iter=100):
         if new_sum == total_sum:
             break
         total_sum = new_sum
-    
-    return clusters, mlist
+
+    clusters, medioids = postprocess(M, clusters, mlist)
+    return clusters, medioids
 
 # # Call kmedioids function
 # clusters, mlist = kmedioids(M, k, max_iter=100)
