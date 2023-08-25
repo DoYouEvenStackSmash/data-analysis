@@ -1,10 +1,4 @@
-#!/usr/bin/python3
-import numpy as np
-from Datum import Datum
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-
-colors = list(set(mcolors.CSS4_COLORS))
+from clustering_imports import *
 
 def graham_scan_convex_hull(points):
     def cross_product(p, q, r):
