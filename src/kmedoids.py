@@ -4,6 +4,7 @@ sys.path.append("..")
 
 from clustering_imports import *
 
+
 def assign_clusters(dlen, mlist, distances):
     """
     Implicitly assigns elements to clusters using the distances matrix

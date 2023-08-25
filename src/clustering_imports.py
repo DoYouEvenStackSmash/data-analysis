@@ -3,8 +3,10 @@ import numpy as np
 from Datum import Datum
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from scipy.cluster.hierarchy import dendrogram, linkage
 
 colors = list(set(mcolors.CSS4_COLORS))
+
 
 def graham_scan_convex_hull(points):
     def cross_product(p, q, r):
@@ -34,5 +36,3 @@ def graham_scan_convex_hull(points):
         convex_hull.append(point)
 
     return convex_hull
-
-

@@ -1,5 +1,6 @@
 from clustering_imports import *
 
+
 def graham_scan_convex_hull(points):
     def cross_product(p, q, r):
         return (q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1])
@@ -28,5 +29,3 @@ def graham_scan_convex_hull(points):
         convex_hull.append(point)
 
     return convex_hull
-
-
