@@ -1,0 +1,10 @@
+namespace MyData;
+table Image {
+  shape:int;
+  data:[ubyte];
+}
+
+table Data {
+  M:[Image];
+}
+root_type Data;

@@ -8,6 +8,7 @@ from kmeans import *
 from clustering_imports import *
 
 
+
 def dataloader(filename):
     """
     Loads data from a file
@@ -123,7 +124,7 @@ def sift_data(clusters, centroids, r):
     return np.array(data)
 
 
-def eval_clustering(clusters, centroids):
+def eval_cluster_inertia(clusters, centroids):
     """
     Calculates the inertia of each cluster
     """
@@ -138,7 +139,6 @@ def eval_clustering(clusters, centroids):
         min_rad = min(min_rad, msums[i])
         max_rad = max(max_rad, msums[i])
         print("{}\t{}".format(ctr, msums[i]))
-    return 15
 
 
 def nested_kmeans(M):
@@ -175,7 +175,7 @@ def nested_kmeans(M):
 
         # If data size is below the cutoff, use k-medioids clustering
         if len(data) < cutoff:
-            clusters, centroids = kmedioids(data, k, max_iter=100)
+            clusters, centroids = kmedioids(data, k, max_iter=30)
             for i, ctr in enumerate(centroids):
                 ci = np.array(clusters[i])
 
@@ -219,8 +219,10 @@ def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=3):
     Wrapper function for execution of clustering
     """
     M = dataloader(filename)
+    M = M.reshape(M.shape[0],M.shape[1]**2)
     clusters, centroids = nested_kmeans(M)
-    display_clusters(clusters, np.array(centroids))
+    eval_cluster_inertia(clusters, centroids)
+    # display_clusters(clusters, np.array(centroids))
     # display_dendrogram(clusters, np.array(centroids))
 
 
