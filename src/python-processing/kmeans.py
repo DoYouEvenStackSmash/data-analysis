@@ -3,6 +3,7 @@ import numpy as np
 from collections import deque
 from clustering_imports import *
 
+
 def weighted_sample(weights):
     """
     Sample a weighted probability distribution
@@ -87,8 +88,6 @@ def assign_kmeans_clusters(data, centroids):
 #             merged_clusters.append(cluster_data)
 
 #     return merged_clusters
-
-
 
 
 def update_centroids(clusters):

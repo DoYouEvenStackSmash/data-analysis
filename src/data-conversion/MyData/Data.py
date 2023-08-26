@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Data(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAsData(cls, buf, offset):
@@ -28,6 +30,7 @@ class Data(object):
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
             from MyData.Image import Image
+
             obj = Image()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -45,7 +48,20 @@ class Data(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
-def DataStart(builder): builder.StartObject(1)
-def DataAddM(builder, M): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(M), 0)
-def DataStartMVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def DataEnd(builder): return builder.EndObject()
+
+def DataStart(builder):
+    builder.StartObject(1)
+
+
+def DataAddM(builder, M):
+    builder.PrependUOffsetTRelativeSlot(
+        0, flatbuffers.number_types.UOffsetTFlags.py_type(M), 0
+    )
+
+
+def DataStartMVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def DataEnd(builder):
+    return builder.EndObject()

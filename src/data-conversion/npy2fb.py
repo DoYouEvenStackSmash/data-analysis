@@ -11,7 +11,9 @@ fname = sys.argv[1]
 serialized_array = np.load(fname)
 
 # Reshape the array to (256, 16384)
-reshaped_array = serialized_array.reshape(serialized_array.shape[0], serialized_array.shape[1]**2)
+reshaped_array = serialized_array.reshape(
+    serialized_array.shape[0], serialized_array.shape[1] ** 2
+)
 
 # Create a FlatBuffers builder
 builder = flatbuffers.Builder(1024)
@@ -23,7 +25,7 @@ for img_data in reshaped_array:
     byte_array = img_data.tobytes()
     Image.ImageStartDataVector(builder, len(byte_array))
     builder.head = builder.head - len(byte_array)
-    builder.Bytes[builder.head:builder.head + len(byte_array)] = byte_array
+    builder.Bytes[builder.head : builder.head + len(byte_array)] = byte_array
     data_vector = builder.EndVector(len(byte_array))
     # Create an Image object
     Image.ImageStart(builder)
@@ -44,7 +46,7 @@ Data.DataAddM(builder, m_vector)
 data = Data.DataEnd(builder)
 
 builder.Finish(data)
-formatted_fname = fname.split('/')[-1]
+formatted_fname = fname.split("/")[-1]
 # Save the FlatBuffers buffer to a file
 with open(f'{formatted_fname.split(".")[0]}.fb', "wb") as f:
     f.write(builder.Output())

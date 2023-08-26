@@ -8,7 +8,6 @@ from kmeans import *
 from clustering_imports import *
 
 
-
 def dataloader(filename):
     """
     Loads data from a file
@@ -214,14 +213,127 @@ def nested_kmeans(M):
     return clusters, centroids  # Return the final clusters and centroids
 
 
-def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=3):
+class Node:
+    def __init__(self, val, idx, children=None, data=None):
+        self.val = val
+        self.idx = idx
+        self.children = children
+        self.data = data
+
+
+def initial_centroids(d, k):
+    start_center = np.random.randint(len(d))  # Choose a random starting center index
+    centroids = [d[start_center]]  # Initialize centroids list with the starting center
+
+    # Create a deque of indices for non-center points
+    not_chosen = deque(i for i in range(len(d)) if i != start_center)
+    chosen = {start_center}  # Set containing chosen center indices
+
+    # Compute initial centroids using k-means++
+    centroids = kmeanspp(d, k, centroids, not_chosen, chosen)
+    return centroids
+
+
+def construct_tree(M, k, C=65, R=30):
+    node_list = [Node(-1, 0)]
+    root = 0
+    node_q = deque() # queue to hold node indices
+    data_q = deque() # queue to hold data arrays
+    node_s = deque() # stack to hold node indices
+    data_s = deque() # stack to hold data arrays
+
+    # initialization of queues
+    node_q.append(root)
+    data_q.append(M)
+
+    while (len(node_q) and len(data_q)) or (len(node_s) and len(data_s)):
+        while (len(node_q) and len(data_q)):
+            n = node_list[node_q.popleft()]
+            d = data_q.popleft()
+
+            # If data size is below the cutoff, use k-medioids clustering
+            if len(d) < C:
+                clusters, centroids = kmedioids(d, k, R)
+                n.children = []
+                for i, ctr in enumerate(centroids):
+                    idx = len(node_list)
+                    n.children.append(idx)
+                    node_list.append(Node(ctr, idx, data=clusters[i]))
+            else:
+                node_s.append(n.idx)
+                data_s.append(d)
+        
+        while (len(node_s) and len(data_s)):
+            n = node_list[node_s.pop()]
+            d = data_s.pop()
+            centroids = initial_centroids(d, k)
+            for _ in range(R):
+                clusters = assign_kmeans_clusters(d, centroids)
+                new_centroids = update_centroids(clusters)
+                if np.array_equal(centroids, new_centroids):
+                    break
+                centroids = new_centroids
+            n.children = []
+            for i, ctr in enumerate(centroids):
+                idx = len(node_list)
+                n.children.append(idx)
+                node_list.append(Node(ctr, idx))
+                node_q.append(idx)
+                data_q.append(clusters[i])
+            break
+    return node_list
+
+
+def generate_dot_graph(xy_pairs):
+    dot_graph = "digraph G {\n"
+    
+    # Add nodes
+    nodes = set()
+    for x, y in xy_pairs:
+        nodes.add(x)
+        nodes.add(y)
+    
+    for node in nodes:
+        dot_graph += f'    {node};\n'
+    
+    # Add edges
+    for x, y in xy_pairs:
+        dot_graph += f'    {x} -> {y};\n'
+    
+    dot_graph += "}"
+    return dot_graph
+
+# Example list of (x, y) pairs
+# xy_pairs = [("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
+
+# Generate dot format graph representation
+# dot_representation = generate_dot_graph(xy_pairs)
+# print(dot_representation)
+
+def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=4):
     """
     Wrapper function for execution of clustering
     """
+    k = 5
     M = dataloader(filename)
-    M = M.reshape(M.shape[0],M.shape[1]**2)
-    clusters, centroids = nested_kmeans(M)
-    eval_cluster_inertia(clusters, centroids)
+    # M = M.reshape(M.shape[0], M.shape[1] ** 2)
+    nl = construct_tree(M,k)
+    l = [i for i in nl if i.children != None]
+    pl = []
+    total_vals = 0
+    for i in nl:
+        if i.children == None:
+            total_vals+=len(i.data)
+            continue
+        for j in i.children:
+            pl.append((i.idx,j))
+    
+    print(generate_dot_graph(pl))
+    print(total_vals)
+
+    # clusters, centroids = nested_kmeans(M)
+    # print(len(clusters))
+    # eval_cluster_inertia(clusters, centroids)
     # display_clusters(clusters, np.array(centroids))
     # display_dendrogram(clusters, np.array(centroids))
 
