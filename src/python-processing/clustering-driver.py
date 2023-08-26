@@ -237,17 +237,17 @@ def initial_centroids(d, k):
 def construct_tree(M, k, C=65, R=30):
     node_list = [Node(-1, 0)]
     root = 0
-    node_q = deque() # queue to hold node indices
-    data_q = deque() # queue to hold data arrays
-    node_s = deque() # stack to hold node indices
-    data_s = deque() # stack to hold data arrays
+    node_q = deque()  # queue to hold node indices
+    data_q = deque()  # queue to hold data arrays
+    node_s = deque()  # stack to hold node indices
+    data_s = deque()  # stack to hold data arrays
 
     # initialization of queues
     node_q.append(root)
     data_q.append(M)
 
     while (len(node_q) and len(data_q)) or (len(node_s) and len(data_s)):
-        while (len(node_q) and len(data_q)):
+        while len(node_q) and len(data_q):
             n = node_list[node_q.popleft()]
             d = data_q.popleft()
 
@@ -262,8 +262,8 @@ def construct_tree(M, k, C=65, R=30):
             else:
                 node_s.append(n.idx)
                 data_s.append(d)
-        
-        while (len(node_s) and len(data_s)):
+
+        while len(node_s) and len(data_s):
             n = node_list[node_s.pop()]
             d = data_s.pop()
             centroids = initial_centroids(d, k)
@@ -286,22 +286,23 @@ def construct_tree(M, k, C=65, R=30):
 
 def generate_dot_graph(xy_pairs):
     dot_graph = "digraph G {\n"
-    
+
     # Add nodes
     nodes = set()
     for x, y in xy_pairs:
         nodes.add(x)
         nodes.add(y)
-    
+
     for node in nodes:
-        dot_graph += f'    {node};\n'
-    
+        dot_graph += f"    {node};\n"
+
     # Add edges
     for x, y in xy_pairs:
-        dot_graph += f'    {x} -> {y};\n'
-    
+        dot_graph += f"    {x} -> {y};\n"
+
     dot_graph += "}"
     return dot_graph
+
 
 # Example list of (x, y) pairs
 # xy_pairs = [("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
@@ -310,6 +311,7 @@ def generate_dot_graph(xy_pairs):
 # dot_representation = generate_dot_graph(xy_pairs)
 # print(dot_representation)
 
+
 def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=4):
     """
     Wrapper function for execution of clustering
@@ -317,17 +319,17 @@ def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=4):
     k = 5
     M = dataloader(filename)
     # M = M.reshape(M.shape[0], M.shape[1] ** 2)
-    nl = construct_tree(M,k)
+    nl = construct_tree(M, k)
     l = [i for i in nl if i.children != None]
     pl = []
     total_vals = 0
     for i in nl:
         if i.children == None:
-            total_vals+=len(i.data)
+            total_vals += len(i.data)
             continue
         for j in i.children:
-            pl.append((i.idx,j))
-    
+            pl.append((i.idx, j))
+
     print(generate_dot_graph(pl))
     print(total_vals)
 
