@@ -20,7 +20,8 @@ def weighted_sample(weights):
 
 
 def distance(k, m):
-    return np.sqrt(np.sum(np.power(k - m, 2)))
+    return np.linalg.norm(k - m)
+    # return np.sqrt(np.sum(np.power(k - m, 2)))
 
 
 def assign_kmeans_clusters(data, centroids):
@@ -97,7 +98,9 @@ def update_centroids(clusters):
     """
     return np.array(
         [
-            np.mean(cluster, axis=0) if len(cluster) else np.zeros_like(cluster[0])
+            np.mean(cluster, axis=0)
+            if len(cluster)
+            else np.zeros((1, cluster.shape[1]))
             for cluster in clusters
         ]
     )

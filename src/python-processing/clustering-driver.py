@@ -93,7 +93,7 @@ def display_clusters(clusters, centroids):
                 c=colors[i + ci],
                 marker="x",
                 linewidth=len(m)
-                / 40,  # adjust width of the line according to the hierarchy
+                / 10,  # adjust width of the line according to the hierarchy
                 label="Convex Hull",
             )
         plt.scatter(
@@ -218,7 +218,7 @@ class Node:
         self.val = val
         self.idx = idx
         self.children = children
-        self.data = data
+        self.data = None
 
 
 def initial_centroids(d, k):
@@ -245,6 +245,7 @@ def construct_tree(M, k, C=65, R=30):
     # initialization of queues
     node_q.append(root)
     data_q.append(M)
+    print(len(M))
 
     while (len(node_q) and len(data_q)) or (len(node_s) and len(data_s)):
         while len(node_q) and len(data_q):
@@ -254,11 +255,12 @@ def construct_tree(M, k, C=65, R=30):
             # If data size is below the cutoff, use k-medioids clustering
             if len(d) < C:
                 clusters, centroids = kmedioids(d, k, R)
-                n.children = []
+                # n.children = []
                 for i, ctr in enumerate(centroids):
                     idx = len(node_list)
-                    n.children.append(idx)
-                    node_list.append(Node(ctr, idx, data=clusters[i]))
+                    # n.children.append(idx)
+                    node_list.append(Node(ctr, idx))
+                    node_list[idx].data = np.array(clusters[i])
             else:
                 node_s.append(n.idx)
                 data_s.append(d)
@@ -267,6 +269,7 @@ def construct_tree(M, k, C=65, R=30):
             n = node_list[node_s.pop()]
             d = data_s.pop()
             centroids = initial_centroids(d, k)
+            clusters = []
             for _ in range(R):
                 clusters = assign_kmeans_clusters(d, centroids)
                 new_centroids = update_centroids(clusters)
@@ -316,27 +319,39 @@ def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=4):
     """
     Wrapper function for execution of clustering
     """
-    k = 5
+    k = 3
     M = dataloader(filename)
+    # print(preprocess(M, k))
+    # sys.exit()
     # M = M.reshape(M.shape[0], M.shape[1] ** 2)
     nl = construct_tree(M, k)
-    l = [i for i in nl if i.children != None]
+    # l = [i for i in nl if i.children != None]
     pl = []
     total_vals = 0
-    for i in nl:
-        if i.children == None:
-            total_vals += len(i.data)
+    clusters = []
+    centroids = []
+    for i in nl[1:]:
+        if i.children is None:
+            if i.data is not None:
+                #     continue
+                clusters.append(i.data)
+                centroids.append(i.val)
+                continue
+            print(i.idx)
             continue
+
+            # total_vals += len(i.data)
+
         for j in i.children:
             pl.append((i.idx, j))
 
     print(generate_dot_graph(pl))
-    print(total_vals)
+    # print(total_vals)
 
     # clusters, centroids = nested_kmeans(M)
     # print(len(clusters))
     # eval_cluster_inertia(clusters, centroids)
-    # display_clusters(clusters, np.array(centroids))
+    display_clusters(clusters, np.array(centroids))
     # display_dendrogram(clusters, np.array(centroids))
 
 
