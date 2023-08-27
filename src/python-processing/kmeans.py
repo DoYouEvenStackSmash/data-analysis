@@ -99,8 +99,8 @@ def update_centroids(clusters):
     return np.array(
         [
             np.mean(cluster, axis=0)
-            if len(cluster)
-            else np.zeros((1, cluster.shape[1]))
+            # if len(cluster)
+            # else np.zeros((1, np.array(cluster).shape[1]))
             for cluster in clusters
         ]
     )
