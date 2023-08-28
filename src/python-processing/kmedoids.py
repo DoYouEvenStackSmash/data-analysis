@@ -99,7 +99,7 @@ def preprocess(M, k=3):
     return medioid_indices, pairwise_distances
 
 
-# def preprocess(M, k=3):
+# def preprocess_points_example(M, k=3):
 #     """
 #     Preprocesses M according to k medioids algorithm
 #     Computes an initial set of medioids, and a distances matrix between every pair of points

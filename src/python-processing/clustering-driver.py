@@ -6,6 +6,7 @@ import argparse
 from kmedoids import *
 from kmeans import *
 from clustering_imports import *
+import time
 
 
 def dataloader(filename):
@@ -82,6 +83,8 @@ def display_clusters(clusters, centroids):
         # reshaped_data = m.reshape(-1, 2)
         reshaped_data = m
         print(m.shape)
+        if i + ci >= len(colors):
+            ci = -len(colors)
         # Compute the convex hull using Graham Scan
         if len(m) > 2:
             convex_hull = graham_scan_convex_hull(reshaped_data)
@@ -229,6 +232,7 @@ def initial_centroids(d, k):
 
     # Compute initial centroids using k-means++
     centroids = kmeanspp(d, k, centroids, not_chosen, chosen)
+    # print(centroids)
     return centroids
 
 
@@ -240,7 +244,7 @@ class Node:
 
 
 def construct_tree(M, k=3, R=30):
-    C = 65
+    C = 30
     nl = []
     nq = deque()
     dq = deque()
@@ -260,7 +264,13 @@ def construct_tree(M, k=3, R=30):
             centroids = initial_centroids(d, k)
             for _ in range(R):
                 clusters = assign_kmeans_clusters(d, centroids)
+                # print(len(clusters))
+                if len(clusters) < k:
+                    centroids = update_centroids(clusters)
+                    break
+                    # break
                 new_centroids = update_centroids(clusters)
+
                 if np.linalg.norm(new_centroids - centroids) == 0.0:
                     break
                 centroids = new_centroids
@@ -270,7 +280,7 @@ def construct_tree(M, k=3, R=30):
                 nl.append(Node(ctr))
                 nq.append(idx)
                 dq.append(np.array(clusters[i]))
-        elif len(d) < C:
+        elif len(d) <= C:
             dlen = d.shape[0]
             mlist, distances = preprocess(d, k)
             total_sum = float("inf")
@@ -279,7 +289,7 @@ def construct_tree(M, k=3, R=30):
                 clusters = assign_clusters(dlen, mlist, distances)
                 mlist = update_medioids(clusters, mlist, distances)
                 new_sum = calculate_sum(clusters, mlist, distances)
-                if new_sum == total_sum:
+                if new_sum == total_sum:  # or len(clusters) < k:
                     break
                 total_sum = new_sum
             clusters, medioids = postprocess(d, clusters, mlist)
@@ -316,39 +326,133 @@ def generate_dot_graph(xy_pairs):
 # Example list of (x, y) pairs
 # xy_pairs = [("A", "B"), ("B", "C"), ("C", "D"), ("D", "A")]
 
+
 # Generate dot format graph representation
 # dot_representation = generate_dot_graph(xy_pairs)
 # print(dot_representation)
+def search_tree(node_list, data_list, input_img):
+    n_curr = 0
+    search_list = []
+    while node_list[n_curr].data is None:
+        min_dist = float("inf")
+        nn = 0
+        for i in node_list[n_curr].children:
+            dist = np.linalg.norm(node_list[i].val - input_img)
+            if dist < min_dist:
+                nn = i
+                min_dist = dist
+        search_list.append(nn)
+        n_curr = nn
+    closest = 0
+    min_dist = float("inf")
+    for idx in node_list[n_curr].data:
+        # print(idx)
+        dist = np.linalg.norm(data_list[idx] - input_img)
+        if dist < min_dist:
+            closest = idx
+            min_dist = dist
+    search_list.append(closest)
+    # print(search_list)
+    return closest, min_dist
+
+
+def setup_coeff(input_coeff):
+    matrix_size = len(input_coeff)
+    # Create a 2D matrix with zeros
+    matrix = np.zeros((matrix_size, matrix_size))
+
+    # Fill the diagonal with the values from the 1D array
+    np.fill_diagonal(matrix, input_coeff)
+    return matrix
+
+
+def correlation_matrix(A, B, coefficients):
+    n = len(A)
+    corr_matrix = np.zeros((n, n))
+
+    for i in range(n):
+        for j in range(n):
+            corr_matrix[i, j] = coefficients[i][j]
+
+    fig, ax = plt.subplots()
+    cax = ax.matshow(corr_matrix, cmap="coolwarm")
+    plt.title("Correlation Matrix")
+    plt.xticks(range(n), A, rotation=90)
+    plt.yticks(range(n), B)
+    plt.colorbar(cax)
+
+    plt.show()
 
 
 def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=4):
     """
     Wrapper function for execution of clustering
     """
-    k = 5
+    k = 4
     M = dataloader(filename)
-    print(M[0])
-    # print(preprocess(M, k))
-    # sys.exit()
-    # M = M.reshape(M.shape[0], M.shape[1] ** 2)
-    nl = construct_tree(M)
 
-    # l = [i for i in nl if i.children != None]
+    tree_build = time.perf_counter()
+    node_list = construct_tree(M, k)
+    tree_build = time.perf_counter() - tree_build
+    print("{}\t{}".format("tree build: ", tree_build))
+
+    data_list = [np.empty(M.shape[1:]) for _ in range(M.shape[0])]
+    img_count = 0
     pl = []
     total_vals = 0
     clusters = []
     centroids = []
-    for i in nl[1:]:
-        if i.children is None:
-            if i.data is not None:
-                #     continue
-                clusters.append(i.data)
-                centroids.append(i.val)
+    for i, node in enumerate(node_list[1:]):
+        if node.children is None:
+            if node.data is not None:
+                data_idx = []
+                for j, img in enumerate(node.data):
+                    data_list[img_count] = np.array(img)
+                    data_idx.append(img_count)
+                    img_count += 1
+                node_list[i + 1].data = data_idx
+
+                # clusters.append(i.data)
+                # centroids.append(i.val)
                 continue
-            # print(i.idx)
             continue
-    # clusters = np.array(clusters)
-    # total_vals += len(i.data)
+
+    np.random.shuffle(M)
+
+    # benchmarking
+    di_match = []
+    ds_match = []
+    start_time = time.perf_counter()
+    m_list = [i for i in range(len(M))]
+    for i, m in enumerate(M):
+        di, ds = search_tree(node_list, data_list, m)
+        di_match.append(di)
+        ds_match.append(ds)
+    end_time = time.perf_counter()
+    time_to_locate = end_time - start_time
+    print("{}\t{}".format("tree search:", time_to_locate))
+
+    # ds_mat = setup_coeff(ds_match)
+    # correlation_matrix(m_list, di_match, ds_mat)
+
+    # setup all pairs matching
+    mi_match = []
+    ms_match = []
+    start_time = time.perf_counter()
+    for i, m in enumerate(M):
+        min_dist = float("inf")
+        nn = 0
+        for j, d in enumerate(data_list):
+            dist = np.linalg.norm(m - d)
+            if dist < min_dist:
+                min_dist = dist
+                nn = j
+        mi_match.append(nn)
+        ms_match.append(min_dist)
+    end_time = time.perf_counter()
+    total = end_time - start_time
+
+    print("{}\t{}".format("pairwise cmp:", total))
 
     # for j in i.children:
     #     pl.append((i.idx, j))
@@ -358,7 +462,7 @@ def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=4):
 
     # clusters, centroids = nested_kmeans(M)
     # print(len(clusters))
-    eval_cluster_inertia(clusters, centroids)
+    # eval_cluster_inertia(clusters, centroids)
     # display_clusters(clusters, np.array(centroids))
     # display_dendrogram(clusters, np.array(centroids))
 

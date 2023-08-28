@@ -33,26 +33,28 @@ def assign_kmeans_clusters(data, centroids):
     min_dist = float("inf")
     nn = None
     pdist = None
-    for img in data:
+    for i, img in enumerate(data):
         min_dist = float("inf")
         nn = None
         for idx, ctr in enumerate(centroids):
-            if np.array_equal(img, ctr):
+            if np.array_equal(data[i], ctr):
                 continue
-            pdist = distance(img, ctr)
+            pdist = distance(data[i], ctr)
             if pdist < min_dist:
                 min_dist = pdist
                 nn = idx
         if nn != None:
-            clusters[nn].append(img)
+            clusters[nn].append(data[i])
 
     # convert clusters lists to numpy arrays
+    new_clusters = []
     for i in range(len(clusters)):
         if not len(clusters[i]):
+            # clusters[i] = np.empty(shape)
             continue
-        clusters[i] = np.stack([j for j in clusters[i]])
+        new_clusters.append(np.stack(np.array([j for j in clusters[i]])))
 
-    return clusters
+    return new_clusters
 
 
 # def assign_kmeans_clusters(data, centroids):
@@ -99,8 +101,6 @@ def update_centroids(clusters):
     return np.array(
         [
             np.mean(cluster, axis=0)
-            # if len(cluster)
-            # else np.zeros((1, np.array(cluster).shape[1]))
             for cluster in clusters
         ]
     )
@@ -116,9 +116,7 @@ def kmeanspp(M, k, centroids, not_chosen, chosen):
         weights = np.zeros(len(not_chosen))
 
         # distance lambda function
-        D = lambda ck, m: np.sqrt(
-            np.sum(np.array([np.power(i, 2) for i in (ck - m).flatten()]))
-        )
+        D = lambda ck, m: np.linalg.norm(ck - m)
         for idx, mdx in enumerate(not_chosen):
             m = M[mdx]
             min_dist = float("inf")
