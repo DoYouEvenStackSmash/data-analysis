@@ -23,9 +23,10 @@ This program implements a hierarchical clustering algorithm that supports multip
 
 ### Prerequisites
 
-- Python 3.x
-- NumPy
-- argparse (already included in Python standard library)
+- networkx
+- matplotlib
+- numpy
+- argparse
 
 ### Installation
 
@@ -51,7 +52,7 @@ The program supports three main operations: building hierarchical clustering, lo
 To build hierarchical clustering with different clustering parameters, use the following command:
 
 ```sh
-python clustering_driver.py build -i example_2_2.npy -k 3 -R 30 -C 45 -o output_tree.json
+python3 clustering_driver.py build -i example_2_2.npy -k 3 -R 30 -C 45 -o output_tree.json
 ```
 
 Replace `example_2_2.npy` with the path to your input data file. The `-k`, `-R`, and `-C` flags allow you to specify the number of clusters, number of iterations, and cutoff value respectively. The `-o` flag is optional and can be used to specify an output file to save the hierarchical clustering structure.
@@ -61,7 +62,7 @@ Replace `example_2_2.npy` with the path to your input data file. The `-k`, `-R`,
 To load an existing hierarchical clustering structure, use the following command:
 
 ```sh
-python clustering_driver.py load -t existing_tree.json
+python3 clustering_driver.py load -t existing_tree.json
 ```
 
 Replace `existing_tree.json` with the path to the generated JSON file containing the hierarchy. Included in the JSON file is a `resources` field which includes the necessary support files to build the tree.
@@ -71,7 +72,7 @@ Replace `existing_tree.json` with the path to the generated JSON file containing
 To search for clusters in an existing hierarchical clustering structure, use the following command:
 
 ```sh
-python clustering_driver.py search -t existing_tree.json -M exampleM_2_2.npy -G
+python3 clustering_driver.py search -t existing_tree.json -M exampleM_2_2.npy -G
 ```
 
 Replace `existing_tree.json` with the path to the JSON file containing the hierarchy and `exampleM_2_2.npy` with the path to the large input data file. The `-G` flag is optional and generates a graph from the tree data.
