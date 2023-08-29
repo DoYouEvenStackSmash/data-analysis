@@ -1,4 +1,3 @@
-
 def preprocess_2D(M, k=3):
     """
     Preprocesses M according to k medioids algorithm
@@ -29,7 +28,6 @@ def preprocess_2D(M, k=3):
     medioid_indices = np.argpartition(np.array([d.v for d in sorted_data]), k)[:k]
     mlist = list(medioid_indices)
     return mlist, distances
-
 
 
 def nested_kmeans(M):
@@ -107,8 +105,8 @@ def nested_kmeans(M):
 
 k = 3
 M = dataloader(filename)
-node_list = construct_tree(M,k)
-for i,node in enumerate(node_list[1:]):
+node_list = construct_tree(M, k)
+for i, node in enumerate(node_list[1:]):
     if node.children is None:
         if node.data is not None:
             clusters.append(node.data)

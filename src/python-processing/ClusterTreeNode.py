@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+
 class ClusterTreeNode:
     def __init__(self, val, val_idx=-1, children=None, data=None):
         self.val = val

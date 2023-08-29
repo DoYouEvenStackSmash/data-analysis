@@ -3,10 +3,11 @@ import numpy as np
 from collections import deque
 from clustering_imports import *
 
+
 def initial_centroids(d, k):
     start_center = np.random.randint(len(d))  # Choose a random starting center index
     centroids = [d[start_center]]  # Initialize centroids list with the starting center
-    
+
     # Create a deque of indices for non-center points
     not_chosen = deque(i for i in range(len(d)) if i != start_center)
     chosen = {start_center}  # Set containing chosen center indices
@@ -15,6 +16,7 @@ def initial_centroids(d, k):
     centroids = kmeanspp(d, k, centroids, not_chosen, chosen)
     # print(centroids)
     return centroids
+
 
 def weighted_sample(weights):
     """
@@ -29,6 +31,7 @@ def weighted_sample(weights):
         if sample_val <= 0:
             return idx
     return len(weights) - 1
+
 
 def distance(k, m):
     return np.linalg.norm(k - m)
@@ -73,12 +76,7 @@ def update_centroids(clusters):
     Evaluate new centroids based on the existing clusters
     Returns an array of np arrays
     """
-    return np.array(
-        [
-            np.mean(cluster, axis=0)
-            for cluster in clusters
-        ]
-    )
+    return np.array([np.mean(cluster, axis=0) for cluster in clusters])
 
 
 def kmeanspp(M, k, centroids, not_chosen, chosen):

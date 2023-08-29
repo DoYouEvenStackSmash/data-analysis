@@ -41,16 +41,19 @@ def update_medioids(clusters, mlist, distances):
 
     return new_mlist
 
+
 class Datum:
     def __init__(self, idx):
         self.idx = idx
         self.v = None
+
 
 def compute_distance_matrix(M_flat):
     pairwise_distances = np.sqrt(
         np.sum(np.square(M_flat[:, np.newaxis] - M_flat), axis=2)
     )
     return pairwise_distances
+
 
 def preprocess(M, k=3):
     """

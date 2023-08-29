@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from geometry_fxns import *
 from clustering_imports import *
 
+
 def display_dendrogram(clusters, centroids):
     """
     Displays the clusters with the corresponding centroids and enclosing convex hull using matplotlib
@@ -110,13 +111,13 @@ def generate_dot_graph(xy_pairs):
 def display_correlation_matrix(A, B, coefficients):
     n = len(A)
     corr_matrix = np.zeros((n, n))
-    
+
     for i in range(n):
         for j in range(n):
             corr_matrix[i, j] = coefficients[i][j]
-    
+
     fig, ax = plt.subplots()
-    cax = ax.matshow(corr_matrix, cmap='coolwarm')
+    cax = ax.matshow(corr_matrix, cmap="coolwarm")
     plt.title("Correlation Matrix")
     plt.xticks(range(n), A, rotation=90)
     plt.yticks(range(n), B)

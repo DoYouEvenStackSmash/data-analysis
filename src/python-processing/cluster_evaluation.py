@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+
 def D_vect(di, dj):
     """
     Euclidean distance between two elements
@@ -18,6 +19,7 @@ def sift_data(clusters, centroids, r):
             if D_vect(k, pt) > r:
                 data.append(np.array(clusters[i][idx]))
     return np.array(data)
+
 
 def eval_cluster_inertia(clusters, centroids):
     """

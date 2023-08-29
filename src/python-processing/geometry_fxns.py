@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import numpy as np
 
+
 def setup_coeff(input_coeff):
     matrix_size = len(input_coeff)
     # Create a 2D matrix with zeros
@@ -9,6 +10,7 @@ def setup_coeff(input_coeff):
     # Fill the diagonal with the values from the 1D array
     np.fill_diagonal(matrix, input_coeff)
     return matrix
+
 
 def graham_scan_convex_hull(points):
     def cross_product(p, q, r):
