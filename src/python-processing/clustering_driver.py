@@ -7,7 +7,7 @@ from ClusterTreeNode import ClusterTreeNode
 from collections import deque
 import time
 from IPython.display import display
-
+import json
 
 def search_tree(node_list, data_list, T):
     """
@@ -124,8 +124,7 @@ def construct_tree(M, k=3, R=30, C=-1):
     # not need to be a member of the dataset. 
     if C < 0:
         C = max(int(len(M) / k**3), 50) # cutoff threshold
-    # SUPER_CUTOFF = CUTOFF * k
-    # CUTOFF = int(len(M) / k**2) # cutoff threshold
+
     node_list = []
     node_queue = deque()
     data_queue = deque()
@@ -247,48 +246,129 @@ def data_loading_wrapper(filename):
     M = dataloader(filename)
     return M
 
+def serialize_wrapper(args, node_list, data_list):
+    """
+    Wrapper function for serializing a constructed clustering with params
+    """
+    params = {"filename":args.output, "k" : args.clusters, "R":args.iterations, "C":args.cutoff}
+    tree_dict = {"parameters":params,"resources":{"node_vals":"tree_node_vals.npy", "data_list":"tree_data_list.npy"}, "root_node":{}}
 
-# import argparse
+    tnl = []
+    node_vals = []
+    for i,node in enumerate(node_list):
+        if i == 0:
+            # tnl.append()
+            tree_dict["root_node"] = {"node_id": i, "node_val_idx": None, "children" : [c for c in node.children], "data_refs":None}
+            continue
+        if node.data_refs is not None:
+            tnl.append({"node_id":i, "node_val_idx":len(node_vals), "children":None, "data_refs":[didx for didx in node.data_refs]})
+            node_vals.append(np.array(data_list[node.val_idx]))
+        else:
+            tnl.append({"node_id": i, "node_val_idx": len(node_vals), "children" : [c for c in node.children], "data_refs":None})
+            node_vals.append(np.array(node.val))
+        
+    
+    tree_dict["node_list"] = tnl
+    
+    f = open("tree_hierarchy.json","w")
+    f.write(json.dumps(tree_dict,indent=2))
+    f.close()
 
-def build_wrapper(input_file, k, R, C):
-    """
-    Wrapper function for building hierarchical clusters
-    """
-    print("Building hierarchical clustering...")
-    nl,dl = hierarchify_wrapper(input_file, k, R, C)
+    np.save('tree_node_vals.npy', np.array(node_vals))
+    np.save('tree_data_list.npy', np.array(data_list))
 
-def search_wrapper(input_file, M, k, R, C):
+def build_wrapper(args):
     """
-    Wrapper function for building a hierarchical cluster tree, and searching through it
+    Wrapper function for constructing a hierarchical clustering from input and serializing the output
     """
-    print(f"Input file: {input_file}")
-    print(f"Large input file: {M}")
-    node_list,data_list = hierarchify_wrapper(input_file, k, R, C)
-    N = data_loading_wrapper(M)
-    print("Performing search operation...")
+    node_list,data_list = hierarchify_wrapper(args.input, args.clusters, args.iterations, args.cutoff)
+    
+    print("Building hierarchical clustering")
+    if args.output is not None:
+        serialize_wrapper(args, node_list, data_list)
+    return node_list, data_list
+    
+
+def tree_loader(filename):
+    """
+    Wrapper function for deserializing a hierarchical clustering
+    Returns a node_list of ClusterTreeNodes and a list of data points
+    """
+
+    f = open(filename, 'r')
+    parsed_data = json.loads(f.read())
+    f.close()
+    node_vals = np.load(parsed_data["resources"]["node_vals"])
+    data_list = np.load(parsed_data["resources"]["data_list"])
+    root_node_data = parsed_data["root_node"]
+    root_node = ClusterTreeNode(
+        val=0,
+        val_idx=root_node_data["node_val_idx"],
+        children=root_node_data["children"],
+        data=root_node_data["data_refs"]
+    )
+
+    node_list_data = parsed_data["node_list"]
+    node_list = [root_node]
+    for node_data in node_list_data:
+        node = ClusterTreeNode(
+            val=node_vals[node_data["node_val_idx"]],
+            val_idx=node_data["node_val_idx"],
+            children=node_data["children"],
+            data=node_data["data_refs"]
+        )
+        node_list.append(node)
+    
+    return node_list, data_list
+
+def load_wrapper(args):
+    """
+    Wrapper function for loading a hierarchical clustering from some static representation
+    Returns a node_list and data_list
+    """
+    print("Loading hierarchical clustering")
+    return tree_loader(args.tree)
+
+def search_wrapper(args):
+    """
+    Wrapper function for searching a hierarchical cluster tree for some list of points
+    returns the list of associations and distances
+    """
+    node_list, data_list = tree_loader(args.tree)
+    N = data_loading_wrapper(args.input)
+    print("Searching hierarchical clustering")
     st_idxs, st_dss = search_tree_associations(node_list, data_list, N)
-    print(st_dss)
-    
-    
+
 
 def main():
     parser = argparse.ArgumentParser(description="Hierarchical Clustering Program")
-    parser.add_argument("-hc", "--hierarchify", help="Input file to build hierarchical clustering", required=True)
-    parser.add_argument("-k", "--clusters", type=int, default=3, help="Number of clusters (default 3)")
-    parser.add_argument("-R", "--iterations", type=int, default=30, help="Number of iterations (default 30)")
-    parser.add_argument("-C", "--cutoff", type=int, default=45, help="Minimal number of elements in medoid cluster (default 45)")
-    parser.add_argument("-search", action="store_true", help="Perform search operation")
-    parser.add_argument("-M", "--input_file", help="Large input file with data for search operation")
+
+    subparsers = parser.add_subparsers(title="Subcommands", dest="command")
+
+    # Build subparser
+    build_parser = subparsers.add_parser("build", help="Build hierarchical clustering")
+    build_parser.add_argument("-i", "--input", required=True, help="Input file with data to build hierarchical clustering")
+    build_parser.add_argument("-k", "--clusters", type=int, default=3, help="Number of clusters (default 3)")
+    build_parser.add_argument("-R", "--iterations", type=int, default=30, help="Number of iterations (default 30)")
+    build_parser.add_argument("-C", "--cutoff", type=int, default=45, help="Minimal number of elements in medoid cluster (default 45)")
+    build_parser.add_argument("-o", "--output", help="Output file for saving the hierarchical clustering")
+    build_parser.set_defaults(func=build_wrapper)
+
+    # Load subparser
+    load_parser = subparsers.add_parser("load", help="Load existing hierarchical clustering")
+    load_parser.add_argument("-t", "--tree", required=True, help="JSON file containing hierarchy")
+    load_parser.set_defaults(func=load_wrapper)
+
+    # Search subparser
+    search_parser = subparsers.add_parser("search", help="Search hierarchical clustering")
+    search_parser.add_argument("-t", "--tree", required=True, help="JSON file containing hierarchy")
+    search_parser.add_argument("-M", "--input", required=True, help="Large input file with data for search or building")
+    search_parser.set_defaults(func=search_wrapper)
+
+    # Parse command-line arguments and call the appropriate function
 
     args = parser.parse_args()
-
-    if args.search:
-        if args.input_file is None:
-            print("Error: -M/--input_file is required for search operation")
-            return
-        search_wrapper(args.hierarchify, args.input_file, args.clusters, args.iterations, args.cutoff)
-    else:
-        build_wrapper(args.hierarchify, args.clusters, args.iterations, args.cutoff)
+    args.func(args)
     
 if __name__ == "__main__":
     main()
