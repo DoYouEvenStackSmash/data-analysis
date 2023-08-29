@@ -1,7 +1,4 @@
-import sys
-
-sys.path.append("..")
-
+#!/usr/bin/python3
 from clustering_imports import *
 
 
@@ -44,16 +41,12 @@ def update_medioids(clusters, mlist, distances):
 
     return new_mlist
 
-
-# import numpy as np
-
-
 class Datum:
     def __init__(self, idx):
         self.idx = idx
         self.v = None
 
-def compute_distance_matrix(M):
+def compute_distance_matrix(M_flat):
     pairwise_distances = np.sqrt(
         np.sum(np.square(M_flat[:, np.newaxis] - M_flat), axis=2)
     )
@@ -73,11 +66,6 @@ def preprocess(M, k=3):
     # if len(M.shape) == 3:
     M_flat = M.reshape(n, -1)
     pairwise_distances = compute_distance_matrix(M_flat)
-    # pairwise_distances = np.sqrt(
-    #     np.sum(np.square(M_flat[:, np.newaxis] - M_flat), axis=2)
-    # )
-    # else:
-    #      pairwise_distances = np.sqrt(np.sum(np.square(M_flat[:, np.newaxis, :] - M_flat), axis=2))
 
     # Step 1-2: Calculate denominators efficiently
     denominators = np.sum(pairwise_distances, axis=1)

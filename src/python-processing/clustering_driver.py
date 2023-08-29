@@ -1,114 +1,12 @@
 #!/usr/bin/python3
+import argparse
 from clustering_imports import *
+from kmeans import *
+from kmedoids import *
+from ClusterTreeNode import ClusterTreeNode
+from collections import deque
 import time
 from IPython.display import display
-
-def dataloader(filename):
-    """
-    Loads data from a file
-    """
-    # Check if the file exists
-    if not os.path.exists(filename):
-        print("File does not exist.")
-        sys.exit()
-    else:
-        # Load the array using np.load()
-        loaded_array = np.load(filename, allow_pickle=True)
-        # Display the loaded array
-        print("Loaded Array:")
-        print(loaded_array.shape)
-        return loaded_array
-
-
-def initial_centroids(d, k):
-    start_center = np.random.randint(len(d))  # Choose a random starting center index
-    centroids = [d[start_center]]  # Initialize centroids list with the starting center
-
-    # Create a deque of indices for non-center points
-    not_chosen = deque(i for i in range(len(d)) if i != start_center)
-    chosen = {start_center}  # Set containing chosen center indices
-
-    # Compute initial centroids using k-means++
-    centroids = kmeanspp(d, k, centroids, not_chosen, chosen)
-    # print(centroids)
-    return centroids
-
-def construct_tree(M, k=3, R=30):
-    """
-    Builds a hierarchical clustering on the input data M
-    Returns a flat tree as a list of nodes, where node_list[0] is the root.
-    """
-    # if size of data is greater than cutoff, we assume that the centroid does
-    # not need to be a member of the dataset. 
-    CUTOFF = int(len(M) / k**2) # cutoff threshold
-    # SUPER_CUTOFF = CUTOFF * k
-    # CUTOFF = int(len(M) / k**2) # cutoff threshold
-    node_list = []
-    node_queue = deque()
-    data_queue = deque()
-
-    node_list.append(TreeNode(0))
-    node_queue.append(0)
-    data_queue.append(M)
-
-    while len(node_queue):
-
-        node = node_list[node_queue.popleft()]
-        data = data_queue.popleft()
-        
-        node.children = []
-        # perform k means clustering.
-        if len(data) > CUTOFF:
-            
-            clusters = None
-            centroids = initial_centroids(data, k)
-            for _ in range(R):
-                clusters = assign_kmeans_clusters(data, centroids)
-                
-                # # TODO: investigate emergency brake for empty clusters
-                # if len(clusters) < k:
-                #     centroids = update_centroids(clusters)
-                #     break
-                
-                new_centroids = update_centroids(clusters)
-                # convergence early stop condition
-                if np.linalg.norm(new_centroids - centroids) == 0.0:
-                    break
-                centroids = new_centroids
-            
-            # create new nodes for centroids, and add each centroid/data pair to queues
-            for i, ctr in enumerate(centroids):
-                idx = len(node_list)
-                node.children.append(idx)
-                node_list.append(TreeNode(ctr))
-                node_queue.append(idx)
-                data_queue.append(np.array(clusters[i]))
-        # perform k medioids clustering to ensure that the center is within the input data
-        else:
-            
-            dlen = data.shape[0]
-            mlist, distances = preprocess(data, k)
-            
-            total_sum = float("inf")
-            clusters = None
-            
-            for _ in range(R):
-                clusters = assign_clusters(dlen, mlist, distances)
-                mlist = update_medioids(clusters, mlist, distances)
-                new_sum = calculate_sum(clusters, mlist, distances)
-                if new_sum == total_sum:
-                    break
-                total_sum = new_sum
-            clusters, medioids = postprocess(data, clusters, mlist)
-            
-            # create new nodes for medioids, initialize node data arrays to hold the clusters
-            for i, med in enumerate(medioids):
-                idx = len(node_list)
-                node.children.append(idx)
-                node_list.append(TreeNode(med))
-                node_list[idx].data = np.array(clusters[i])
-
-    return node_list
 
 
 def search_tree(node_list, data_list, T):
@@ -119,7 +17,7 @@ def search_tree(node_list, data_list, T):
     n_curr = 0
     # search_list = []
     # search representative nodes
-    while node_list[n_curr].data is None:
+    while node_list[n_curr].data_refs is None:
         min_dist = float('inf')
         nn = 0
         for i in node_list[n_curr].children:
@@ -133,7 +31,7 @@ def search_tree(node_list, data_list, T):
     # search leaves
     closest_idx = 0
     min_dist = float('inf')
-    for idx in node_list[n_curr].data:
+    for idx in node_list[n_curr].data_refs:
         # print(idx)
         dist = np.linalg.norm(data_list[idx] - T)
         if dist < min_dist:
@@ -148,7 +46,7 @@ def search_tree_associations(node_list, data_list, input_list):
     Computes matches using tree-based nearest neighbor search.
     
     Args:
-        node_list (list of TreeNode): List of nodes representing a search tree structure.
+        node_list (list of ClusterTreeNode): List of nodes representing a search tree structure.
         data_list (list of numpy arrays): List of data points for comparison.
         input_list (list of numpy arrays): List of input points to find matches for.
     
@@ -217,19 +115,84 @@ def all_pairs_associations(data_list, input_list):
     
     return mi_match_indices, ms_match_distances
 
+def construct_tree(M, k=3, R=30, C=-1):
+    """
+    Builds a hierarchical clustering on the input data M
+    Returns a flat tree as a list of nodes, where node_list[0] is the root.
+    """
+    # if size of data is greater than cutoff, we assume that the centroid does
+    # not need to be a member of the dataset. 
+    if C < 0:
+        C = max(int(len(M) / k**3), 50) # cutoff threshold
+    # SUPER_CUTOFF = CUTOFF * k
+    # CUTOFF = int(len(M) / k**2) # cutoff threshold
+    node_list = []
+    node_queue = deque()
+    data_queue = deque()
 
-def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=4):
+    node_list.append(ClusterTreeNode(0))
+    node_queue.append(0)
+    data_queue.append(M)
+
+    while len(node_queue):
+
+        node = node_list[node_queue.popleft()]
+        data = data_queue.popleft()
+        
+        node.children = []
+        # perform k means clustering.
+        if len(data) > C:
+            
+            clusters = None
+            centroids = initial_centroids(data, k)
+            for _ in range(R):
+                clusters = assign_kmeans_clusters(data, centroids)
+
+                new_centroids = update_centroids(clusters)
+                # convergence early stop condition
+                if np.linalg.norm(new_centroids - centroids) == 0.0:
+                    break
+                centroids = new_centroids
+            
+            # create new nodes for centroids, and add each centroid/data pair to queues
+            for i, ctr in enumerate(centroids):
+                idx = len(node_list)
+                node.children.append(idx)
+                node_list.append(ClusterTreeNode(ctr))
+                node_queue.append(idx)
+                data_queue.append(np.array(clusters[i]))
+        # perform k medioids clustering to ensure that the center is within the input data
+        else:
+            
+            dlen = data.shape[0]
+            mlist, distances = preprocess(data, k)
+            
+            total_sum = float("inf")
+            clusters = None
+            
+            for _ in range(R):
+                clusters = assign_clusters(dlen, mlist, distances)
+                mlist = update_medioids(clusters, mlist, distances)
+                new_sum = calculate_sum(clusters, mlist, distances)
+                if new_sum == total_sum:
+                    break
+                total_sum = new_sum
+            clusters, medioids = postprocess(data, clusters, mlist)
+            
+            # create new nodes for medioids, initialize node data arrays to hold the clusters
+            for i, med in enumerate(medioids):
+                idx = len(node_list)
+                node.children.append(idx)
+                node_list.append(ClusterTreeNode(med))
+                node_list[idx].data_refs = np.array(clusters[i])
+
+    return node_list
+
+def construct_data_list(M, node_list):
     """
-    Wrapper function for execution of clustering
+    Wrapper function for constructing a new data array by replacing data references to their indices
+    Returns an array of data points, and replaces data_refs in leaf nodes
     """
-    k = 3
-    M = dataloader(filename)
-    
-    tree_build = time.perf_counter()
-    node_list = construct_tree(M,k)
-    tree_build = time.perf_counter() - tree_build
-    print("{}\t{}".format("tree build: ", tree_build))
-    
     data_list = [np.empty(M.shape[1:]) for _ in range(M.shape[0])]
     img_count = 0
     pl = []
@@ -238,71 +201,94 @@ def clustering_wrapper(filename, algorithm="kmeans", iterations=100, k=4):
     centroids = []
     for i,node in enumerate(node_list[1:]):
         if node.children is None:
-            if node.data is not None:
+            if node.data_refs is not None:
                 data_idx = []
-                for j,img in enumerate(node.data):
+                for j,img in enumerate(node.data_refs):
                     if np.linalg.norm(img - node.val) == 0.0:
                         node.val_idx = img_count
                     data_list[img_count] = np.array(img)
                     data_idx.append(img_count)
                     img_count += 1
-                node_list[i + 1].data = data_idx
-                
-                continue
-            continue
+                node_list[i + 1].data_refs = data_idx
+    return data_list
+
+def hierarchify_wrapper(filename, k, R, C):
+    """
+    Wrapper function for building a hierarchical clustering
+    """
+    M = data_loading_wrapper(filename)
+    nl,dl = hierarchify(M, k, R, C)
+    return nl,dl
+
+def hierarchify(M, k=3, R=4,C=-1):
+    """
+    Wrapper function for execution of clustering
+    """
+    print("starting search tree construction:\n\tN = {}\n\tD = {}\n\tk = {}\n\tR = {}".format(M.shape[0],np.product(M.shape[1:]), k, R))
+    tree_build = time.perf_counter()
+    node_list = construct_tree(M,k,R,C)
+    tree_build = time.perf_counter() - tree_build
+    print("{}:\t{}".format("Tree build time:",tree_build))
+
+    print("building data reference list...")
+    data_build = time.perf_counter()
+    data_list = construct_data_list(M, node_list)
+    data_build = time.perf_counter() - data_build
+    print("{}:\t{}".format("list build time:",data_build))
+    print("total:\t{}".format(tree_build + data_build))
+
     return node_list, data_list
+
+def data_loading_wrapper(filename):
+    """
+    Wrapper for data loader
+    returns a loaded data array
+    """
+    M = dataloader(filename)
+    return M
+
+
+# import argparse
+
+def build_wrapper(input_file, k, R, C):
+    """
+    Wrapper function for building hierarchical clusters
+    """
+    print("Building hierarchical clustering...")
+    nl,dl = hierarchify_wrapper(input_file, k, R, C)
+
+def search_wrapper(input_file, M, k, R, C):
+    """
+    Wrapper function for building a hierarchical cluster tree, and searching through it
+    """
+    print(f"Input file: {input_file}")
+    print(f"Large input file: {M}")
+    node_list,data_list = hierarchify_wrapper(input_file, k, R, C)
+    N = data_loading_wrapper(M)
+    print("Performing search operation...")
+    st_idxs, st_dss = search_tree_associations(node_list, data_list, N)
+    print(st_dss)
+    
     
 
-    # for j in i.children:
-    #     pl.append((i.idx, j))
-
-    # print(generate_dot_graph(pl))
-    # print(total_vals)
-
-    # clusters, centroids = nested_kmeans(M)
-    # print(len(clusters))
-    # eval_cluster_inertia(clusters, centroids)
-
-    # display_dendrogram(clusters, np.array(centroids))
-
-
 def main():
-    # Create the argument parser
-    parser = argparse.ArgumentParser(description="Clustering Algorithm")
+    parser = argparse.ArgumentParser(description="Hierarchical Clustering Program")
+    parser.add_argument("-hc", "--hierarchify", help="Input file to build hierarchical clustering", required=True)
+    parser.add_argument("-k", "--clusters", type=int, default=3, help="Number of clusters (default 3)")
+    parser.add_argument("-R", "--iterations", type=int, default=30, help="Number of iterations (default 30)")
+    parser.add_argument("-C", "--cutoff", type=int, default=45, help="Minimal number of elements in medoid cluster (default 45)")
+    parser.add_argument("-search", action="store_true", help="Perform search operation")
+    parser.add_argument("-M", "--input_file", help="Large input file with data for search operation")
 
-    # Add the command-line arguments
-    parser.add_argument(
-        "--algorithm",
-        choices=["kmeans", "kmedoids"],
-        default="kmeans",
-        help="Choice of clustering algorithm: 'kmeans' or 'kmedoids'",
-    )
-
-    parser.add_argument(
-        "--filename", required=True, help="Path to input data file (.npy format)"
-    )
-
-    parser.add_argument(
-        "--iter",
-        type=int,
-        default=100,
-        help="Number of iterations to run clustering algorithm (default: 100)",
-    )
-
-    parser.add_argument(
-        "--k", type=int, default=3, help="Static number of clusters (default: 3)"
-    )
-
-    # Parse the command-line arguments
     args = parser.parse_args()
 
-    # Display the parsed arguments
-    print("Chosen algorithm:", args.algorithm)
-    print("Filename:", args.filename)
-    print("Number of iterations:", args.iter)
-    print("Number of clusters:", args.k)
-    clustering_wrapper(args.filename)
-
-
+    if args.search:
+        if args.input_file is None:
+            print("Error: -M/--input_file is required for search operation")
+            return
+        search_wrapper(args.hierarchify, args.input_file, args.clusters, args.iterations, args.cutoff)
+    else:
+        build_wrapper(args.hierarchify, args.clusters, args.iterations, args.cutoff)
+    
 if __name__ == "__main__":
     main()
