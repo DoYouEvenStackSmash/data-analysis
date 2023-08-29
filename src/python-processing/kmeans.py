@@ -18,7 +18,6 @@ def weighted_sample(weights):
             return idx
     return len(weights) - 1
 
-
 def distance(k, m):
     return np.linalg.norm(k - m)
     # return np.sqrt(np.sum(np.power(k - m, 2)))
@@ -37,8 +36,8 @@ def assign_kmeans_clusters(data, centroids):
         min_dist = float("inf")
         nn = None
         for idx, ctr in enumerate(centroids):
-            if np.array_equal(data[i], ctr):
-                continue
+            # if np.array_equal(data[i], ctr):
+            #     continue
             pdist = distance(data[i], ctr)
             if pdist < min_dist:
                 min_dist = pdist
@@ -55,42 +54,6 @@ def assign_kmeans_clusters(data, centroids):
         new_clusters.append(np.stack(np.array([j for j in clusters[i]])))
 
     return new_clusters
-
-
-# def assign_kmeans_clusters(data, centroids):
-#     """
-#     Create clusters by assigning data to centroids
-#     Returns a list of np array clusters
-#     """
-#     clusters = [[] for _ in centroids]
-
-#     stack = [(data, centroids, clusters)]
-
-#     while stack:
-#         data, centroids, clusters = stack.pop()
-
-#         if len(data) == 0:
-#             continue
-
-#         if len(centroids) == 1:
-#             clusters[0].extend(data)
-#             continue
-
-#         mid = len(data) // 2
-#         left_data, right_data = data[:mid], data[mid:]
-#         left_centroids, right_centroids = centroids, centroids
-#         left_clusters, right_clusters = [[] for _ in centroids], [[] for _ in centroids]
-
-#         stack.append((left_data, left_centroids, left_clusters))
-#         stack.append((right_data, right_centroids, right_clusters))
-
-#     merged_clusters = []
-#     for i, cluster_data in enumerate(clusters):
-#         if len(cluster_data) > 0:
-#             cluster_centroid = min(centroids, key=lambda ctr: distance(cluster_data[0], ctr))
-#             merged_clusters.append(cluster_data)
-
-#     return merged_clusters
 
 
 def update_centroids(clusters):
