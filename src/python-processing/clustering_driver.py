@@ -8,6 +8,7 @@ from collections import deque
 import time
 from IPython.display import display
 import json
+import networkx as nx
 
 def search_tree(node_list, data_list, T):
     """
@@ -287,7 +288,6 @@ def build_wrapper(args):
     if args.output is not None:
         serialize_wrapper(args, node_list, data_list)
     return node_list, data_list
-    
 
 def tree_loader(filename):
     """
@@ -321,13 +321,72 @@ def tree_loader(filename):
     
     return node_list, data_list
 
+def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_dss):
+    comp_dict = {}
+    for m in range(len(data_list)):
+        comp_dict[m] = {"Tree":{"Index":[],"Distance":[]}, "Naive":{"Index":[],"Distance":[]}}
+    for i,a in enumerate(st_idxs):
+
+        comp_dict[a]["Tree"]["Index"].append(f"T{int(i)}")
+        comp_dict[a]["Tree"]["Distance"].append(float(st_dss[i]))
+
+    for i,a in enumerate(ap_idxs):
+
+        comp_dict[a]["Naive"]["Index"].append(f"N{int(i)}")
+        comp_dict[a]["Naive"]["Distance"].append(float(ap_dss[i]))
+
+    comp_dict = {"Nodes":[{i:v} for i,v in comp_dict.items()]}
+
+    data = []
+    for N in comp_dict["Nodes"]:
+        for element, details in N.items():
+            key = element
+            tree_neighbors = [("green", f"Data{element}",details["Tree"]["Index"][i], details["Tree"]["Distance"][i]) for i in range(len(details["Tree"]["Index"]))]
+            for t in tree_neighbors:
+                data.append(t)
+            naive_neighbors = [("yellow",f"Data{element}", details["Naive"]["Index"][i], details["Naive"]["Distance"][i]) for i in range(len(details["Naive"]["Index"]))]
+            for t in naive_neighbors:
+                data.append(t)
+
+    for i,node in enumerate(node_list[1:]):
+        if node.data_refs is not None:
+            for idx in node.data_refs:
+                data.append(("purple", f"Node{i+1}", f"Data{idx}", np.linalg.norm(data_list[node.val_idx] - data_list[idx])))
+        else:
+            for c in node.children:
+                data.append(("blue",f"Node{i+1}",f"Node{c}", np.linalg.norm(node.val - node_list[c].val)))
+        
+
+    # Create a directed graph
+    G = nx.DiGraph()
+    node_colors = {}
+    for color, A, B, _ in data:
+        if color == "blue":
+            node_colors[A] = color
+        if color == "purple":
+            node_colors[A] = color
+            node_colors[B] = color
+        else:
+            node_colors[B] = color
+            # node_colors[A] = color
+        # node_colors[A] = "blue"
+    # Add nodes and edges based on relationships
+    for color, A, B, distance in data:
+        G.add_edge(A, B, weight=distance, color=color)
+    nx.set_node_attributes(G, node_colors, 'color')
+    # Save the graph in GraphML format
+    nx.write_graphml(G, "graph_representation.graphml")
+
 def load_wrapper(args):
     """
     Wrapper function for loading a hierarchical clustering from some static representation
     Returns a node_list and data_list
     """
     print("Loading hierarchical clustering")
-    return tree_loader(args.tree)
+    node_list, data_list = tree_loader(args.tree)
+    # if args.G:
+    #     graph_serialize(node_list, data_list)
+    return 
 
 def search_wrapper(args):
     """
@@ -338,7 +397,9 @@ def search_wrapper(args):
     N = data_loading_wrapper(args.input)
     print("Searching hierarchical clustering")
     st_idxs, st_dss = search_tree_associations(node_list, data_list, N)
-
+    ap_idxs, ap_dss = all_pairs_associations(data_list, N)
+    if args.G:
+        search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_dss)
 
 def main():
     parser = argparse.ArgumentParser(description="Hierarchical Clustering Program")
@@ -363,6 +424,7 @@ def main():
     search_parser = subparsers.add_parser("search", help="Search hierarchical clustering")
     search_parser.add_argument("-t", "--tree", required=True, help="JSON file containing hierarchy")
     search_parser.add_argument("-M", "--input", required=True, help="Large input file with data for search or building")
+    search_parser.add_argument("-G", action="store_true", help="generate graph from tree data")
     search_parser.set_defaults(func=search_wrapper)
 
     # Parse command-line arguments and call the appropriate function
