@@ -10,6 +10,8 @@ from IPython.display import display
 import json
 import networkx as nx
 from loguru import logger
+from graph_support import *
+
 
 def search_tree(node_list, data_list, T):
     """
@@ -114,11 +116,8 @@ def all_pairs_associations(data_list, input_list):
 
     end_time = time.perf_counter()
     total_execution_time = end_time - start_time
-    # logger.info("{},{},{},{},{},{}".format(
-    #     M.shape[0], np.product(M.shape[1:]), k, R, tree_build, data_build
-    # ))
+
     logger.info("{}".format(total_execution_time))
-    # print("Total time taken for pairwise comparison:", total_execution_time)
 
     return mi_match_indices, ms_match_distances
 
@@ -151,15 +150,15 @@ def construct_tree(M, k=3, R=30, C=-1):
             clusters = None
             centroids = initial_centroids(data, k)
             for r in range(R):
-                clusters = assign_kmeans_clusters(data, centroids, bool(r==0))
+                clusters = assign_kmeans_clusters(data, centroids, bool(r == 0))
 
                 new_centroids = update_centroids(clusters)
-                
+
                 # TODO: Investigate Estop behavior
                 if new_centroids.shape != centroids.shape:
                     centroids = new_centroids
                     break
-            
+
                 if np.linalg.norm(new_centroids - centroids) == 0.0:
                     break
                 centroids = new_centroids
@@ -234,28 +233,23 @@ def hierarchify(M, k=3, R=4, C=-1):
     """
     Wrapper function for execution of clustering
     """
-    # print(
-    #     "starting search tree construction:\n\tN = {}\n\tD = {}\n\tk = {}\n\tR = {}".format(
-    #         M.shape[0], np.product(M.shape[1:]), k, R
-    #     )
-    # )
+
     tree_build = time.perf_counter()
     node_list = construct_tree(M, k, R, C)
     tree_build = time.perf_counter() - tree_build
-    
-    # print("{}:\t{}".format("Tree build time:", tree_build))
 
     # print("building data reference list...")
     data_build = time.perf_counter()
     data_list = construct_data_list(M, node_list)
     data_build = time.perf_counter() - data_build
-    # print("{}:\t{}".format("list build time:", data_build))
-    # print("total:\t{}".format(tree_build + data_build))
-    #N D k R tree_build data_build
+
+    # N D k R tree_build data_build
     # Log the metrics in CSV format
-    logger.info("{},{},{},{},{},{}".format(
-        M.shape[0], np.product(M.shape[1:]), k, R, tree_build, data_build
-    ))
+    logger.info(
+        "{},{},{},{},{},{}".format(
+            M.shape[0], np.product(M.shape[1:]), k, R, tree_build, data_build
+        )
+    )
     return node_list, data_list
 
 
@@ -290,39 +284,48 @@ def serialize_wrapper(args, node_list, data_list):
 
     tree_node_list = []
     tree_node_vals = []
-    
+
     # handle root node
     tree_node_list.append(
-            {
-            "node_id": 0, # position of root node in node_array
-            "node_val_idx": None, # position of node.val in tree_node_vals array
-            "children": [c for c in node_list[0].children], # array of references to elements of tree_node_list
+        {
+            "node_id": 0,  # position of root node in node_array
+            "node_val_idx": None,  # position of node.val in tree_node_vals array
+            "children": [
+                c for c in node_list[0].children
+            ],  # array of references to elements of tree_node_list
             "data_refs": None,
-            }
-        )
-    
+        }
+    )
+
     for i, node in enumerate(node_list[1:]):
-        
         if node.data_refs is not None:
             tree_node_list.append(
                 {
-                    "node_id": i + 1, # position of node in tree_node_list
-                    "node_val_idx": len(tree_node_vals), # position of node.val in tree_node_vals array
-                    "children": None, # children of a leaf node is None
-                    "data_refs": [didx for didx in node.data_refs], # array of references to elements of data_list
+                    "node_id": i + 1,  # position of node in tree_node_list
+                    "node_val_idx": len(
+                        tree_node_vals
+                    ),  # position of node.val in tree_node_vals array
+                    "children": None,  # children of a leaf node is None
+                    "data_refs": [
+                        didx for didx in node.data_refs
+                    ],  # array of references to elements of data_list
                 }
             )
             # special handling of node's value
-            # since node.val for a leaf node is a member of the input data, we add the same member from 
-            # data_list using node.val_idx 
-            tree_node_vals.append(np.array(data_list[node.val_idx])) 
+            # since node.val for a leaf node is a member of the input data, we add the same member from
+            # data_list using node.val_idx
+            tree_node_vals.append(np.array(data_list[node.val_idx]))
         else:
             tree_node_list.append(
                 {
-                    "node_id": i + 1, # position of node in tree_node_list
-                    "node_val_idx": len(tree_node_vals), # position of node.val in tree_node_vals array
-                    "children": [c for c in node.children], # array of references to other elements of tree_node_list
-                    "data_refs": None, # internal node has no data_refs
+                    "node_id": i + 1,  # position of node in tree_node_list
+                    "node_val_idx": len(
+                        tree_node_vals
+                    ),  # position of node.val in tree_node_vals array
+                    "children": [
+                        c for c in node.children
+                    ],  # array of references to other elements of tree_node_list
+                    "data_refs": None,  # internal node has no data_refs
                 }
             )
             # node.val of an internal node is generated by kmeans, and only exists in the node
@@ -336,46 +339,6 @@ def serialize_wrapper(args, node_list, data_list):
 
     np.save(f"{output_prefix}_tree_node_vals.npy", np.array(tree_node_vals))
     np.save(f"{output_prefix}_tree_data_list.npy", np.array(data_list))
-
-
-def build_tree_diagram(node_list, data_list):
-    """
-    Given the node and data lists, creates an adjacency list which represents the tree
-    Serializes the output as tree_representation.grpahml
-    """
-    SINGLE_ROOT = False # unify clusters by taking mean of root node
-    data = []
-    node_list[0].val = np.mean(np.array([node_list[i].val for i in node_list[0].children]),axis=0)
-    for i,n in enumerate(node_list):
-        if i == 0 and not SINGLE_ROOT:
-            continue
-        if n.children is None:
-            if n.data_refs is not None:            
-                for c in node_list[i].data_refs:
-                    data.append(("purple", f"Node{i}", f"Data{c}", np.linalg.norm(node_list[i].val - data_list[c])))
-            continue
-        for c in node_list[i].children:
-            data.append(("pink", f"Node{i}", f"Node{c}", np.linalg.norm(node_list[i].val - node_list[c].val)))
-        # Create a directed graph
-    
-    G = nx.DiGraph()
-    node_colors = {}
-    for color, A, B, _ in data:
-        # if color == "blue":
-        #     node_colors[A] = color
-        if color == "purple":
-            node_colors[A] = color
-            node_colors[B] = color
-        else:
-            node_colors[A] = color
-
-    # Add nodes and edges based on relationships
-    for color, A, B, distance in data:
-        G.add_edge(A, B, weight=distance, color=color)
-    nx.set_node_attributes(G, node_colors, "color")
-    # Save the graph in GraphML format
-    nx.write_graphml(G, "tree_representation.graphml")
-    return data
 
 
 def build_wrapper(args):
@@ -397,8 +360,8 @@ def tree_loader(filename):
     Wrapper function for deserializing a hierarchical clustering
     Returns a node_list of ClusterTreeNodes and a list of data points
     """
-    
-    '''
+
+    """
     "node_list": [
         {
             "node_id": 1,
@@ -412,11 +375,11 @@ def tree_loader(filename):
         },
         ]
 
-    '''
+    """
     f = open(filename, "r")
     parsed_data = json.loads(f.read())
     f.close()
-    
+
     # load values of internal tree nodes
     tree_node_vals = np.load(parsed_data["resources"]["node_vals_file"])
 
@@ -425,7 +388,7 @@ def tree_loader(filename):
 
     # load node_list
     node_list_data = parsed_data["node_list"]
-    
+
     # process root node
     root_node_data = node_list_data[0]
     root_node = ClusterTreeNode(
@@ -436,110 +399,22 @@ def tree_loader(filename):
     )
 
     node_list = [root_node]
-    for j,node_data in enumerate(node_list_data[1:]):
-        # if node_data["data_refs"] is 
+    for j, node_data in enumerate(node_list_data[1:]):
+        # if node_data["data_refs"] is
         node_list.append(
-            ClusterTreeNode(   
-                val=tree_node_vals[node_data["node_val_idx"]],  # get value of node using node_val_idx
-                val_idx=node_data["node_val_idx"],  # get actual value of node using node_val_idx
+            ClusterTreeNode(
+                val=tree_node_vals[
+                    node_data["node_val_idx"]
+                ],  # get value of node using node_val_idx
+                val_idx=node_data[
+                    "node_val_idx"
+                ],  # get actual value of node using node_val_idx
                 children=node_data["children"],
                 data=node_data["data_refs"],
             )
         )
 
     return node_list, data_list
-
-
-def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_dss):
-    """
-    Serializes the results from a search, head to head between tree search and all pairs comparison
-    """
-
-    # constructs a dictionary for serialization prep
-    comp_dict = {}
-    for m in range(len(data_list)):
-        comp_dict[m] = {
-            "Tree": {"Index": [], "Distance": []},
-            "Naive": {"Index": [], "Distance": []},
-        }
-    for i, a in enumerate(st_idxs):
-        comp_dict[a]["Tree"]["Index"].append(f"T{int(i)}")
-        comp_dict[a]["Tree"]["Distance"].append(float(st_dss[i]))
-
-    for i, a in enumerate(ap_idxs):
-        comp_dict[a]["Naive"]["Index"].append(f"N{int(i)}")
-        comp_dict[a]["Naive"]["Distance"].append(float(ap_dss[i]))
-
-    comp_dict = {"Nodes": [{i: v} for i, v in comp_dict.items()]}
-
-    # populates the data array with the elements
-    data = []
-    for N in comp_dict["Nodes"]:
-        for element, details in N.items():
-            key = element
-            tree_neighbors = [
-                (
-                    "green",
-                    f"Data{element}",
-                    details["Tree"]["Index"][i],
-                    details["Tree"]["Distance"][i],
-                )
-                for i in range(len(details["Tree"]["Index"]))
-            ]
-            for t in tree_neighbors:
-                data.append(t)
-            naive_neighbors = [
-                (
-                    "yellow",
-                    f"Data{element}",
-                    details["Naive"]["Index"][i],
-                    details["Naive"]["Distance"][i],
-                )
-                for i in range(len(details["Naive"]["Index"]))
-            ]
-            for t in naive_neighbors:
-                data.append(t)
-    
-    for i, node in enumerate(node_list[1:]):
-        if node.data_refs is not None:
-            for idx in node.data_refs:
-                data.append(
-                    (
-                        "purple",
-                        f"Node{i+1}",
-                        f"Data{idx}",
-                        np.linalg.norm(node.val - data_list[idx]),
-                    )
-                )
-        else:
-            for c in node.children:
-                data.append(
-                    (
-                        "blue",
-                        f"Node{i+1}",
-                        f"Node{c}",
-                        np.linalg.norm(node.val - node_list[c].val),
-                    )
-                )
-
-    # Create a directed graph
-    G = nx.DiGraph()
-    node_colors = {}
-    for color, A, B, _ in data:
-        if color == "blue":
-            node_colors[A] = color
-        if color == "purple":
-            node_colors[A] = color
-            node_colors[B] = color
-        else:
-            node_colors[B] = color
-
-    # Add nodes and edges based on relationships
-    for color, A, B, distance in data:
-        G.add_edge(A, B, weight=distance, color=color)
-    nx.set_node_attributes(G, node_colors, "color")
-    # Save the graph in GraphML format
-    nx.write_graphml(G, "graph_representation.graphml")
 
 
 def load_wrapper(args):
@@ -570,7 +445,7 @@ def search_wrapper(args):
     print(len(N))
     st_idxs, st_dss = search_tree_associations(node_list, data_list, N)
     print(st_dss)
-    
+
     if args.G:
         ap_idxs, ap_dss = all_pairs_associations(data_list, N)
         search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_dss)
@@ -578,7 +453,6 @@ def search_wrapper(args):
         ds_mat = setup_coeff(st_dss)
         mlist = [i for i in range(len(N))]
         display_correlation_matrix(mlist, st_idxs, ds_mat)
-
 
 
 def main():
