@@ -1,5 +1,7 @@
 #!/usr/bin/python3
+
 import numpy as np
+
 from collections import deque
 from clustering_imports import *
 
@@ -66,9 +68,9 @@ def assign_kmeans_clusters(data, centroids, FIRST_FLAG=False, k=3):
     new_clusters = []
     for i in range(len(clusters)):
         if not len(clusters[i]):
-            val = np.stack(np.array([data[np.random.randint(len(data))]]))
-            new_clusters.append(val)
-            # new_clusters.append(np.stack(np.zeros(centroids[0].shape)))# clusters[i] = np.empty(shape)
+            # TODO: Investigate Estop Behavior
+            # val = np.stack(np.array([data[np.random.randint(len(data))]]))
+            # new_clusters.append(val)
             continue
         new_clusters.append(np.stack(np.array([j for j in clusters[i]])))
 
