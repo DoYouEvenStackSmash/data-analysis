@@ -9,7 +9,7 @@ import time
 from IPython.display import display
 import json
 import networkx as nx
-
+from loguru import logger
 
 def search_tree(node_list, data_list, T):
     """
@@ -72,8 +72,8 @@ def search_tree_associations(node_list, data_list, input_list):
 
     end_time = time.perf_counter()
     time_to_locate = end_time - start_time
-
-    print("Time taken for tree-based search:", time_to_locate)
+    logger.info("{}".format(time_to_locate))
+    # print("Time taken for tree-based search:", time_to_locate)
 
     return di_match_indices, ds_match_distances
 
@@ -114,8 +114,11 @@ def all_pairs_associations(data_list, input_list):
 
     end_time = time.perf_counter()
     total_execution_time = end_time - start_time
-
-    print("Total time taken for pairwise comparison:", total_execution_time)
+    # logger.info("{},{},{},{},{},{}".format(
+    #     M.shape[0], np.product(M.shape[1:]), k, R, tree_build, data_build
+    # ))
+    logger.info("{}".format(total_execution_time))
+    # print("Total time taken for pairwise comparison:", total_execution_time)
 
     return mi_match_indices, ms_match_distances
 
@@ -231,23 +234,28 @@ def hierarchify(M, k=3, R=4, C=-1):
     """
     Wrapper function for execution of clustering
     """
-    print(
-        "starting search tree construction:\n\tN = {}\n\tD = {}\n\tk = {}\n\tR = {}".format(
-            M.shape[0], np.product(M.shape[1:]), k, R
-        )
-    )
+    # print(
+    #     "starting search tree construction:\n\tN = {}\n\tD = {}\n\tk = {}\n\tR = {}".format(
+    #         M.shape[0], np.product(M.shape[1:]), k, R
+    #     )
+    # )
     tree_build = time.perf_counter()
     node_list = construct_tree(M, k, R, C)
     tree_build = time.perf_counter() - tree_build
-    print("{}:\t{}".format("Tree build time:", tree_build))
+    
+    # print("{}:\t{}".format("Tree build time:", tree_build))
 
-    print("building data reference list...")
+    # print("building data reference list...")
     data_build = time.perf_counter()
     data_list = construct_data_list(M, node_list)
     data_build = time.perf_counter() - data_build
-    print("{}:\t{}".format("list build time:", data_build))
-    print("total:\t{}".format(tree_build + data_build))
-
+    # print("{}:\t{}".format("list build time:", data_build))
+    # print("total:\t{}".format(tree_build + data_build))
+    #N D k R tree_build data_build
+    # Log the metrics in CSV format
+    logger.info("{},{},{},{},{},{}".format(
+        M.shape[0], np.product(M.shape[1:]), k, R, tree_build, data_build
+    ))
     return node_list, data_list
 
 
