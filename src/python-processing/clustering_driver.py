@@ -147,11 +147,21 @@ def construct_tree(M, k=3, R=30, C=-1):
         if len(data) > C:
             clusters = None
             centroids = initial_centroids(data, k)
-            for _ in range(R):
-                clusters = assign_kmeans_clusters(data, centroids)
+            for r in range(R):
+                clusters = assign_kmeans_clusters(data, centroids, bool(r==0))
 
                 new_centroids = update_centroids(clusters)
                 # convergence early stop condition
+                if new_centroids.shape[0] < centroids.shape[0]:
+                    centroids = new_centroids
+                    continue
+                    # nc = list(new_centroids)
+                    # # for i in range(centroids.shape[0] - new_centroids.shape[0]):
+                    # nc.append(centroids[i])
+                        # clusters.append(np.array([]))
+                    # new_centroids = np.stack([j for j in nc])
+                    
+                    # new_centroids.append(centroids[-1])
                 if np.linalg.norm(new_centroids - centroids) == 0.0:
                     break
                 centroids = new_centroids
@@ -209,6 +219,7 @@ def construct_data_list(M, node_list):
                     data_idx.append(img_count)
                     img_count += 1
                 node_list[i + 1].data_refs = data_idx
+    # print(img_count)
     return data_list
 
 
@@ -412,18 +423,32 @@ def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_ds
             ]
             for t in naive_neighbors:
                 data.append(t)
-
+    # print(len(data_list))
+    # print(len(node_list))
     for i, node in enumerate(node_list[1:]):
         if node.data_refs is not None:
+            # print(node.val_idx)
             for idx in node.data_refs:
-                data.append(
-                    (
-                        "purple",
-                        f"Node{i+1}",
-                        f"Data{idx}",
-                        np.linalg.norm(data_list[node.val_idx] - data_list[idx]),
+                vidx = node.val_idx
+                # print(idx)
+                if node.val_idx >= len(data_list):
+                    data.append(
+                        (
+                            "purple",
+                            f"Node{i+1}",
+                            f"Data{idx}",
+                            np.linalg.norm(node.val - data_list[idx]),
+                        )
                     )
-                )
+                else:
+                    data.append(
+                        (
+                            "purple",
+                            f"Node{i+1}",
+                            f"Data{idx}",
+                            np.linalg.norm(data_list[vidx] - data_list[idx]),
+                        )
+                    )
         else:
             for c in node.children:
                 data.append(
@@ -462,6 +487,7 @@ def load_wrapper(args):
     """
     print("Loading hierarchical clustering")
     node_list, data_list = tree_loader(args.tree)
+    print(len(data_list))
     # if args.G:
     #     graph_serialize(node_list, data_list)
     return
@@ -473,12 +499,23 @@ def search_wrapper(args):
     returns the list of associations and distances
     """
     node_list, data_list = tree_loader(args.tree)
+    print(len(data_list))
     N = data_loading_wrapper(args.input)
     print("Searching hierarchical clustering")
+    np.random.shuffle(N)
+    print(len(N))
     st_idxs, st_dss = search_tree_associations(node_list, data_list, N)
-    ap_idxs, ap_dss = all_pairs_associations(data_list, N)
+    print(st_dss)
+    
     if args.G:
+        ap_idxs, ap_dss = all_pairs_associations(data_list, N)
         search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_dss)
+        
+    else:
+        ds_mat = setup_coeff(st_dss)
+        mlist = [i for i in range(len(N))]
+        display_correlation_matrix(mlist, st_idxs, ds_mat)
+
 
 
 def main():

@@ -38,7 +38,7 @@ def distance(k, m):
     # return np.sqrt(np.sum(np.power(k - m, 2)))
 
 
-def assign_kmeans_clusters(data, centroids):
+def assign_kmeans_clusters(data, centroids, FIRST_FLAG=False, k=3):
     """
     Create clusters by assigning data to centroids
     Returns a list of np array clusters
@@ -51,8 +51,9 @@ def assign_kmeans_clusters(data, centroids):
         min_dist = float("inf")
         nn = None
         for idx, ctr in enumerate(centroids):
-            # if np.array_equal(data[i], ctr):
-            #     continue
+            if FIRST_FLAG:
+                if np.array_equal(data[i], ctr):
+                    continue
             pdist = distance(data[i], ctr)
             if pdist < min_dist:
                 min_dist = pdist
@@ -61,10 +62,13 @@ def assign_kmeans_clusters(data, centroids):
             clusters[nn].append(data[i])
 
     # convert clusters lists to numpy arrays
+    # np.random.randint(len(data))
     new_clusters = []
     for i in range(len(clusters)):
         if not len(clusters[i]):
-            # clusters[i] = np.empty(shape)
+            val = np.stack(np.array([data[np.random.randint(len(data))]]))
+            new_clusters.append(val)
+            # new_clusters.append(np.stack(np.zeros(centroids[0].shape)))# clusters[i] = np.empty(shape)
             continue
         new_clusters.append(np.stack(np.array([j for j in clusters[i]])))
 
