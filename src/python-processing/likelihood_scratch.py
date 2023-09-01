@@ -3,11 +3,34 @@ from clustering_driver import *
 from clustering_imports import *
 
 
-def likelihood(omega, m, N_pix, noise=1):
-    L = np.power(2.0 * (noise**2.0) * np.pi, (np.divide(-N_pix, 2.0))) * np.exp(
-        -np.divide(np.square(np.linalg.norm(omega - m)), (2.0 * (noise**2.0)))
+def _likelihood(omega, m, N_pix, noise=1):
+    """
+    Likelihood function from the paper
+    """
+    L = np.power(
+        2.0 * np.square(noise) * np.pi, -1.0 * (np.divide(N_pix, 2.0))
+    ) * np.exp(
+        -1.0
+        * np.divide(np.square(np.linalg.norm(omega - m)), (2.0 * (np.square(noise))))
     )
 
+    return L
+
+
+def likelihood(omega, m, N_pix, noise=1):
+    """
+    Same likelihood but from a different resource, formatted differently.
+    Not sure what the procedure should be for all images
+    """
+    L = np.divide(
+        np.exp(
+            -1.0
+            * np.divide(
+                np.square(np.linalg.norm(omega - m)), (2.0 * (np.square(noise)))
+            )
+        ),
+        np.power(2.0 * np.square(noise) * np.pi, (np.divide(N_pix, 2.0))),
+    )
     return L
 
 
