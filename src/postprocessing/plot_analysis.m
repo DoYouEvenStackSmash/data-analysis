@@ -6,15 +6,17 @@ data_table2 = readtable(file2);
 
 error = abs(data_table.single_point_likelihood - data_table2.single_point_likelihood);
 
-plots = tiledlayout(4, 1, 'TileSpacing','Compact');
+plots = tiledlayout(3, 1, 'TileSpacing','Compact');
 t = [0:255];
 
-title(plots, "likelihood data");
+title(plots, "likelihood data, lambda val: 0.07440039861602968");
+xlabel(plots, "image index")
+ylabel(plots, "magnitude")
 p1 = nexttile;
 hold on;
 grid on;
 plot(p1, t, data_table.single_point_likelihood, 'LineWidth', 2);
-plot(p1, t, data_table2.single_point_likelihood);
+plot(p1, t, data_table2.single_point_likelihood, 'LineWidth', 1.1);
 legend(["tree search"], ["global search"]);
 xlim([0 255]);
 hold off;
@@ -32,13 +34,13 @@ plot(p3, t, data_table.area_likelihood, 'LineWidth', 2);
 legend(["cluster likelihood"])
 xlim([0 255])
 hold off;
-p4 = nexttile;
-hold on;
-grid on;
-plot(p4, t, data_table2.area_likelihood, 'LineWidth', 2);
-legend(["global likelihood"]);
-xlim([0 255])
-hold off;
+% p4 = nexttile;
+% hold on;
+% grid on;
+% plot(p4, t, data_table2.area_likelihood, 'LineWidth', 2);
+% legend(["global likelihood"]);
+% xlim([0 255])
+% hold off;
 clear all;
 
 
