@@ -13,11 +13,10 @@ from loguru import logger
 from graph_support import *
 from likelihood_scratch import *
 
-
-def search_tree(node_list, data_list, T):
+def find_cluster(node_list, T):
     """
-    Searches for the closest_idx point in data_list to target T
-    Returns closest_idx of the nearest point to T, and the distance between them
+    Searches for the cluster containing(ish) T
+    returns an index to a node in node_list
     """
     n_curr = 0
     # search_list = []
@@ -32,6 +31,14 @@ def search_tree(node_list, data_list, T):
                 min_dist = dist
         # search_list.append(nn)
         n_curr = nn
+    return n_curr
+
+def search_tree(node_list, data_list, T):
+    """
+    Searches for the closest_idx point in data_list to target T
+    Returns closest_idx of the nearest point to T, and the distance between them
+    """
+    n_curr = find_cluster(node_list, T)
 
     # search leaves
     closest_idx = 0
@@ -45,6 +52,7 @@ def search_tree(node_list, data_list, T):
     # search_list.append(closest_idx)
 
     return closest_idx, min_dist
+
 
 
 def search_tree_associations(node_list, data_list, input_list):
@@ -467,7 +475,7 @@ def likelihood_wrapper(args):
     write_csv(
         search_tree_nn_likelihood, search_tree_whole_cluster_likelihood, search_file
     )
-    all_pairs_nn_likelihood, all_pairs_global_likelihood = all_pairs_likelihoods(
+    all_pairs_nn_likelihood, all_pairs_global_likelihood = global_scope_likelihoods(
         data_list, N
     )
     ap_file = "all_pairs_likelihoods.csv"
