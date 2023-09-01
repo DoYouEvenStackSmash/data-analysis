@@ -2,7 +2,7 @@
 from clustering_driver import *
 from clustering_imports import *
 
-def likelihood(omega, m, N_pix, noise=1e-1):
+def likelihood(omega, m, N_pix, noise=1):
     L = np.power(2.0 * (noise**2.0) * np.pi, (np.divide(-N_pix, 2.0))) * np.exp(
         -np.divide(np.square(np.linalg.norm(omega - m)), (2.0 * (noise**2.0)))
     )
