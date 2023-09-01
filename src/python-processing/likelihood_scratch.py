@@ -17,7 +17,7 @@ def _likelihood(omega, m, N_pix, noise=1):
     return L
 
 
-def likelihood(omega, m, N_pix, noise=1):
+def likelihood(omega, m, N_pix, noise=0.07440039861602968):
     """
     Same likelihood but from a different resource, formatted differently.
     Not sure what the procedure should be for all images
