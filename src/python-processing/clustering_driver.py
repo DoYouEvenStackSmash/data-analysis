@@ -13,6 +13,7 @@ from loguru import logger
 from graph_support import *
 from likelihood_scratch import *
 
+
 def find_cluster(node_list, T):
     """
     Searches for the cluster containing(ish) T
@@ -33,6 +34,7 @@ def find_cluster(node_list, T):
         n_curr = nn
     return n_curr
 
+
 def search_tree(node_list, data_list, T):
     """
     Searches for the closest_idx point in data_list to target T
@@ -52,7 +54,6 @@ def search_tree(node_list, data_list, T):
     # search_list.append(closest_idx)
 
     return closest_idx, min_dist
-
 
 
 def search_tree_associations(node_list, data_list, input_list):
