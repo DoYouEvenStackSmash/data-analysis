@@ -11,12 +11,13 @@ import json
 import networkx as nx
 from loguru import logger
 from graph_support import *
+from likelihood_scratch import *
 
 
-def search_tree(node_list, data_list, T):
+def find_cluster(node_list, T):
     """
-    Searches for the closest_idx point in data_list to target T
-    Returns closest_idx of the nearest point to T, and the distance between them
+    Searches for the cluster containing(ish) T
+    returns an index to a node in node_list
     """
     n_curr = 0
     # search_list = []
@@ -31,6 +32,15 @@ def search_tree(node_list, data_list, T):
                 min_dist = dist
         # search_list.append(nn)
         n_curr = nn
+    return n_curr
+
+
+def search_tree(node_list, data_list, T):
+    """
+    Searches for the closest_idx point in data_list to target T
+    Returns closest_idx of the nearest point to T, and the distance between them
+    """
+    n_curr = find_cluster(node_list, T)
 
     # search leaves
     closest_idx = 0
@@ -455,6 +465,25 @@ def search_wrapper(args):
         display_correlation_matrix(mlist, st_idxs, ds_mat)
 
 
+def likelihood_wrapper(args):
+    node_list, data_list = tree_loader(args.models)
+    N = data_loading_wrapper(args.images)
+    (
+        search_tree_nn_likelihood,
+        search_tree_whole_cluster_likelihood,
+    ) = search_tree_likelihoods(node_list, data_list, N)
+    search_file = "search_tree_likelihoods.csv"
+    write_csv(
+        search_tree_nn_likelihood, search_tree_whole_cluster_likelihood, search_file
+    )
+    all_pairs_nn_likelihood, all_pairs_global_likelihood = global_scope_likelihoods(
+        data_list, N
+    )
+    ap_file = "all_pairs_likelihoods.csv"
+    write_csv(all_pairs_nn_likelihood, all_pairs_global_likelihood, ap_file)
+    # if args.output:
+
+
 def main():
     parser = argparse.ArgumentParser(description="Hierarchical Clustering Program")
 
@@ -520,6 +549,20 @@ def main():
     )
     search_parser.set_defaults(func=search_wrapper)
 
+    # likelihood parser
+    likelihood_parser = subparsers.add_parser(
+        "likelihood", help="likelihood calculation"
+    )
+    likelihood_parser.add_argument(
+        "--models", required=True, help="json file containing hierarchy"
+    )
+    likelihood_parser.add_argument(
+        "--images", required=True, help="npy array containing images"
+    )
+    likelihood_parser.add_argument(
+        "-o", "--output", help="prefix of output file for saving the densities"
+    )
+    likelihood_parser.set_defaults(func=likelihood_wrapper)
     # Parse command-line arguments and call the appropriate function
 
     args = parser.parse_args()

@@ -78,6 +78,17 @@ python3 clustering_driver.py search -t existing_tree.json -M exampleM_2_2.npy -G
 
 Replace `existing_tree.json` with the path to the JSON file containing the hierarchy and `exampleM_2_2.npy` with the path to the large input data file. The `-G` flag is optional and generates a graph from the tree data.
 
+### Likelihood evaluation (Experimental)
+
+To compute the likelihoods of reference data given input data, use the following command:
+
+```sh
+python3 clustering_driver.py likelihood -t existing_tree.json -M some_input.npy -G
+```
+
+This will perform several variants of the likelihood evaluation, and create csv files containing the results of the different computations. 
+
+
 ## Contributing
 
 Contributions are welcome! If you have any ideas or improvements, please feel free to open issues or pull requests.
