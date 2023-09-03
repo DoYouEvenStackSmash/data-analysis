@@ -476,6 +476,7 @@ def likelihood_wrapper(args):
     write_csv(
         search_tree_nn_likelihood, search_tree_whole_cluster_likelihood, search_file
     )
+    # return
     all_pairs_nn_likelihood, all_pairs_global_likelihood = global_scope_likelihoods(
         data_list, N
     )
@@ -558,7 +559,7 @@ def main():
     )
     likelihood_parser.add_argument(
         "--images", required=True, help="npy array containing images"
-    )
+    ) 
     likelihood_parser.add_argument(
         "-o", "--output", help="prefix of output file for saving the densities"
     )

@@ -6,7 +6,7 @@ data_table2 = readtable(file2);
 
 error = abs(data_table.single_point_likelihood - data_table2.single_point_likelihood);
 
-plots = tiledlayout(2, 1, 'TileSpacing','Compact');
+plots = tiledlayout(3, 1, 'TileSpacing','Compact');
 t = [0:255];
 
 title(plots, "likelihood data, lambda val: 0.2727643646373728");
@@ -27,13 +27,13 @@ plot(t, error, 'LineWidth', 2);
 xlim([0 255])
 legend(["error"]);
 hold off;
-% p3 = nexttile;
-% hold on;
-% grid on;
-% plot(p3, t, data_table.area_likelihood, 'LineWidth', 2);
-% legend(["cluster likelihood"])
-% xlim([0 255])
-% hold off;
+p3 = nexttile;
+hold on;
+grid on;
+plot(p3, t, data_table.area_likelihood, 'LineWidth', 2);
+legend(["cluster likelihood"])
+xlim([0 255])
+hold off;
 % p4 = nexttile;
 % hold on;
 % grid on;

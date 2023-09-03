@@ -16,17 +16,28 @@ def _likelihood(omega, m, N_pix, noise=1):
 
     return L
 
+def likelihood(omega, m, N_pix, noise = 1, slice_size=128):
+    
+    # npix = omega.shape[0] * omega.shape[1]
+    L = 0.0
+    denom = (2.0 * np.square(noise) * np.pi) ** (np.divide(slice_size, 2.0))
+    for i in range(omega.shape[0]):
+        for j in range(0, omega.shape[1], slice_size):
+            l2 = np.square(np.linalg.norm(omega[i, j : j + slice_size] - m[i, j:j+slice_size]))
+            L += np.exp(-1.0* np.divide(l2, (2.0 * (np.square(noise))))) / denom
+    return L
 
-def likelihood(omega, m, N_pix, noise=1):#0.2727643646373728):#0.07440039861602968):
+
+def __likelihood(omega, m, N_pix, noise=1):#0.2727643646373728):#0.07440039861602968):
     """
     Same likelihood but from a different resource, formatted differently.
     Not sure what the procedure should be for all images
     """
     l2 = np.square(np.linalg.norm(omega - m))
     # overflow!
-    # denom = np.power(2.0 * np.square(noise) * np.pi, (np.divide(N_pix, 2.0)))
+    denom = (2.0 * np.square(noise) * np.pi) ** (np.divide(N_pix, 2.0))
     
-    denom = 1
+    # denom = 1
 
     L = np.exp(-1.0* np.divide(l2, (2.0 * (np.square(noise)))))
     # print(denom)
@@ -124,7 +135,7 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise = 1):
     Nearest neighbor
     returns a list of likelihoods associated with the data_list members
     """
-    n_pix = np.product(data_list[0].shape[1:])
+    n_pix = data_list[0].shape[0] * data_list[0].shape[1]
     likelihood_omega_m = [0.0 for _ in range(len(data_list))]
     start_time = time.perf_counter()
 
@@ -137,6 +148,7 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise = 1):
             if distance < min_distance:
                 min_distance = distance
                 nn_index = midx
+        # for i in range(n_pix):
         likelihood_omega_m[nn_index] += likelihood(omega, m, n_pix, noise)
 
     end_time = time.perf_counter() - start_time
