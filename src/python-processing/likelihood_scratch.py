@@ -26,8 +26,8 @@ def postprocessing_adjust(input_arr, noise, const_factor=0):
     """
     log_add = 0
     if const_factor > 0:
-        log_add = np.log(const_factor * np.sqrt(2 * np.pi * noise ** 2))
-    
+        log_add = np.log(const_factor * np.sqrt(2 * np.pi * noise**2))
+
     return [np.log(i) + log_add for i in input_arr]
 
 
@@ -70,7 +70,9 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1)
     end_time = time.perf_counter() - start_time
     logger.info("tree_match_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, approx_scale_constant)
+    likelihood_omega_m = postprocessing_adjust(
+        likelihood_omega_m, noise, approx_scale_constant
+    )
     return likelihood_omega_m
 
 
@@ -101,7 +103,9 @@ def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise=1):
     end_time = time.perf_counter() - start_time
     logger.info("tree_cluster_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, approx_scale_constant)
+    likelihood_omega_m = postprocessing_adjust(
+        likelihood_omega_m, noise, approx_scale_constant
+    )
     return likelihood_omega_m
 
 
