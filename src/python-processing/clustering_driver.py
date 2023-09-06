@@ -569,7 +569,7 @@ def main():
     )
     likelihood_parser.add_argument(
         "--images", required=True, help="npy array containing images"
-    ) 
+    )
     likelihood_parser.add_argument(
         "-o", "--output", help="prefix of output file for saving the densities"
     )

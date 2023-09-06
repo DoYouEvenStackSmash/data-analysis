@@ -41,6 +41,7 @@ def update_medioids(clusters, mlist, distances):
 
     return new_mlist
 
+
 def compute_distance_matrix(M_flat):
     """
     Build an nxn matrix of all pairwise distances between elements

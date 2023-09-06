@@ -3,6 +3,8 @@ from clustering_driver import *
 from clustering_imports import *
 
 from decimal import Decimal
+
+
 def original_likelihood(omega, m, N_pix, noise=1):
     """
     Likelihood function from the paper
@@ -17,23 +19,25 @@ def original_likelihood(omega, m, N_pix, noise=1):
     )
     return L
 
+
 def postprocessing_adjust(input_arr):
     """
     Placeholder for modifying an array
     """
     return [np.log(i) for i in input_arr]
 
-def likelihood(omega, m, N_pix, noise = 1):
+
+def likelihood(omega, m, N_pix, noise=1):
     """
     New likelihood
     """
-    lambda_square = noise ** 2
+    lambda_square = noise**2
     coeff = 1 / np.sqrt(2 * np.pi * (lambda_square))
     l2 = np.exp(-1.0 * (np.square(np.linalg.norm(omega - m)) / (2 * lambda_square)))
     return coeff * l2
 
 
-def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise = 1):
+def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1):
     """
     Given a hierarchical clustering of the images_from_structures, and the input images,
     evaluate the likelihood of each image with its nearest structure
@@ -47,7 +51,6 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise = 
     # Likelihood array
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
 
-
     start_time = time.perf_counter()
 
     # omega := experimental image
@@ -60,12 +63,12 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise = 
     end_time = time.perf_counter() - start_time
     logger.info("tree_match_likelihood time: {}".format(end_time))
 
-    const_adjust = 0#np.log(1 / (2 * np.pi * noise ** 2))
+    const_adjust = 0  # np.log(1 / (2 * np.pi * noise ** 2))
     likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
     return likelihood_omega_m
 
 
-def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise = 1):
+def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise=1):
     """
     Given a hierarchical clustering of the images_from_structures, and the input images,
     Accumulate the likelihoods calculated between each image and the cluster of structures it is associated with
@@ -90,21 +93,27 @@ def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise = 1
     end_time = time.perf_counter() - start_time
     logger.info("tree_cluster_likelihood time: {}".format(end_time))
 
-    const_adjust = 0#np.log(1 / (2 * np.pi * noise ** 2))
+    const_adjust = 0  # np.log(1 / (2 * np.pi * noise ** 2))
     # likelihood_omega_m = [i for i in likelihood_omega_m]
     likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
     return likelihood_omega_m
+
 
 def calculate_noise(input_list):
     """
     Calculate the noise as the standard deviation
     """
     avg = np.mean(input_list)
-    noise = np.sqrt(np.divide(np.sum(np.array([np.square(x - avg) for x in input_list])), input_list.shape[0] - 1))
+    noise = np.sqrt(
+        np.divide(
+            np.sum(np.array([np.square(x - avg) for x in input_list])),
+            input_list.shape[0] - 1,
+        )
+    )
     return noise
-    
 
-def search_tree_likelihoods(node_list, data_list, input_list, input_noise = None):
+
+def search_tree_likelihoods(node_list, data_list, input_list, input_noise=None):
     """
     Given a hierarchical clustering of the images_from_structures, and the input images,
     Accumulate the likelihood according to the paper in the structure indices
@@ -115,7 +124,9 @@ def search_tree_likelihoods(node_list, data_list, input_list, input_noise = None
     if input_noise is None:
         input_noise = calculate_noise(input_list)
 
-    nn_likelihoods = evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, input_noise)
+    nn_likelihoods = evaluate_tree_neighbor_likelihood(
+        node_list, data_list, input_list, input_noise
+    )
     cluster_likelihoods = evaluate_tree_cluster_likelihood(
         node_list, data_list, input_list, input_noise
     )
@@ -123,7 +134,7 @@ def search_tree_likelihoods(node_list, data_list, input_list, input_noise = None
     return nn_likelihoods, cluster_likelihoods
 
 
-def evaluate_global_neighbor_likelihood(data_list, input_list, noise = 1):
+def evaluate_global_neighbor_likelihood(data_list, input_list, noise=1):
     """
     Given reference data and some input data,
     Accumulate the likelihoods according to the paper in the structure indices
@@ -150,13 +161,13 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise = 1):
     end_time = time.perf_counter() - start_time
     logger.info("global_neighbor_likelihood time: {}".format(end_time))
 
-    const_adjust = 0#np.log(np.sqrt((2 * np.pi * noise ** 2)))
+    const_adjust = 0  # np.log(np.sqrt((2 * np.pi * noise ** 2)))
     # print(const_adjust)
     likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
     return likelihood_omega_m
 
 
-def evaluate_global_likelihood(data_list, input_list, noise = 1):
+def evaluate_global_likelihood(data_list, input_list, noise=1):
     """
     Given reference data and some input data,
     Accumulate the likelihoods according to the paper in the structure indices
@@ -173,14 +184,14 @@ def evaluate_global_likelihood(data_list, input_list, noise = 1):
     end_time = time.perf_counter() - start_time
     logger.info("global_likelihood time: {}".format(end_time))
 
-    const_adjust = 0#np.log(np.sqrt((2 * np.pi * noise ** 2)))
+    const_adjust = 0  # np.log(np.sqrt((2 * np.pi * noise ** 2)))
     likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
     # likelihood_omega_m = [np.log(i) - const_adjust for i in likelihood_omega_m]
-    
+
     return likelihood_omega_m
 
 
-def global_scope_likelihoods(data_list, input_list, input_noise = None):
+def global_scope_likelihoods(data_list, input_list, input_noise=None):
     """
     Given reference data and some input data,
     Returns nearest neighbor likelihoods and all pairs likelihoods likelihoods
@@ -188,7 +199,9 @@ def global_scope_likelihoods(data_list, input_list, input_noise = None):
     if input_noise is None:
         input_noise = calculate_noise(input_list)
 
-    nn_likelihoods = evaluate_global_neighbor_likelihood(data_list, input_list, input_noise)
+    nn_likelihoods = evaluate_global_neighbor_likelihood(
+        data_list, input_list, input_noise
+    )
     global_likelihoods = evaluate_global_likelihood(data_list, input_list, input_noise)
     logger.info("lambda: {}".format(input_noise))
     return nn_likelihoods, global_likelihoods
