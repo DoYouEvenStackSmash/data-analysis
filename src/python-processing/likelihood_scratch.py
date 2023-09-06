@@ -20,11 +20,15 @@ def original_likelihood(omega, m, N_pix, noise=1):
     return L
 
 
-def postprocessing_adjust(input_arr):
+def postprocessing_adjust(input_arr, noise, const_factor=0):
     """
     Placeholder for modifying an array
     """
-    return [np.log(i) for i in input_arr]
+    log_add = 0
+    if const_factor > 0:
+        log_add = np.log(const_factor * np.sqrt(2 * np.pi * noise ** 2))
+    
+    return [np.log(i) + log_add for i in input_arr]
 
 
 def likelihood(omega, m, N_pix, noise=1):
@@ -34,6 +38,7 @@ def likelihood(omega, m, N_pix, noise=1):
     lambda_square = noise**2
     coeff = 1 / np.sqrt(2 * np.pi * (lambda_square))
     l2 = np.exp(-1.0 * (np.square(np.linalg.norm(omega - m)) / (2 * lambda_square)))
+    # log_add = np.log(np.sqrt(2 * np.pi * lambda_square))
     return coeff * l2
 
 
@@ -47,6 +52,8 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1)
     """
     # in application, this is 16384 <- 128 x 128
     n_pix = data_list[0].shape[1] ** 2.0
+
+    approx_scale_constant = len(data_list)
 
     # Likelihood array
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
@@ -63,7 +70,7 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1)
     end_time = time.perf_counter() - start_time
     logger.info("tree_match_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, approx_scale_constant)
     return likelihood_omega_m
 
 
@@ -75,6 +82,8 @@ def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise=1):
     returns a list of likelihoods associated with the data_list members
     """
     n_pix = data_list[0].shape[1] ** 2
+
+    approx_scale_constant = len(data_list)
 
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]  # Likelihood array
 
@@ -92,7 +101,7 @@ def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise=1):
     end_time = time.perf_counter() - start_time
     logger.info("tree_cluster_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, approx_scale_constant)
     return likelihood_omega_m
 
 
@@ -158,7 +167,7 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise=1):
     end_time = time.perf_counter() - start_time
     logger.info("global_neighbor_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 0)
     return likelihood_omega_m
 
 
@@ -179,7 +188,7 @@ def evaluate_global_likelihood(data_list, input_list, noise=1):
     end_time = time.perf_counter() - start_time
     logger.info("global_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 0)
     return likelihood_omega_m
 
 
