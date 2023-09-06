@@ -3,9 +3,11 @@ from clustering_driver import *
 from clustering_imports import *
 
 from decimal import Decimal
-def _likelihood(omega, m, N_pix, noise=1):
+def original_likelihood(omega, m, N_pix, noise=1):
     """
     Likelihood function from the paper
+    L(\omega, m, N_{\text{pix}}, \text{noise}) = \frac{1}{{(2 \cdot \text{noise}^2 \cdot \pi)^{\frac{N_{\text{pix}}}{2}}}} \cdot \exp\left(-\frac{{\|\omega - m\|^2}}{{2 \cdot \text{noise}^2}}\right)
+
     """
     L = np.power(
         2.0 * np.square(noise) * np.pi, -1.0 * (np.divide(N_pix, 2.0))
@@ -13,26 +15,13 @@ def _likelihood(omega, m, N_pix, noise=1):
         -1.0
         * np.divide(np.square(np.linalg.norm(omega - m)), (2.0 * (np.square(noise))))
     )
-
     return L
 
-def ___likelihood(omega, m, N_pix, noise = 1, slice_size=128):
-    
-    # npix = omega.shape[0] * omega.shape[1]
-    L = 0.0
-    # d = (2.0 * np.square(noise) * np.pi) ** (np.divide(-slice_size, 2))
-    d = (Decimal('2.0') * Decimal(noise ** 2) * Decimal(3.141592653589793)) ** (Decimal('-0.5') * slice_size)
-    denom = Decimal(1)
-    for i in range(int(omega.shape[0])):
-        denom = denom * d
-    for i in range(omega.shape[0]):
-        for j in range(0, omega.shape[1], slice_size):
-            L += sum(np.square(omega[i, j : j + slice_size] - m[i, j:j+slice_size]))
-    exponent = Decimal(np.exp(-1.0 * np.divide(L, 2.0 * np.square(noise))))
-    # print(exponent)
-    return exponent * denom
-
-
+def postprocessing_adjust(input_arr):
+    """
+    Placeholder for modifying an array
+    """
+    return [np.log(i) for i in input_arr]
 
 def likelihood(omega, m, N_pix, noise = 1):
     """
@@ -42,22 +31,6 @@ def likelihood(omega, m, N_pix, noise = 1):
     coeff = 1 / np.sqrt(2 * np.pi * (lambda_square))
     l2 = np.exp(-1.0 * (np.square(np.linalg.norm(omega - m)) / (2 * lambda_square)))
     return coeff * l2
-
-
-def __likelihood(omega, m, N_pix, noise=1, slice_size=1):#0.2727643646373728):#0.07440039861602968):
-    """
-    Same likelihood but from a different resource, formatted differently.
-    Not sure what the procedure should be for all images
-    """
-    l2 = np.square(np.linalg.norm(omega - m))
-    # overflow!
-    denom = (2.0 * np.square(noise) * np.pi) ** (np.divide(N_pix, 2.0))
-    
-    # denom = 1
-
-    L = np.exp(-1.0* np.divide(l2, (2.0 * (np.square(noise)))))
-    # print(denom)
-    return L / denom
 
 
 def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise = 1):
@@ -86,7 +59,9 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise = 
 
     end_time = time.perf_counter() - start_time
     logger.info("tree_match_likelihood time: {}".format(end_time))
-    likelihood_omega_m = [np.log(i) for i in likelihood_omega_m]
+
+    const_adjust = 0#np.log(1 / (2 * np.pi * noise ** 2))
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
     return likelihood_omega_m
 
 
@@ -114,7 +89,10 @@ def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise = 1
 
     end_time = time.perf_counter() - start_time
     logger.info("tree_cluster_likelihood time: {}".format(end_time))
-    likelihood_omega_m = [np.log(i) for i in likelihood_omega_m]
+
+    const_adjust = 0#np.log(1 / (2 * np.pi * noise ** 2))
+    # likelihood_omega_m = [i for i in likelihood_omega_m]
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
     return likelihood_omega_m
 
 def calculate_noise(input_list):
@@ -171,7 +149,10 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise = 1):
 
     end_time = time.perf_counter() - start_time
     logger.info("global_neighbor_likelihood time: {}".format(end_time))
-    likelihood_omega_m = [np.log(i) for i in likelihood_omega_m]
+
+    const_adjust = 0#np.log(np.sqrt((2 * np.pi * noise ** 2)))
+    # print(const_adjust)
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
     return likelihood_omega_m
 
 
@@ -191,7 +172,11 @@ def evaluate_global_likelihood(data_list, input_list, noise = 1):
 
     end_time = time.perf_counter() - start_time
     logger.info("global_likelihood time: {}".format(end_time))
-    likelihood_omega_m = [np.log(i) for i in likelihood_omega_m]
+
+    const_adjust = 0#np.log(np.sqrt((2 * np.pi * noise ** 2)))
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m)
+    # likelihood_omega_m = [np.log(i) - const_adjust for i in likelihood_omega_m]
+    
     return likelihood_omega_m
 
 

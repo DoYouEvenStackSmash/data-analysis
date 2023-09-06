@@ -183,20 +183,30 @@ def construct_tree(M, k=3, R=30, C=-1):
         # perform k medioids clustering to ensure that the center is within the input data
         else:
             dlen = data.shape[0]
-            mlist, distances = preprocess(data, k)
-
-            total_sum = float("inf")
+            medioids = None
             clusters = None
+            mlist = None
+            if dlen > 1:
+                mlist, distances = preprocess(data, k)
 
-            for _ in range(R):
-                clusters = assign_clusters(dlen, mlist, distances)
-                mlist = update_medioids(clusters, mlist, distances)
-                new_sum = calculate_sum(clusters, mlist, distances)
-                if new_sum == total_sum:
-                    break
-                total_sum = new_sum
-            clusters, medioids = postprocess(data, clusters, mlist)
+                total_sum = float("inf")
+                # clusters = None
 
+                for _ in range(R):
+                    clusters = assign_clusters(dlen, mlist, distances)
+                    mlist = update_medioids(clusters, mlist, distances)
+                    new_sum = calculate_sum(clusters, mlist, distances)
+                    if new_sum == total_sum:
+                        break
+                    total_sum = new_sum
+                clusters, medioids = postprocess(data, clusters, mlist)
+            elif dlen == 1:
+                # mlist = [0]
+                medioids = np.array([data[0]])
+                clusters = [np.array([data[0]])]
+            else:
+                continue
+                # clusters, medioids = postprocess(data, clusters, mlist)
             # create new nodes for medioids, initialize node data arrays to hold the clusters
             for i, med in enumerate(medioids):
                 idx = len(node_list)
