@@ -23,22 +23,31 @@ def original_likelihood(omega, m, N_pix, noise=1):
 def postprocessing_adjust(input_arr, noise, const_factor=0):
     """
     Placeholder for modifying an array
+    -\log \left(
+        \sqrt{2\pi \lambda^2}
+    \right)
     """
     log_add = 0
-    if const_factor > 0:
+    const_factor = 1
+
+    # branching for easy enable/disable
+    if True:
         log_add = np.log(const_factor * np.sqrt(2 * np.pi * noise**2))
 
-    return [np.log(i) + log_add for i in input_arr]
+    return [np.log(i) - log_add for i in input_arr]
 
 
 def likelihood(omega, m, N_pix, noise=1):
     """
     New likelihood
+    \log \left(
+        \sum_{j=1}^M \weight_j
+        \exp \left( - \left\| \omega_i - x_j \right\|^2 / 2 \lambda^2 \right)
+    \right)
     """
     lambda_square = noise**2
-    coeff = 1 / np.sqrt(2 * np.pi * (lambda_square))
+    coeff = 1
     l2 = np.exp(-1.0 * (np.square(np.linalg.norm(omega - m)) / (2 * lambda_square)))
-    # log_add = np.log(np.sqrt(2 * np.pi * lambda_square))
     return coeff * l2
 
 
@@ -54,7 +63,7 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1)
     n_pix = data_list[0].shape[1] ** 2.0
 
     approx_scale_constant = len(data_list)
-
+    weight = 1  # / len(data_list)
     # Likelihood array
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
 
@@ -63,16 +72,14 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1)
     # omega := experimental image
     for input_index, omega in enumerate(input_list):
         nearest_index, nearest_distance = search_tree(node_list, data_list, omega)
-        likelihood_omega_m[input_index] += likelihood(
+        likelihood_omega_m[input_index] += weight * likelihood(
             omega, data_list[nearest_index], n_pix, noise
         )
 
     end_time = time.perf_counter() - start_time
     logger.info("tree_match_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(
-        likelihood_omega_m, noise, approx_scale_constant
-    )
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
     return likelihood_omega_m
 
 
@@ -87,6 +94,8 @@ def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise=1):
 
     approx_scale_constant = len(data_list)
 
+    weight = 1  # / len(data_list)
+
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]  # Likelihood array
 
     start_time = time.perf_counter()
@@ -96,16 +105,14 @@ def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise=1):
     for input_index, omega in enumerate(input_list):
         cluster_node = node_list[find_cluster(node_list, omega)]
         for data_idx in cluster_node.data_refs:
-            likelihood_omega_m[input_index] += likelihood(
+            likelihood_omega_m[input_index] += weight * likelihood(
                 omega, data_list[data_idx], n_pix, noise
             )
 
     end_time = time.perf_counter() - start_time
     logger.info("tree_cluster_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(
-        likelihood_omega_m, noise, approx_scale_constant
-    )
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
     return likelihood_omega_m
 
 
@@ -154,6 +161,8 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise=1):
     """
     n_pix = data_list[0].shape[0] * data_list[0].shape[1]
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
+    approx_scale_constant = len(data_list)
+    weight = 1 / len(data_list)
     start_time = time.perf_counter()
 
     for idx, omega in enumerate(input_list):
@@ -166,12 +175,14 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise=1):
                 min_distance = distance
                 nn_index = midx
         # for i in range(n_pix):
-        likelihood_omega_m[idx] += likelihood(omega, m, n_pix, noise)
+        likelihood_omega_m[idx] += weight * likelihood(omega, m, n_pix, noise)
 
     end_time = time.perf_counter() - start_time
     logger.info("global_neighbor_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 0)
+    likelihood_omega_m = postprocessing_adjust(
+        likelihood_omega_m, noise, approx_scale_constant
+    )
     return likelihood_omega_m
 
 
@@ -179,20 +190,24 @@ def evaluate_global_likelihood(data_list, input_list, noise=1):
     """
     Given reference data and some input data,
     Accumulate the likelihoods according to the paper in the structure indices
-
     """
     n_pix = data_list[0].shape[1] ** 2.0
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
+    approx_scale_constant = len(data_list)
+    weight = 1 / len(data_list)
+
     start_time = time.perf_counter()
 
     for idx, omega in enumerate(input_list):
         for midx, m in enumerate(data_list):
-            likelihood_omega_m[idx] += likelihood(omega, m, n_pix, noise)
+            likelihood_omega_m[idx] += weight * likelihood(omega, m, n_pix, noise)
 
     end_time = time.perf_counter() - start_time
     logger.info("global_likelihood time: {}".format(end_time))
 
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 0)
+    likelihood_omega_m = postprocessing_adjust(
+        likelihood_omega_m, noise, approx_scale_constant
+    )
     return likelihood_omega_m
 
 
