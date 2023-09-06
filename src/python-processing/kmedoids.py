@@ -42,13 +42,10 @@ def update_medioids(clusters, mlist, distances):
     return new_mlist
 
 
-class Datum:
-    def __init__(self, idx):
-        self.idx = idx
-        self.v = None
-
-
 def compute_distance_matrix(M_flat):
+    """
+    Build an nxn matrix of all pairwise distances between elements
+    """
     pairwise_distances = np.sqrt(
         np.sum(np.square(M_flat[:, np.newaxis] - M_flat), axis=2)
     )
@@ -64,14 +61,15 @@ def preprocess(M, k=3):
     n = M.shape[0]
 
     # Flatten the 2x2 matrices to 1D arrays for pairwise calculations
-    # M_flat = M
     pairwise_distances = None
-    # if len(M.shape) == 3:
+
     M_flat = M.reshape(n, -1)
+
     pairwise_distances = compute_distance_matrix(M_flat)
 
     # Step 1-2: Calculate denominators efficiently
     denominators = np.sum(pairwise_distances, axis=1)
+
     # Calculate v values using vectorized operations
     v_values = pairwise_distances / denominators[:, np.newaxis]
 
@@ -80,18 +78,14 @@ def preprocess(M, k=3):
     v_sums = np.sum(v_values, axis=1)
 
     # Initialize objects using list comprehension
-    data = [Datum(idx) for idx in range(n)]
-
-    # Assign calculated v values to data objects
-    for j in range(n):
-        data[j].v = v_sums[j]
+    data = [(idx, v_sums[idx]) for idx in range(n)]
 
     # Sort the data objects by v values
-    sortkey = lambda d: d.v
+    sortkey = lambda d: d[1]
     sorted_data = sorted(data, key=sortkey)
 
     # Get the indices of the k medioids
-    medioid_indices = [d.idx for d in sorted_data[:k]]
+    medioid_indices = [d[0] for d in sorted_data[:k]]
 
     return medioid_indices, pairwise_distances
 
