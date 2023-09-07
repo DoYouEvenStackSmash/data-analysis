@@ -133,90 +133,6 @@ def all_pairs_associations(data_list, input_list):
     return mi_match_indices, ms_match_distances
 
 
-def _construct_tree(M, k=3, R=30, C=-1):
-    """
-    Builds a hierarchical clustering on the input data M
-    Returns a flat tree as a list of nodes, where node_list[0] is the root.
-    """
-    # if size of data is greater than cutoff, we assume that the centroid does
-    # not need to be a member of the dataset.
-    if C < 0:
-        C = max(int(len(M) / k**3), 50)  # cutoff threshold
-
-    node_list = []
-    node_queue = deque()
-    data_queue = deque()
-
-    node_list.append(ClusterTreeNode(0))
-    node_queue.append(0)
-    data_queue.append(M)
-
-    while len(node_queue):
-        node = node_list[node_queue.popleft()]
-        data = data_queue.popleft()
-
-        node.children = []
-        # perform k means clustering.
-        if len(data) > C:
-            clusters = None
-            centroids = initial_centroids(data, k)
-            for r in range(R):
-                clusters = assign_kmeans_clusters(data, centroids, bool(r == 0))
-
-                new_centroids = update_centroids(clusters)
-
-                # TODO: Investigate Estop behavior
-                if new_centroids.shape != centroids.shape:
-                    centroids = new_centroids
-                    break
-
-                if np.linalg.norm(new_centroids - centroids) == 0.0:
-                    break
-                centroids = new_centroids
-
-            # create new nodes for centroids, and add each centroid/data pair to queues
-            for i, ctr in enumerate(centroids):
-                idx = len(node_list)
-                node.children.append(idx)
-                node_list.append(ClusterTreeNode(ctr))
-                node_queue.append(idx)
-                data_queue.append(np.array(clusters[i]))
-        # perform k medioids clustering to ensure that the center is within the input data
-        else:
-            dlen = data.shape[0]
-            medioids = None
-            clusters = None
-            mlist = None
-            if dlen > 1:
-                mlist, distances = preprocess(data, k)
-
-                total_sum = float("inf")
-                # clusters = None
-
-                for _ in range(R):
-                    clusters = assign_clusters(dlen, mlist, distances)
-                    mlist = update_medioids(clusters, mlist, distances)
-                    new_sum = calculate_sum(clusters, mlist, distances)
-                    if new_sum == total_sum:
-                        break
-                    total_sum = new_sum
-                clusters, medioids = postprocess(data, clusters, mlist)
-            elif dlen == 1:
-                medioids = np.array([data[0]])
-                clusters = [np.array([data[0]])]
-            else:
-                continue
-                # clusters, medioids = postprocess(data, clusters, mlist)
-            # create new nodes for medioids, initialize node data arrays to hold the clusters
-            for i, med in enumerate(medioids):
-                idx = len(node_list)
-                node.children.append(idx)
-                node_list.append(ClusterTreeNode(med))
-                node_list[idx].data_refs = np.array(clusters[i])
-
-    return node_list
-
-
 def construct_data_list(node_list, data_shape=None):
     """
     Wrapper function for constructing a new data array by replacing data references to their indices
@@ -310,7 +226,7 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
             "R": args.iterations,
             "C": args.cutoff,
         }
-        
+
     output_prefix = args.output
     tree_dict = {
         "parameters": params,
@@ -470,7 +386,7 @@ def load_wrapper(args):
     Returns a node_list and data_list
     """
     print("Loading hierarchical clustering")
-    node_list, data_list,param_list, tree_params = tree_loader(args.tree)
+    node_list, data_list, param_list, tree_params = tree_loader(args.tree)
     if args.G:
         build_tree_diagram(node_list, data_list)
     if args.output:
@@ -566,9 +482,7 @@ def main():
     load_parser.add_argument(
         "-t", "--tree", required=True, help="JSON file containing hierarchy"
     )
-    load_parser.add_argument(
-        "-o", "--output", help="output file for serialization"
-    )
+    load_parser.add_argument("-o", "--output", help="output file for serialization")
     load_parser.add_argument(
         "-G", action="store_true", help="generate graph from tree data"
     )
