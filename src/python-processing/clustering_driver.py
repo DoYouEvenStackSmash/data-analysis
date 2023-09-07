@@ -12,6 +12,7 @@ import networkx as nx
 from loguru import logger
 from graph_support import *
 from likelihood_scratch import *
+from reference_kmeans import *
 
 
 def find_cluster(node_list, T):
@@ -132,7 +133,7 @@ def all_pairs_associations(data_list, input_list):
     return mi_match_indices, ms_match_distances
 
 
-def construct_tree(M, k=3, R=30, C=-1):
+def _construct_tree(M, k=3, R=30, C=-1):
     """
     Builds a hierarchical clustering on the input data M
     Returns a flat tree as a list of nodes, where node_list[0] is the root.
@@ -216,27 +217,37 @@ def construct_tree(M, k=3, R=30, C=-1):
     return node_list
 
 
-def construct_data_list(M, node_list):
+def construct_data_list(node_list, data_shape=None):
     """
     Wrapper function for constructing a new data array by replacing data references to their indices
     Returns an array of data points, and replaces data_refs in leaf nodes
     """
-    data_list = [np.empty(M.shape[1:]) for _ in range(M.shape[0])]
+
+    data_list = [np.empty(data_shape[1:]) for _ in range(data_shape[0])]
+    param_list = [[] for _ in range(data_shape[0])]
     img_count = 0
 
     for i, node in enumerate(node_list[1:]):
         if node.children is None:
             if node.data_refs is not None:
                 data_idx = []
+                param_idx = []
                 for j, img in enumerate(node.data_refs):
                     if np.linalg.norm(img - node.val) == 0.0:
                         node.val_idx = img_count
                     data_list[img_count] = np.array(img)
+                    param_list[img_count] = node.param_refs[j]
                     data_idx.append(img_count)
+                    param_idx.append(img_count)
                     img_count += 1
                 node_list[i + 1].data_refs = data_idx
+                node_list[i + 1].param_refs = param_idx
     # print(img_count)
-    return data_list
+    return data_list, param_list
+
+
+def param_loader(filename, count=1):
+    return [{"id": i, "weight": 1} for i in range(count)]
 
 
 def hierarchify_wrapper(filename, k, R, C):
@@ -244,22 +255,25 @@ def hierarchify_wrapper(filename, k, R, C):
     Wrapper function for building a hierarchical clustering
     """
     M = data_loading_wrapper(filename)
-    nl, dl = hierarchify(M, k, R, C)
-    return nl, dl
+    # M = np.random.randint(0, 10, (10, 2, 2))
+    P = param_loader(filename, len(M))
+    # print(P)
+    nl, dl, pl = hierarchify(M, P, k, R, C)
+    return nl, dl, pl
 
 
-def hierarchify(M, k=3, R=4, C=-1):
+def hierarchify(M, P, k=3, R=4, C=-1):
     """
     Wrapper function for execution of clustering
     """
 
     tree_build = time.perf_counter()
-    node_list = construct_tree(M, k, R, C)
+    node_list = construct_tree(M, P, k, R, C)
     tree_build = time.perf_counter() - tree_build
 
     # print("building data reference list...")
     data_build = time.perf_counter()
-    data_list = construct_data_list(M, node_list)
+    data_list, param_list = construct_data_list(node_list, M.shape)
     data_build = time.perf_counter() - data_build
 
     # N D k R tree_build data_build
@@ -269,7 +283,7 @@ def hierarchify(M, k=3, R=4, C=-1):
             M.shape[0], np.product(M.shape[1:]), k, R, C, tree_build, data_build
         )
     )
-    return node_list, data_list
+    return node_list, data_list, param_list
 
 
 def data_loading_wrapper(filename):
@@ -281,28 +295,35 @@ def data_loading_wrapper(filename):
     return M
 
 
-def serialize_wrapper(args, node_list, data_list):
+def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
     """
     Wrapper function for serializing a constructed clustering with params
     """
-    params = {
-        "input": args.input,
-        "output": args.output,
-        "k": args.clusters,
-        "R": args.iterations,
-        "C": args.cutoff,
-    }
+    params = {}
+    if tree_params != None:
+        params = tree_params
+    else:
+        params = {
+            "input": args.input,
+            "output": args.output,
+            "k": args.clusters,
+            "R": args.iterations,
+            "C": args.cutoff,
+        }
+        
     output_prefix = args.output
     tree_dict = {
         "parameters": params,
         "resources": {
             "node_vals_file": f"{output_prefix}_tree_node_vals.npy",
-            "data_list_file": f"{output_prefix}_tree_data_list.npy",
+            "data_list_file": f"{output_prefix}_tree_data_list.npy"
+            # "param_list_file": f"{output_prefix}_tree_param_list.npy"
         },
     }
 
     tree_node_list = []
     tree_node_vals = []
+    tree_param_vals = param_list
 
     # handle root node
     tree_node_list.append(
@@ -313,6 +334,7 @@ def serialize_wrapper(args, node_list, data_list):
                 c for c in node_list[0].children
             ],  # array of references to elements of tree_node_list
             "data_refs": None,
+            "param_refs": None,
         }
     )
 
@@ -328,6 +350,7 @@ def serialize_wrapper(args, node_list, data_list):
                     "data_refs": [
                         didx for didx in node.data_refs
                     ],  # array of references to elements of data_list
+                    "param_refs": [pidx for pidx in node.param_refs],
                 }
             )
             # special handling of node's value
@@ -345,13 +368,14 @@ def serialize_wrapper(args, node_list, data_list):
                         c for c in node.children
                     ],  # array of references to other elements of tree_node_list
                     "data_refs": None,  # internal node has no data_refs
+                    "param_refs": None,
                 }
             )
             # node.val of an internal node is generated by kmeans, and only exists in the node
             tree_node_vals.append(np.array(node.val))
 
     tree_dict["node_list"] = tree_node_list
-
+    tree_dict["param_list"] = tree_param_vals
     f = open(f"{output_prefix}_tree_hierarchy.json", "w")
     f.write(json.dumps(tree_dict, indent=2))
     f.close()
@@ -364,13 +388,13 @@ def build_wrapper(args):
     """
     Wrapper function for constructing a hierarchical clustering from input and serializing the output
     """
-    node_list, data_list = hierarchify_wrapper(
+    node_list, data_list, param_list = hierarchify_wrapper(
         args.input, args.clusters, args.iterations, args.cutoff
     )
 
     print("Building hierarchical clustering")
     if args.output is not None:
-        serialize_wrapper(args, node_list, data_list)
+        serialize_wrapper(args, node_list, data_list, param_list)
     return node_list, data_list
 
 
@@ -407,6 +431,8 @@ def tree_loader(filename):
 
     # load node_list
     node_list_data = parsed_data["node_list"]
+    param_list = parsed_data["param_list"]
+    tree_params = parsed_data["parameters"]
 
     # process root node
     root_node_data = node_list_data[0]
@@ -415,6 +441,7 @@ def tree_loader(filename):
         val_idx=root_node_data["node_val_idx"],
         children=root_node_data["children"],
         data=root_node_data["data_refs"],
+        params=root_node_data["param_refs"],
     )
 
     node_list = [root_node]
@@ -430,10 +457,11 @@ def tree_loader(filename):
                 ],  # get actual value of node using node_val_idx
                 children=node_data["children"],
                 data=node_data["data_refs"],
+                params=node_data["param_refs"],
             )
         )
 
-    return node_list, data_list
+    return node_list, data_list, param_list, tree_params
 
 
 def load_wrapper(args):
@@ -442,9 +470,11 @@ def load_wrapper(args):
     Returns a node_list and data_list
     """
     print("Loading hierarchical clustering")
-    node_list, data_list = tree_loader(args.tree)
+    node_list, data_list,param_list, tree_params = tree_loader(args.tree)
     if args.G:
         build_tree_diagram(node_list, data_list)
+    if args.output:
+        serialize_wrapper(args, node_list, data_list, param_list, tree_params)
     print(len(data_list))
     # if args.G:
     #     graph_serialize(node_list, data_list)
@@ -456,7 +486,7 @@ def search_wrapper(args):
     Wrapper function for searching a hierarchical cluster tree for some list of points
     returns the list of associations and distances
     """
-    node_list, data_list = tree_loader(args.tree)
+    node_list, data_list, param_list, tree_params = tree_loader(args.tree)
     print(len(data_list))
     N = data_loading_wrapper(args.input)
     print("Searching hierarchical clustering")
@@ -474,7 +504,7 @@ def search_wrapper(args):
 
 
 def likelihood_wrapper(args):
-    node_list, data_list = tree_loader(args.models)
+    node_list, data_list, param_list, tree_params = tree_loader(args.models)
     N = data_loading_wrapper(args.images)
     (
         search_tree_nn_likelihood,
@@ -535,6 +565,9 @@ def main():
     )
     load_parser.add_argument(
         "-t", "--tree", required=True, help="JSON file containing hierarchy"
+    )
+    load_parser.add_argument(
+        "-o", "--output", help="output file for serialization"
     )
     load_parser.add_argument(
         "-G", action="store_true", help="generate graph from tree data"
