@@ -23,7 +23,7 @@ spl_bin_count = (max(single_point_likelihoods) - min(single_point_likelihoods)) 
 al_bin_count = (max(area_likelihoods) - min(area_likelihoods)) / al_bin_width;
 
 % Create subplots and histograms
-plots = tiledlayout(3, 1);%, 'TileSpacing', 'Compact');
+plots = tiledlayout(4, 1);%, 'TileSpacing', 'Compact');
 
 % Plot single point likelihood histogram
 spl_bins = min(single_point_likelihoods):spl_bin_width:max(single_point_likelihoods);
@@ -35,8 +35,11 @@ al_hist = histc(area_likelihoods, al_bins);
 
 t = [0:length(single_point_likelihoods) - 1];
 % Plot error
-error = abs(search_tree_likelihoods.area_likelihood - global_likelihoods.area_likelihood);
-error_bins = min(error):0.1:max(error);
+error = abs(single_point_likelihoods - area_likelihoods);
+error_average = mean(error)
+error_std_dev = std(error);
+error_bin_width = 3.5 * error_std_dev / (length(error)^(1/3));
+error_bins = min(error):error_bin_width:max(error);
 error_hist = histc(error, error_bins);
 
 % Plot subplots
@@ -64,10 +67,11 @@ bar(p2, al_bins, al_hist, 'histc');
 title(p2, 'True Log-Likelihood', ["Mean: "+ al_average, "std: " + al_std_dev]);
 xlabel(p2, 'Values');
 ylabel(p2, 'Frequency');
-% % bar(p3, error_bins, error_hist, 'histc');
-% % title(p3, 'Error Histogram');
-% % xlabel(p3, 'Values');
-% % ylabel(p3, 'Frequency');
+p4 = nexttile;
+bar(p4, error_bins, error_hist, 'histc');
+title(p4, 'Error Histogram');
+xlabel(p4, 'Values');
+ylabel(p4, 'Frequency');
 
 % % Add the additional plots
 % ub = length(error) - 1;
