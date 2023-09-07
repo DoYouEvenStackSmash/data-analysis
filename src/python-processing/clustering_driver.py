@@ -266,8 +266,8 @@ def hierarchify(M, k=3, R=4, C=-1):
     # N D k R tree_build data_build
     # Log the metrics in CSV format
     logger.info(
-        "{},{},{},{},{},{}".format(
-            M.shape[0], np.product(M.shape[1:]), k, R, tree_build, data_build
+        "{},{},{},{},{},{},{}".format(
+            M.shape[0], np.product(M.shape[1:]), k, R, C, tree_build, data_build
         )
     )
     return node_list, data_list
@@ -485,12 +485,13 @@ def likelihood_wrapper(args):
     write_csv(
         search_tree_nn_likelihood, search_tree_whole_cluster_likelihood, search_file
     )
-    # return
-    all_pairs_nn_likelihood, all_pairs_global_likelihood = global_scope_likelihoods(
-        data_list, N
-    )
-    ap_file = "all_pairs_likelihoods.csv"
-    write_csv(all_pairs_nn_likelihood, all_pairs_global_likelihood, ap_file)
+    if args.true_likelihood:
+        # return
+        all_pairs_nn_likelihood, all_pairs_global_likelihood = global_scope_likelihoods(
+            data_list, N
+        )
+        ap_file = "all_pairs_likelihoods.csv"
+        write_csv(all_pairs_nn_likelihood, all_pairs_global_likelihood, ap_file)
     # if args.output:
 
 
@@ -572,6 +573,7 @@ def main():
     likelihood_parser.add_argument(
         "-o", "--output", help="prefix of output file for saving the densities"
     )
+    likelihood_parser.add_argument('-T',"--true_likelihood", action="store_true", help="calculate true likelihoods")
     likelihood_parser.set_defaults(func=likelihood_wrapper)
     # Parse command-line arguments and call the appropriate function
 
