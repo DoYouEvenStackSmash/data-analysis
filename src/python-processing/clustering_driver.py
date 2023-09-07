@@ -201,7 +201,6 @@ def construct_tree(M, k=3, R=30, C=-1):
                     total_sum = new_sum
                 clusters, medioids = postprocess(data, clusters, mlist)
             elif dlen == 1:
-                # mlist = [0]
                 medioids = np.array([data[0]])
                 clusters = [np.array([data[0]])]
             else:
@@ -573,7 +572,12 @@ def main():
     likelihood_parser.add_argument(
         "-o", "--output", help="prefix of output file for saving the densities"
     )
-    likelihood_parser.add_argument('-T',"--true_likelihood", action="store_true", help="calculate true likelihoods")
+    likelihood_parser.add_argument(
+        "-T",
+        "--true_likelihood",
+        action="store_true",
+        help="calculate true likelihoods",
+    )
     likelihood_parser.set_defaults(func=likelihood_wrapper)
     # Parse command-line arguments and call the appropriate function
 

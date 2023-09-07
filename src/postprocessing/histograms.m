@@ -86,7 +86,7 @@ ylabel(p2, 'Frequency');
 % linkaxes([p3, p4], 'x');
 
 % Set the overall title and axis labels
-title(plots, 'Log Likelihood Data, SNR=0.1');
+title(plots, 'Log Likelihood Data, SNR=0.01');
 % xlabel(plots, 'Image Index');
 % ylabel(plots, 'Magnitude');
 
