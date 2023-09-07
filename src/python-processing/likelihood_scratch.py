@@ -230,7 +230,7 @@ def global_scope_likelihoods(data_list, input_list, input_noise=None):
 def write_csv(single_point_likelihood, area_likelihood, filename="out.csv"):
     f = open(filename, "w")
 
-    head = f"single_point_likelihood, area_likelihood,\n"
+    head = f"single_point_likelihood,area_likelihood,\n"
     f.write(head)
     for i, sp in enumerate(single_point_likelihood):
         f.write(f"{sp},{area_likelihood[i]},\n")

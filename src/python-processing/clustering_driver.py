@@ -462,9 +462,8 @@ def search_wrapper(args):
     N = data_loading_wrapper(args.input)
     print("Searching hierarchical clustering")
     np.random.shuffle(N)
-    print(len(N))
+
     st_idxs, st_dss = search_tree_associations(node_list, data_list, N)
-    print(st_dss)
 
     if args.G:
         ap_idxs, ap_dss = all_pairs_associations(data_list, N)
