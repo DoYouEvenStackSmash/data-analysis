@@ -201,7 +201,6 @@ def construct_tree(M, k=3, R=30, C=-1):
                     total_sum = new_sum
                 clusters, medioids = postprocess(data, clusters, mlist)
             elif dlen == 1:
-                # mlist = [0]
                 medioids = np.array([data[0]])
                 clusters = [np.array([data[0]])]
             else:
@@ -266,8 +265,8 @@ def hierarchify(M, k=3, R=4, C=-1):
     # N D k R tree_build data_build
     # Log the metrics in CSV format
     logger.info(
-        "{},{},{},{},{},{}".format(
-            M.shape[0], np.product(M.shape[1:]), k, R, tree_build, data_build
+        "{},{},{},{},{},{},{}".format(
+            M.shape[0], np.product(M.shape[1:]), k, R, C, tree_build, data_build
         )
     )
     return node_list, data_list
@@ -462,9 +461,8 @@ def search_wrapper(args):
     N = data_loading_wrapper(args.input)
     print("Searching hierarchical clustering")
     np.random.shuffle(N)
-    print(len(N))
+
     st_idxs, st_dss = search_tree_associations(node_list, data_list, N)
-    print(st_dss)
 
     if args.G:
         ap_idxs, ap_dss = all_pairs_associations(data_list, N)
@@ -486,12 +484,13 @@ def likelihood_wrapper(args):
     write_csv(
         search_tree_nn_likelihood, search_tree_whole_cluster_likelihood, search_file
     )
-    # return
-    all_pairs_nn_likelihood, all_pairs_global_likelihood = global_scope_likelihoods(
-        data_list, N
-    )
-    ap_file = "all_pairs_likelihoods.csv"
-    write_csv(all_pairs_nn_likelihood, all_pairs_global_likelihood, ap_file)
+    if args.true_likelihood:
+        # return
+        all_pairs_nn_likelihood, all_pairs_global_likelihood = global_scope_likelihoods(
+            data_list, N
+        )
+        ap_file = "all_pairs_likelihoods.csv"
+        write_csv(all_pairs_nn_likelihood, all_pairs_global_likelihood, ap_file)
     # if args.output:
 
 
@@ -572,6 +571,12 @@ def main():
     )
     likelihood_parser.add_argument(
         "-o", "--output", help="prefix of output file for saving the densities"
+    )
+    likelihood_parser.add_argument(
+        "-T",
+        "--true_likelihood",
+        action="store_true",
+        help="calculate true likelihoods",
     )
     likelihood_parser.set_defaults(func=likelihood_wrapper)
     # Parse command-line arguments and call the appropriate function

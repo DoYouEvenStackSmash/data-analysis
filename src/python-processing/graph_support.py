@@ -91,7 +91,7 @@ def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_ds
         G.add_edge(A, B, weight=distance, color=color)
     nx.set_node_attributes(G, node_colors, "color")
     # Save the graph in GraphML format
-    nx.write_graphml(G, "graph_representation.graphml")
+    nx.write_graphml(G, "search_results.graphml")
 
 
 def build_tree_diagram(node_list, data_list):

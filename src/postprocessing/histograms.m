@@ -1,0 +1,92 @@
+% Load data from CSV files
+search_tree_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\search_tree_likelihoods.csv');
+global_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\all_pairs_likelihoods.csv');
+
+% Extract single point likelihood and area likelihood data
+single_point_likelihoods = search_tree_likelihoods.single_point_likelihood;
+area_likelihoods = global_likelihoods.area_likelihood;
+
+% Calculate the average of single point likelihoods and area likelihoods
+spl_average = mean(single_point_likelihoods);
+al_average = mean(area_likelihoods);
+
+% Calculate the standard deviation of single point likelihoods and area likelihoods
+spl_std_dev = std(single_point_likelihoods);
+al_std_dev = std(area_likelihoods);
+
+% Calculate bin widths using Scott's rule
+spl_bin_width = 3.5 * spl_std_dev / (length(single_point_likelihoods)^(1/3));
+al_bin_width = 3.5 * al_std_dev / (length(area_likelihoods)^(1/3));
+
+% Calculate the number of bins
+spl_bin_count = (max(single_point_likelihoods) - min(single_point_likelihoods)) / spl_bin_width;
+al_bin_count = (max(area_likelihoods) - min(area_likelihoods)) / al_bin_width;
+
+% Create subplots and histograms
+plots = tiledlayout(3, 1);%, 'TileSpacing', 'Compact');
+
+% Plot single point likelihood histogram
+spl_bins = min(single_point_likelihoods):spl_bin_width:max(single_point_likelihoods);
+spl_hist = histc(single_point_likelihoods, spl_bins);
+
+% Plot area likelihood histogram
+al_bins = min(area_likelihoods):al_bin_width:max(area_likelihoods);
+al_hist = histc(area_likelihoods, al_bins);
+
+t = [0:length(single_point_likelihoods) - 1];
+% Plot error
+error = abs(search_tree_likelihoods.area_likelihood - global_likelihoods.area_likelihood);
+error_bins = min(error):0.1:max(error);
+error_hist = histc(error, error_bins);
+
+% Plot subplots
+
+p3 = nexttile;
+hold on;
+grid on;
+plot(p3, t, single_point_likelihoods, 'LineWidth', 2);
+plot(p3, t, area_likelihoods, 'LineWidth', 1.2);
+title(p3, 'Image Log-Likelihoods');
+legend("Tree Approximation", "True Likelihood");
+xlim([0 length(single_point_likelihoods) - 1]);
+xlabel(p3, 'Image Index');
+ylabel(p3, 'Log-Likelihood')
+hold off;
+
+p1 = nexttile;
+bar(p1, spl_bins, spl_hist, 'histc');
+title(p1, 'Tree Approximated Log-Likelihood', ["Mean: "+ spl_average, "std: " + spl_std_dev]);
+xlabel(p1, 'Values');
+ylabel(p1, 'Frequency');
+
+p2 = nexttile;
+bar(p2, al_bins, al_hist, 'histc');
+title(p2, 'True Log-Likelihood', ["Mean: "+ al_average, "std: " + al_std_dev]);
+xlabel(p2, 'Values');
+ylabel(p2, 'Frequency');
+% % bar(p3, error_bins, error_hist, 'histc');
+% % title(p3, 'Error Histogram');
+% % xlabel(p3, 'Values');
+% % ylabel(p3, 'Frequency');
+
+% % Add the additional plots
+% ub = length(error) - 1;
+% t = 0:ub;
+
+% p4 = nexttile;
+% hold on;
+% grid on;
+% title(p4, 'Sum Over Members Likelihood');
+% plot(p4, t, search_tree_likelihoods.area_likelihood, 'LineWidth', 2);
+% xlim(p4, [0 length(single_point_likelihoods) - 1]);
+% legend(p4, {'Cluster Likelihood'});
+% hold off;
+
+% % Link the x-axis limits of the additional plots with the last subplot
+% linkaxes([p3, p4], 'x');
+
+% Set the overall title and axis labels
+title(plots, 'Log Likelihood Data, SNR=0.01');
+% xlabel(plots, 'Image Index');
+% ylabel(plots, 'Magnitude');
+
