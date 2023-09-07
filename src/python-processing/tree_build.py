@@ -1,101 +1,38 @@
 # from clustering_imports import *
 # from kmedoids import *
 # from collections import deque
+from kmedoids import *
+from kmeans import *
 from clustering_driver import *
 
 
-def weighted_sample(weights):
+def construct_data_list(node_list, data_shape=None):
     """
-    Sample a weighted probability distribution
-    returns an index
-    """
-    # normalize total_w to be in [0,1]
-    total_w = weights / np.sum(weights)
-    sample_val = np.random.uniform(0, 1)
-    for idx, w in enumerate(total_w):
-        sample_val -= w
-        if sample_val <= 0:
-            return idx
-    return len(weights) - 1
-
-
-def kmeanspp(data_store, data_ref_arr, k):
-    # k meanscpp
-    dlen = len(data_ref_arr)
-    start_center = np.random.randint(dlen)
-    not_chosen = deque(i for i in range(dlen) if i != start_center)
-
-    centroids = [data_store[data_ref_arr[start_center]]]
-
-    chosen = {start_center}
-    weights = None  # np.zeros(dlen)
-    min_dist = float("inf")
-
-    for _ in range(k - 1):
-        weights = np.zeros(len(not_chosen))
-        for idx, mdx in enumerate(not_chosen):
-            min_dist = float("inf")
-            m = data_store[data_ref_arr[mdx]]
-            for ctx, ctr in enumerate(centroids):
-                min_dist = min(min_dist, np.linalg.norm(m - ctr))
-
-            weights[idx] = np.square(min_dist)
-
-        selected_point = weighted_sample(weights)
-        centroids.append(data_store[data_ref_arr[not_chosen[selected_point]]])
-        chosen.add(not_chosen[selected_point])
-        not_chosen.remove(not_chosen[selected_point])
-    centroids = np.array(centroids)
-    return centroids
-
-
-def kmeans_main(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
-    """
-    Perform K-Means clustering iterations for a subset of data references.
-
-    Args:
-        data_store (list of numpy arrays): Data points to be clustered.
-        data_ref_arr (list of ints): Indices referring to elements in data_store.
-        centroids (list of numpy arrays): Initial cluster centroids.
-        FIRST_FLAG (bool): Flag to indicate the first iteration (default False).
-
-    Returns:
-        new_data_ref_clusters (list of lists): Updated cluster assignments for data references.
-        new_centroids (numpy array): Updated cluster centroids.
+    Wrapper function for constructing a new data array by replacing data references to their indices
+    Returns an array of data points, and replaces data_refs in leaf nodes
     """
 
-    data_ref_clusters = [[] for _ in centroids]
-    data_ref_means = [np.zeros(data_store[0].shape) for _ in centroids]
-    nn = None
-    pdist = None
-    min_dist = float("inf")
+    data_list = [np.empty(data_shape[1:]) for _ in range(data_shape[0])]
+    param_list = [[] for _ in range(data_shape[0])]
+    img_count = 0
 
-    for dref_idx, dref in enumerate(data_ref_arr):
-        min_dist = float("inf")
-        nn = None
-        for ctx, ctr in enumerate(centroids):
-            if FIRST_FLAG:
-                if np.array_equal(data_store[dref], ctr):
-                    continue
-
-            pdist = np.linalg.norm(data_store[dref] - ctr)
-            if pdist < min_dist:
-                min_dist = pdist
-                nn = ctx
-        if nn != None:
-            data_ref_clusters[nn].append(data_ref_arr[dref_idx])
-
-    new_data_ref_clusters = []
-    new_centroids = []
-    for i in range(len(data_ref_clusters)):
-        if not len(data_ref_clusters[i]):
-            continue
-        new_data_ref_clusters.append(data_ref_clusters[i])
-        new_centroids.append(
-            np.mean([data_store[i] for i in new_data_ref_clusters[-1]], axis=0)
-        )
-
-    return new_data_ref_clusters, np.array(new_centroids)
+    for i, node in enumerate(node_list[1:]):
+        if node.children is None:
+            if node.data_refs is not None:
+                data_idx = []
+                param_idx = []
+                for j, img in enumerate(node.data_refs):
+                    if np.linalg.norm(img - node.val) == 0.0:
+                        node.val_idx = img_count
+                    data_list[img_count] = np.array(img)
+                    param_list[img_count] = node.param_refs[j]
+                    data_idx.append(img_count)
+                    param_idx.append(img_count)
+                    img_count += 1
+                node_list[i + 1].data_refs = data_idx
+                node_list[i + 1].param_refs = param_idx
+    # print(img_count)
+    return data_list, param_list
 
 
 def construct_tree(M, P, k=3, R=30, C=-1):
@@ -121,10 +58,10 @@ def construct_tree(M, P, k=3, R=30, C=-1):
 
         if len(data_ref_arr) > C:
             data_ref_clusters = None
-            centroids = kmeanspp(data_store, data_ref_arr, k)
+            centroids = kmeanspp_refs(data_store, data_ref_arr, k)
 
             for r in range(R):
-                data_ref_clusters, new_centroids = kmeans_main(
+                data_ref_clusters, new_centroids = kmeans_refs(
                     data_store, data_ref_arr, centroids, bool(r == 0)
                 )
 
