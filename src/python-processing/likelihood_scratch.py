@@ -197,7 +197,7 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
         node_list, data_list, input_list, input_noise
     )
     global_likelihoods = evaluate_global_likelihood(data_list, input_list, input_noise)
-    # logger.info("lambda: {}".format(input_noise))
+
     return nn_likelihoods, global_likelihoods
 
 
