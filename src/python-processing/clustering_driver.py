@@ -36,7 +36,7 @@ def hierarchify(M, P, k=3, R=4, C=-1):
     """
     Wrapper function for execution of clustering
     """
-
+    global logger
     tree_build = time.perf_counter()
     node_list = construct_tree(M, P, k, R, C)
     tree_build = time.perf_counter() - tree_build
@@ -275,12 +275,20 @@ def search_wrapper(args):
 
 def likelihood_wrapper(args):
     node_list, data_list, param_list, tree_params = tree_loader(args.models)
+
     N = data_loading_wrapper(args.images)
+    if args.test:
+        approximate_likelihood, true_likelihood = testbench_likelihood(
+            node_list, data_list, N
+        )
+        out_file = f"{args.output}_likelihoods.csv"
+        write_csv(approximate_likelihood, true_likelihood, out_file)
+        return
     (
         search_tree_nn_likelihood,
         search_tree_whole_cluster_likelihood,
     ) = search_tree_likelihoods(node_list, data_list, N)
-    search_file = "search_tree_likelihoods.csv"
+    search_file = f"{args.output}_likelihoods.csv"
     write_csv(
         search_tree_nn_likelihood, search_tree_whole_cluster_likelihood, search_file
     )
@@ -379,6 +387,10 @@ def main():
         action="store_true",
         help="calculate true likelihoods",
     )
+    likelihood_parser.add_argument(
+        "-test", action="store_true", help="fast access to testbench function"
+    )
+
     likelihood_parser.set_defaults(func=likelihood_wrapper)
     # Parse command-line arguments and call the appropriate function
 

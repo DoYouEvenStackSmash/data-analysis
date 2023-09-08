@@ -2,3 +2,6 @@
 *.csv
 *.json
 *.graphml
+*.png
+*.log
+*.jpg

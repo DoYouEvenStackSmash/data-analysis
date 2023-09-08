@@ -1,10 +1,12 @@
 % Load data from CSV files
-search_tree_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\search_tree_likelihoods.csv');
-global_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\all_pairs_likelihoods.csv');
-
+path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\s256_im2048_snr1e-1_likelihoods.csv'
+% files = []
+% search_tree_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\search_tree_likelihoods.csv');
+% global_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\all_pairs_likelihoods.csv');
+likelihoods = readtable(path);
 % Extract single point likelihood and area likelihood data
-single_point_likelihoods = search_tree_likelihoods.single_point_likelihood;
-area_likelihoods = global_likelihoods.area_likelihood;
+single_point_likelihoods = likelihoods.approximate_likelihood;
+area_likelihoods = likelihoods.true_likelihood;
 
 % Calculate the average of single point likelihoods and area likelihoods
 spl_average = mean(single_point_likelihoods);
@@ -34,8 +36,9 @@ al_bins = min(area_likelihoods):al_bin_width:max(area_likelihoods);
 al_hist = histc(area_likelihoods, al_bins);
 
 t = [0:length(single_point_likelihoods) - 1];
+
 % Plot error
-error = abs(single_point_likelihoods - area_likelihoods);
+error = abs(single_point_likelihoods - area_likelihoods) ./ abs(area_likelihoods);
 error_average = mean(error)
 error_std_dev = std(error);
 error_bin_width = 3.5 * error_std_dev / (length(error)^(1/3));
@@ -43,7 +46,6 @@ error_bins = min(error):error_bin_width:max(error);
 error_hist = histc(error, error_bins);
 
 % Plot subplots
-
 p3 = nexttile;
 hold on;
 grid on;
@@ -68,10 +70,12 @@ title(p2, 'True Log-Likelihood', ["Mean: "+ al_average, "std: " + al_std_dev]);
 xlabel(p2, 'Values');
 ylabel(p2, 'Frequency');
 p4 = nexttile;
-bar(p4, error_bins, error_hist, 'histc');
-title(p4, 'Error Histogram');
+plot(p4, t,error);
+% bar(p4, error_bins, error_hist, 'histc');
+title(p4, 'Relative Error');
 xlabel(p4, 'Values');
-ylabel(p4, 'Frequency');
+ylabel(p4, 'Magnitude');
+xlim([0, length(single_point_likelihoods) - 1]);
 
 % % Add the additional plots
 % ub = length(error) - 1;
@@ -90,7 +94,7 @@ ylabel(p4, 'Frequency');
 % linkaxes([p3, p4], 'x');
 
 % Set the overall title and axis labels
-title(plots, 'Log Likelihood Data, SNR=0.01');
+title(plots, 'Log Likelihood Data, SNR=0.1');
 % xlabel(plots, 'Image Index');
 % ylabel(plots, 'Magnitude');
 

@@ -24,6 +24,6 @@ def dataloader(filename):
         # Load the array using np.load()
         loaded_array = np.load(filename, allow_pickle=True)
         # Display the loaded array
-        print("Loaded Array:")
-        print(loaded_array.shape)
+        # print("Loaded Array:")
+        # print(loaded_array.shape)
         return loaded_array

@@ -147,7 +147,7 @@ def kmeanspp_refs(data_store, data_ref_arr, k):
 
     centroids = [data_store[data_ref_arr[start_center]]]
 
-    chosen = {start_center}
+    # chosen = {start_center}
     weights = None  # np.zeros(dlen)
     min_dist = float("inf")
 
@@ -162,9 +162,14 @@ def kmeanspp_refs(data_store, data_ref_arr, k):
             weights[idx] = np.square(min_dist)
 
         selected_point = weighted_sample(weights)
+        # print(selected_point)
+        # print(len(not_chosen))
         centroids.append(data_store[data_ref_arr[not_chosen[selected_point]]])
-        chosen.add(not_chosen[selected_point])
+
+        # chosen.add(not_chosen[selected_point])
         not_chosen.remove(not_chosen[selected_point])
+        if not len(not_chosen):
+            break
     centroids = np.array(centroids)
     return centroids
 
