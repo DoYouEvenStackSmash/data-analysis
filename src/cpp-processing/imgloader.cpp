@@ -4,7 +4,7 @@
 #include <chrono>
 // using std::chrono;
 
-using namespace MyData; // Use the namespace from your schema
+using namespace MyData; 
 
 std::vector<ImageT> convertToImageTVector(const flatbuffers::Vector<flatbuffers::Offset<MyData::Image>>* images) {
     std::vector<ImageT> imageTVector;

@@ -37,7 +37,7 @@ int main() {
         matrices[i] = matrix;
         // matrices.push_back(matrix);
     }
-    // Replace this with your actual data
+    
     std::vector<int> medioidIndices;
     Eigen::MatrixXf distances;
     preprocess(&matrices[0], numMatrices ,k, medioidIndices, &distances);
@@ -59,7 +59,7 @@ int main() {
     
   std::vector<std::vector<std::vector<double>>> data(ref_clusters.size());
   std::vector<std::vector<double>> data_centroids(ref_clusters.size());
-  // for (int i = 0; i < ref_clusters.size(); )
+  
   for (int i = 0; i < ref_clusters.size(); ++i) {
     int cidx = medioidIndices[i];
     const Eigen::Map<const Eigen::VectorXf> flattened_centroid(matrices[cidx].data(), matrices[cidx].size());
