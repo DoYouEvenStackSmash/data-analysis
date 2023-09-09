@@ -3,13 +3,36 @@
 #include <eigen3/Eigen/Dense>
 #include <limits>
 #include "kmeans.h"
+#include <set>
 using namespace std;
 
 void params(bool foo=false) {
-  cout << foo << endl;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    double sample_val = dist(gen);
+    cout << "sample:\t" << sample_val << endl;
 }
 
 int main() {
+  // for (int i = 0; i < 20; ++i){
+  //   params();
+  // }
+  // return 0;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> distribution(0, 10); // Generates integers between 1 and 100
+    int rand_start = distribution(gen);
+    set<int> s;
+  //   for (int i = 0; i < 10; i++) {
+  //     if (i == rand_start)
+  //       continue;
+  //     s.insert(i);
+  //   }
+
+  // for (auto &a : s)
+  //   cout << a << endl;
+  // return 0;
   vector<vector<int>> c(10);
     Eigen::MatrixXf matrix1(2, 2);
     matrix1 << 1.0, 2.0,
@@ -40,12 +63,15 @@ int main() {
   vector<Eigen::MatrixXf> centroids = {matrix1, matrix2};
   vector<Eigen::MatrixXf> nctr;
   vector<vector<int>> nrc;
-  kmeans_refs(&data[0], data_refs, centroids, true, nctr, nrc);
+  // kmeans_refs(&data[0], data_refs, centroids, true, nctr, nrc);
+  int starting_index = 2;
+  int k = 2;
+  kmeanspp_refs(&data[0], data_refs, starting_index, k, nctr);
   cout << "centers" << endl;
-  for (auto a: nrc) {
-    for (auto b : a)
-      cout << b << ",";
-    cout << endl;
+  for (auto a: nctr) {
+    // for (auto b : a)
+      cout << a;
+      cout << endl;
   }
   return 0;
   Eigen::MatrixXf mean_mat(2,2);
