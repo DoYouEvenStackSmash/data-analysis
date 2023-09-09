@@ -11,8 +11,8 @@
 using namespace std;
 int main() {
     // Example usage:
-    int k = 12;
-    const int numMatrices = 1000;
+    int k = 3;
+    const int numMatrices = 100;
     const int numRows = 1;
     const int numCols = 2;
 
@@ -38,10 +38,10 @@ int main() {
         // matrices.push_back(matrix);
     }
     
-    std::vector<int> medioidIndices;
+    std::vector<int> medioidIndices(k);
     Eigen::MatrixXf distances;
     preprocess(&matrices[0], numMatrices ,k, medioidIndices, &distances);
-    vector<vector<int>> ref_clusters;
+    vector<vector<int>> ref_clusters(medioidIndices.size());
     double total_sum = 0.0;
     for (int i = 0; i < 100; ++i) {
       double new_sum = 0.0;

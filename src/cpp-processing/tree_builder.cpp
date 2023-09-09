@@ -5,11 +5,13 @@
 #include <map>
 #include <ctime>
 #include <queue>
+#include "kmeans.h"
+#include "kmedioids.h"
 #include "tree_builder.h"
+
 using namespace std;
 
-
-std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n,int k=3, int C=25, int R=100) {
+std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n, int k, int C, int R) {
 
   // initialize a map of nodes accessible by their id
   map<int, CTNode*> node_map;
@@ -30,7 +32,7 @@ std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n,int k=3
   for (int i = 0; i < n; ++i) {
     init_data_refs[i] = i;
   }
-
+  // return node_map;
   // load the data references
   data_ref_queue.push(init_data_refs);
   
@@ -82,6 +84,7 @@ std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n,int k=3
         kmeans_refs(data_store, data_refs, centroids, bool(i==0), new_centroids, new_ref_clusters);
         // save new_ref_clusters
         ref_clusters = new_ref_clusters;
+        // return node_map;
         
         // it is possible to drop below the value of k
         // if this happens, we break. It can form an unbalanced tree, but
@@ -132,14 +135,15 @@ std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n,int k=3
       // of the tree.
       vector<Eigen::MatrixXf> data(data_refs.size());
       for (int i = 0; i < data_refs.size(); ++i) {
+        data[i].resize(data_store[0].rows(), data_store[0].cols());
         data[i] = data_store[data_refs[i]];
       }
 
       // only perform k medioids if there are multiple elements in data_refs
       if (data_refs.size() > 1) {
         // construct the pairwise distance matrix according to paper
-        Eigen::MatrixXf distances;  
-        preprocess(&data[0], data.size(), k, medioidIndices, &distances);
+        Eigen::MatrixXf distances;
+        preprocess(&data[0], data_refs.size(), k, medioidIndices, distances);
         
         vector<vector<int>> new_ref_clusters(medioidIndices.size());
         double total_sum = 0.0;

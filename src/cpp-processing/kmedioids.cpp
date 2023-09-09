@@ -5,8 +5,8 @@
 #include <algorithm>
 
 struct P {
-  int idx;
-  double vSum;
+  int idx = 0;
+  double vSum = 0.0;
 };
 
 // Calculates the total sum of distances between data points and their respective medioids.
@@ -49,9 +49,9 @@ void assign_clusters(
     std::vector<std::vector<int>> &ref_clusters // Data point assignments to medioid clusters
 ) {
     int n = distances.rows(); // Number of data points
-    int m = medioid_indices.size(); // Number of medioids
-    std::vector<double> D(m); // Distances from a data point to all medioids
-    int idx; // Index of the nearest medioid
+    int m = ref_clusters.size(); // Number of medioids
+    std::vector<double> D(m,0.0); // Distances from a data point to all medioids
+    int idx  = 0; // Index of the nearest medioid
 
     // Iterate over all data points
     for (int didx = 0; didx < n; ++didx) {
@@ -61,10 +61,17 @@ void assign_clusters(
         }
 
         // Find the index of the nearest medioid (cluster)
-        idx = std::distance(D.begin(), std::min_element(D.begin(), D.end()));
+      // if (D.size() == 1) {
+        // std::cout <<"error"<< std::endl;
+        // ref_clusters[0].push_back(didx);
+      // }else {
+        auto curr_posn = std::min_element(D.begin(), D.end());
+        idx = std::distance(D.begin(), curr_posn);
+        ref_clusters[idx].push_back(didx);
+      // }
 
         // Assign the current data point to the cluster with the nearest medioid
-        ref_clusters[idx].push_back(didx);
+        
     }
 }
 
@@ -106,7 +113,7 @@ void update_medioids(
 void computeDistanceMatrix(
     Eigen::MatrixXf *data,           // Array of data points
     int n,                           // Number of data points
-    Eigen::MatrixXf *return_distances // Output parameter for pairwise distance matrix
+    Eigen::MatrixXf &return_distances // Output parameter for pairwise distance matrix
 ) {
     // Initialize a matrix to store pairwise distances
     Eigen::MatrixXf pairwiseDistances(n, n);
@@ -124,21 +131,25 @@ void computeDistanceMatrix(
     }
 
     // Set the 'return_distances' matrix to the computed pairwise distance matrix
-    *return_distances = pairwiseDistances;
+    return_distances = pairwiseDistances;
 }
 
+// Custom comparison function to compare P objects by vSum
+bool compareByVSum(P& left,P& right) {
+    return left.vSum < right.vSum;
+}
 
-void preprocess(Eigen::MatrixXf *data, int n, int k, std::vector<int> &medioidIndices, Eigen::MatrixXf *distances) {
+void preprocess(Eigen::MatrixXf *data, int n, int k, std::vector<int> &medioidIndices, Eigen::MatrixXf &distances) {
     // int n = Mlen;
 
     // Compute pairwise distance matrix
     computeDistanceMatrix(data,n,distances);
 
     // Step 1-2: Calculate denominators efficiently
-    Eigen::VectorXf denominators = (*distances).rowwise().sum();
+    Eigen::VectorXf denominators = distances.rowwise().sum();
 
     // Calculate v values
-    Eigen::MatrixXf vValues = (*distances).array().colwise() / denominators.array();
+    Eigen::MatrixXf vValues = distances.array().colwise() / denominators.array();
 
     // Set diagonal values to 0
     vValues.diagonal().setZero();
@@ -146,7 +157,7 @@ void preprocess(Eigen::MatrixXf *data, int n, int k, std::vector<int> &medioidIn
     Eigen::VectorXf vSums = vValues.rowwise().sum();
 
     // Initialize data as pairs of index and v value
-    std::vector<P> v_arr(n);
+    std::vector<P> v_arr(n,{0,0.0});
     for (int idx = 0; idx < n; ++idx) {
         v_arr[idx].idx = idx;
         v_arr[idx].vSum = vSums[idx];
@@ -154,9 +165,7 @@ void preprocess(Eigen::MatrixXf *data, int n, int k, std::vector<int> &medioidIn
     }
 
     // Sort data by v values
-    std::sort(v_arr.begin(), v_arr.end(), [](const auto& left, const auto& right) {
-        return (left.vSum) < (right.vSum);
-    });
+    std::sort(v_arr.begin(), v_arr.end(), compareByVSum);
 
 
     // Get the indices of the k medioids

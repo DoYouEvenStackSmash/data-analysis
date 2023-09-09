@@ -15,18 +15,6 @@ struct CTNode {
   vector<int>* data = nullptr;
 };
 
-void qtest() {
-  queue<vector<int>> node_queue;
-  for (int i = 0; i < 10; ++i) {
-    vector<int> foo = {i, i+i, i*i};
-    node_queue.push(foo);
-  }
-  while (!node_queue.empty()) {
-    cout << node_queue.front()[0] << endl;
-    node_queue.pop();
-  }
-}
-
 void foo(CTNode*& node) {
   CTNode* n = new CTNode();
   int numRows = 1;
@@ -40,12 +28,12 @@ void foo(CTNode*& node) {
     }
   }
   n->val = new Eigen::MatrixXf(matrix);
+  n->data = new vector<int>(10);
   node = n;
 }
 
 int main() {
-  qtest();
-  return 0;
+
   map<int, CTNode*> node_map;
   int node_count = 0;
   for (int i = 0; i < 10; ++i) {
@@ -60,6 +48,8 @@ int main() {
   }
   for (auto& a : node_map) {
     delete a.second->val; // Delete the Eigen matrix
+    delete a.second->data;
     delete a.second;      // Delete the CTNode
+    
   }
 }

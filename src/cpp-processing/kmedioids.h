@@ -21,7 +21,7 @@ void assign_clusters(
 void computeDistanceMatrix(
     Eigen::MatrixXf *data,                 // Array of data points
     int n,                                 // Number of data points
-    Eigen::MatrixXf *distances             // Output parameter for pairwise distance matrix
+    Eigen::MatrixXf &distances             // Output parameter for pairwise distance matrix
 );
 
 // Function to preprocess data for k-medioids clustering.
@@ -35,7 +35,7 @@ void preprocess(
     int n,                                 // Number of data points
     int k,                                 // Number of medioids
     std::vector<int> &medioidIndices,      // Output: Indices of selected medioids
-    Eigen::MatrixXf *return_distances     // Output: Pairwise distance matrix
+    Eigen::MatrixXf &return_distances     // Output: Pairwise distance matrix
 );
 
 // Function to update medioids based on assigned clusters.
