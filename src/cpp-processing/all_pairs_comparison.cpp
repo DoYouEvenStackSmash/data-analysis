@@ -7,7 +7,7 @@ int main() {
     // Define the size of each matrix and the number of matrices
     const int matrix_size = 128;
     const int num_matrices = 512 * 2;
-    const int num_images = 8192 * 3;
+    const int num_images = 2048 * 3;
 
     // Create an array of Eigen matrices
     Eigen::MatrixXf *models = new Eigen::MatrixXf[num_matrices];
