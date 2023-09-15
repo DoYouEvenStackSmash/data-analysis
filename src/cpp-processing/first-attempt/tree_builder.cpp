@@ -1,4 +1,4 @@
-#include <iostream>
+// #include <iostream>
 #include <vector>
 #include <eigen3/Eigen/Dense>
 #include <limits>
@@ -61,7 +61,7 @@ std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n, int k,
     curr_node = node_map[node_id];
 
     // pop parent node's cluster data indexes off of data_ref_queue
-    data_refs = data_ref_queue.front();
+    vector<int> data_refs = data_ref_queue.front();
     data_ref_queue.pop();
     
     // perform k means clustering if the number of elements is greater than cutoff
@@ -121,9 +121,11 @@ std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n, int k,
         node_count++;
       }
     
+    
+    } 
     // perform k medioids clustering if number of data_refs is below cutoff to ensure the cluster's representative
     // is a real member of the cluster. this is to avoid introducing artifacts that don't exist
-    } else {
+    else {
       if (!data_refs.size())
         continue;
       vector<int> medioidIndices;
@@ -142,7 +144,7 @@ std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n, int k,
       // only perform k medioids if there are multiple elements in data_refs
       if (data_refs.size() > 1) {
         // construct the pairwise distance matrix according to paper
-        Eigen::MatrixXf distances;
+        Eigen::MatrixXf distances(data_refs.size(), data_refs.size());
         preprocess(&data[0], data_refs.size(), k, medioidIndices, distances);
         
         vector<vector<int>> new_ref_clusters(medioidIndices.size());

@@ -6,13 +6,13 @@
 #include <limits>
 #include <random>
 #include <vector>
-
+using Eigen::MatrixXd;
 // This function performs the K-means clustering algorithm to assign data points
 // to centroids. It calculates the distance between each data point and each
 // centroid, assigning data points to the nearest centroid.
-void kmeans_refs(Eigen::MatrixXf *data_store, vector<int> &data_refs,
-                 vector<Eigen::MatrixXf> &centroids, bool FIRST_FLAG,
-                 vector<Eigen::MatrixXf> &new_centroids,
+void kmeans_refs(MatrixXd *data_store, vector<int> &data_refs,
+                 vector<MatrixXd> &centroids, bool FIRST_FLAG,
+                 vector<MatrixXd> &new_centroids,
                  vector<vector<int>> &new_ref_clusters) {
   // Create a vector to store clusters of data point indices for each centroid.
   vector<vector<int>> ref_clusters(centroids.size());
@@ -61,7 +61,7 @@ void kmeans_refs(Eigen::MatrixXf *data_store, vector<int> &data_refs,
       new_ref_clusters.push_back(a);
       // Calculate the average of data points in the cluster to get the new
       // centroid.
-      Eigen::MatrixXf mean_mat(data_store[0].rows(), data_store[0].cols());
+      MatrixXd mean_mat(data_store[0].rows(), data_store[0].cols());
       mean_mat.setZero();
       for (int i = 0; i < a.size(); ++i)
         mean_mat = mean_mat + data_store[a[i]];
@@ -73,11 +73,11 @@ void kmeans_refs(Eigen::MatrixXf *data_store, vector<int> &data_refs,
 
 // This function performs the K-means++ initialization for centroids.
 // It selects the initial centroids in a way that improves clustering performance.
-void kmeanspp_refs(Eigen::MatrixXf *data_store,
+void kmeanspp_refs(MatrixXd *data_store,
                    vector<int> &data_refs,
                    int starting_idx,
                    int k,
-                   vector<Eigen::MatrixXf> &centroids
+                   vector<MatrixXd> &centroids
                    ) {
   // Create a map to keep track of data points that have not been chosen as centroids.
   map<int, double> not_chosen;

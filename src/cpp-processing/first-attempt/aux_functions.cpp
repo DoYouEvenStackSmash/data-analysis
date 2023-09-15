@@ -3,7 +3,11 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <eigen3/Eigen/Dense>
+
+#include <eigen3/Eigen/StdVector>
 #include "aux_functions.h"
+using Eigen::MatrixXd;
 void serialize_clusters(std::vector<std::vector<std::vector<double>>> &data, std::vector<std::vector<double>> &data_centroids) {
 
     // Specify the output file path
@@ -62,3 +66,22 @@ void serialize_clusters(std::vector<std::vector<std::vector<double>>> &data, std
 }
   
 
+void mock_data_loader(std::vector<MatrixXd> &data_store, std::vector<int> &data_refs) {
+    std::srand(12345);
+    double max_val = 100.0;
+    int r = 1;
+    int c = 2;
+    int num_matrices = 100;
+
+    for (int i = 0; i < num_matrices; ++i) {
+        MatrixXd m(r,c);
+        m.setZero();
+        for (int row = 0; row < r; ++row) {
+            for (int col = 0; col < c; ++col) {
+                m(row,col) = static_cast<double>(std::rand()) / RAND_MAX * max_val;
+            }
+        }
+        data_store.push_back(m);
+        data_refs.push_back(i);
+    }
+}

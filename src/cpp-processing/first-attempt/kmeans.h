@@ -1,4 +1,4 @@
-#include <iostream>
+// #include <iostream>
 #include <eigen3/Eigen/Dense>
 #include <random>
 #include <chrono>
@@ -8,6 +8,7 @@
 #include <map>
 
 using namespace std;
+using Eigen::MatrixXd;
 // Function: kmeans_refs
 // Description: Performs the K-means clustering algorithm to assign data points to centroids.
 //              It calculates the distance between each data point and each centroid,
@@ -19,11 +20,11 @@ using namespace std;
 //   - FIRST_FLAG: A boolean flag indicating whether it's the first iteration.
 //   - new_centroids: Reference to a vector to store the newly computed centroids.
 //   - new_ref_clusters: Reference to a vector of vectors to store data point assignments to clusters.
-void kmeans_refs(Eigen::MatrixXf *data_store,
+void kmeans_refs(MatrixXd *data_store,
                  vector<int> &data_refs,
-                 vector<Eigen::MatrixXf> &centroids,
+                 vector<MatrixXd> &centroids,
                  bool FIRST_FLAG,
-                 vector<Eigen::MatrixXf> &new_centroids,
+                 vector<MatrixXd> &new_centroids,
                  vector<vector<int>> &new_ref_clusters);
 
 // Function: kmeanspp_refs
@@ -35,11 +36,11 @@ void kmeans_refs(Eigen::MatrixXf *data_store,
 //   - starting_idx: Index of the first centroid.
 //   - k: The number of centroids to select.
 //   - centroids: Reference to a vector to store the selected centroids.
-void kmeanspp_refs(Eigen::MatrixXf *data_store,
+void kmeanspp_refs(MatrixXd *data_store,
                    vector<int> &data_refs,
                    int starting_idx,
                    int k,
-                   vector<Eigen::MatrixXf> &centroids);
+                   vector<MatrixXd> &centroids);
 
 // Function: weighted_sample
 // Description: Performs weighted sampling to select an index based on provided weights.
