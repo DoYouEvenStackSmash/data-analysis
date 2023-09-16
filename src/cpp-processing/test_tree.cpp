@@ -31,22 +31,7 @@ int main() {
     auto end = std::chrono::steady_clock::now();
     auto time_diff = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     std::cout << "time:\t" << time_diff / 1e9f << "\n";//<< "total:\t" << total << "\n";
-    // for (auto& a : node_map) {
-    //   cout << "id:\t" << a.first << endl;
-    //   for (auto &b : a.second->children) {
-    //     cout << "\t" << b << endl;
-    //   }
-    //   if (a.first != -1) {
-    //     cout << a.first << "\nid:\t" << a.second->_id << "\n" << *(a.second->val) << endl;
-    //     if (a.second->data) {
-    //       cout << "[";
-    //       for (auto &b : (*a.second->data)) {
-    //         cout << b << ",";
-    //       }
-    //       cout << "];\n";
-    //     }
-    //   }
-    // }
+
     std::string mid_split = ",";//" -> ";
     
     for (auto &a : node_map) {

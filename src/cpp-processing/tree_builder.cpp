@@ -25,14 +25,6 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
   std::random_device rd;
   std::mt19937 gen(rd());
 
-  
-  // // initialize the data references for data_store
-  // vector<int> init_data_refs(n);
-  // // init data refs
-  // for (int i = 0; i < n; ++i) {
-  //   init_data_refs[i] = i;
-  // }
-  // return node_map;
   // load the data references
   data_ref_queue.push(init_data_refs);
   
@@ -71,16 +63,11 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
       // choose a random start value within the range [0, data_refs.size())
       std::uniform_int_distribution<int> dist(0, data_refs.size() - 1);
       int random_start = dist(gen);
-      // printf("%d\n", random_start);
-      // int random_start = 1;
       
       // initialize centroids using kmeans++
       kmeanspp_refs(data_store, data_refs, random_start, k, centroids);
 
       vector<vector<int>> ref_clusters; // will contain indices to data_ref elements
-      // vector<vector<int>> new_ref_clusters;
-      
-
       
       for (int i = 0; i < R; ++i) {
         vector<MatrixXd> new_centroids;
@@ -132,17 +119,19 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
         continue;
       vector<int> medioid_indices;
       vector<vector<int>> ref_clusters;
-      // printf("size: %d\n", data_refs.size());
+      
       // only perform k medioids if there are multiple elements in data_refs
       if (data_refs.size() > k) {
         // construct the pairwise distance matrix according to paper
-        // Eigen::MatrixXf distances(data_refs.size(), data_refs.size());
+        
         distance_matrix->setZero();
         preprocess(data_store, data_refs, distance_matrix, medioid_indices, k);
         int num_elements = data_refs.size();
         // vector<vector<int>> new_ref_clusters(medioid_indices.size());
         double total_sum = 0.0;
         double new_sum = 0.0;
+        
+        // kmedioids loop
         for (int i = 0; i < R; ++i) {
           std::vector<std::vector<int>> temp_ref_clusters;
           temp_ref_clusters = AssignClusters(distance_matrix, medioid_indices, num_elements);
@@ -156,13 +145,18 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
           total_sum = new_sum;
           new_sum = 0.0;
         }
-      } else if (data_refs.size() > 1) {
+      } 
+      // handle case where data_refs is small enough to be a single cluster
+      else if (data_refs.size() > 1) {
+        
+        // find the medioid of the cluster
         vector<double> D(data_refs.size(), 0.0);
         for (int i = 0; i < data_refs.size(); ++i) {
           for (int j = 0; j < data_refs.size(); ++j) {
             D[i] += (data_store[data_refs[i]] - data_store[data_refs[j]]).norm();
           }
         }
+        // find index of the medioid
         int min_idx = 0;
         for (int c = 0; c < D.size(); ++c) {
           min_idx = D[min_idx] < D[c] ? min_idx : c;
@@ -171,8 +165,9 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
         ref_clusters.push_back({});
         for (int i = 0; i < data_refs.size(); ++i)
           ref_clusters[0].push_back(i);
-        
-      } else if (data_refs.size() == 1) {
+      }
+      // handle case where data_refs is 1
+      else if (data_refs.size() == 1) {
         // special case for data_ref of size 1 to avoid edge cases
         // medioid_indices will refer to data_refs[0]
         medioid_indices.push_back(0);
