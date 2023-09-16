@@ -14,12 +14,12 @@ struct P {
 // This function iterates over medioid clusters and their assigned data points.
 // - 'distances' is the pairwise distance matrix between data points and medioids.
 // - 'medioid_indices' is a vector containing indices of medioid points.
-// - 'ref_clusters' is a vector of vectors containing indices of data points assigned to each medioid cluster.
+// - 'clusters' is a vector of vectors containing indices of data_refs assigned to each medioid cluster.
 // - 'total_sum' is a pointer to a double where the calculated sum will be stored.
-void calculate_sum(
+void CalculateSum(
     MatrixXd* &distance_matrix,                 // Pairwise distance matrix
     std::vector<int> &medioid_indices,         // Indices of medioid points
-    std::vector<std::vector<int>> &clusters, // Data point assignments to medioid clusters
+    std::vector<std::vector<int>> &clusters, // Data ref assignments to medioid clusters
     double *total_sum                          // Pointer to store the calculated sum
 ) {
     double sum_over_all = 0.0;
@@ -41,11 +41,11 @@ void calculate_sum(
 // Assigns data points to their nearest medioid clusters based on pairwise distances.
 // This function computes distances between each data point and all medioids and assigns
 // each data point to the cluster with the nearest medioid.
-std::vector<std::vector<int>> assign_clusters(  MatrixXd* &distance_matrix,
+std::vector<std::vector<int>> AssignClusters(  MatrixXd* &distance_matrix,
                                                 std::vector<int> &curr_medioids,
                                                 int &n_elems) {
-    std::vector<std::vector<int>> clusters(curr_medioids.size(), std::vector<int>());
 
+    std::vector<std::vector<int>> clusters(curr_medioids.size(), std::vector<int>());
     for (int i = 0; i < n_elems; ++i) {
         double min_dist = std::numeric_limits<double>::infinity();
         int min_idx = -1;
@@ -66,20 +66,25 @@ std::vector<std::vector<int>> assign_clusters(  MatrixXd* &distance_matrix,
 
 // Updates medioids for each cluster based on the sum of distances between data points in the cluster and all other data points.
 // This function calculates a new medioid for each cluster by selecting the data point with the minimum sum of distances to all other data points in the cluster.
-
-void update_medioids(   MatrixXd* &distance_matrix,
+void UpdateMedioids(   MatrixXd* &distance_matrix,
                         std::vector<std::vector<int>> clusters,
                         std::vector<int>& curr_medioids) {
+
     for (int i = 0; i < clusters.size(); ++i) {
         std::vector<double> D(clusters[i].size(), 0.0);
+        
+        // calculate the sum of distances between every element and the members of the i'th cluster
         for (int j = 0; j < clusters[i].size(); ++j) {
             for (int k = 0; k < clusters[i].size(); ++k) {
                 D[j] += (*distance_matrix)(clusters[i][j], clusters[i][k]);
             }
         }
+        // find the index of the element with the minimum value
         int min_idx = 0;
         for (int c = 0; c < D.size(); ++c)
             min_idx = D[min_idx] < D[c] ? min_idx : c;
+        
+        // set the i'th medioid to the element with the smallest sum in the i'th cluster
         curr_medioids[i] = clusters[i][min_idx];
     }
 }
@@ -107,16 +112,19 @@ bool compareByVSum(P& left,P& right) {
     return left.vSum < right.vSum;
 }
 
+// Preprocessing wrapper to select the first k medioids 
+// Computes pairwise distances between all elements
 void preprocess(MatrixXd *data_store, std::vector<int> &data_refs, MatrixXd* &distance_matrix, std::vector<int> &medioid_indices, int k) {
     // int n = Mlen;
     ComputeDistanceMatrix(data_store, data_refs, distance_matrix);
-
+    // Eigen::VectorXd denoms
     Eigen::VectorXd denoms = distance_matrix->rowwise().sum();
     std::vector<P> v_vals(data_refs.size());
+    // printf("%d", distance_matrix->rows());
     for (int j = 0; j < data_refs.size(); ++j) {
         v_vals[j].idx = j;
         for (int i = 0; i < data_refs.size(); ++i) {
-            v_vals[j].vSum += (*distance_matrix)(j, i) / denoms[i];
+            v_vals[j].vSum += ((*distance_matrix)(j, i)) / denoms[i];
         }
     }
 

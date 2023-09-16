@@ -79,6 +79,11 @@ int main(void) {
   }
 
   Eigen::VectorXd denoms = dm->rowwise().sum();
+  for (auto a: denoms) {
+    std::cout << a << std::endl;
+  }
+  delete dm;
+  return 0;
   std::vector<P> v_vals(vec.size());
   for (int j = 0; j < vec.size(); ++j) {
     // P a;

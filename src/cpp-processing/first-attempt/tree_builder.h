@@ -6,5 +6,7 @@
 #include <ctime>
 #include <queue>
 #include "CTNode.h"
-
-std::map<int, CTNode*> construct_tree(Eigen::MatrixXf *data_store, int n,int k=3, int C=25, int R=100);
+using Eigen::MatrixXd;
+// Function to construct a hierarchical clustering over the elements of data_store
+// 
+std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_data_refs,int k=3, int C=25, int R=100);

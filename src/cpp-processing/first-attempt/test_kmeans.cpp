@@ -21,10 +21,11 @@ int main(void) {
     mock_data_loader(data_store,data_refs);
     vector<MatrixXd> centroids;
     int starting_index = 2;
-    int k = 12;
+    int k = 3;
+    auto start = std::chrono::steady_clock::now();
     kmeanspp_refs(data_store.data(), data_refs, starting_index, k, centroids);
     vector<vector<int>> ref_clusters;
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 30; ++i) {
       vector<MatrixXd> new_ctr;
       vector<vector<int>> new_cls;
       kmeans_refs(data_store.data(), data_refs, centroids, true, new_ctr, new_cls);
@@ -36,7 +37,10 @@ int main(void) {
       }
       centroids = new_ctr;
     }
-    // return 0;
+    auto end = std::chrono::steady_clock::now();
+    auto time_diff = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    std::cout << "time:\t" << time_diff / 1e9f << "\n";//<< "total:\t" << total << "\n";
+    return 0;
     std::vector<std::vector<std::vector<double>>> data(ref_clusters.size());
     std::vector<std::vector<double>> data_centroids(ref_clusters.size());
     // for (int i = 0; i < ref_clusters.size(); )

@@ -27,13 +27,13 @@ int main() {
 
     vector<vector<int>> ref_clusters;
     double total_sum = 0.0;
-    for (int i = 0; i < 30; ++i) {
+    for (int i = 0; i < 100; ++i) {
       double new_sum = 0.0;
       std::vector<std::vector<int>> temp_ref_clusters;//(medioidIndices.size(),vector<int>());
-      temp_ref_clusters = assign_clusters(dm, medioid_indices, C);
-      update_medioids(dm, temp_ref_clusters, medioid_indices);
+      temp_ref_clusters = AssignClusters(dm, medioid_indices, C);
+      UpdateMedioids(dm, temp_ref_clusters, medioid_indices);
 
-      calculate_sum(dm, medioid_indices, temp_ref_clusters, &new_sum);
+      CalculateSum(dm, medioid_indices, temp_ref_clusters, &new_sum);
 
       ref_clusters = temp_ref_clusters;
       if (new_sum == total_sum) {
