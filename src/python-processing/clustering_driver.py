@@ -20,17 +20,25 @@ def param_loader(filename, count=1):
     return [{"id": i, "weight": 1} for i in range(count)]
 
 
-def hierarchify_wrapper(filename, k, R, C):
+def hierarchify_wrapper(filename, k, R, C,param_file = None):
     """
     Wrapper function for building a hierarchical clustering
     """
     M = data_loading_wrapper(filename)
     # M = np.random.randint(0, 10, (10, 2, 2))
-    P = param_loader(filename, len(M))
+    P = None
+    if param_file != None:
+        p = param_wrapper(param_file)
+    else:
+        P = param_loader(filename, len(M))
     # print(P)
     nl, dl, pl = hierarchify(M, P, k, R, C)
     return nl, dl, pl
 
+def param_wrapper(param_file):
+    param_list = np.load(param_file)
+    # return [{"id":i,"weight":1} for i in range(len(param_list))]
+    return param_list
 
 def hierarchify(M, P, k=3, R=4, C=-1):
     """
@@ -159,7 +167,7 @@ def build_wrapper(args):
     Wrapper function for constructing a hierarchical clustering from input and serializing the output
     """
     node_list, data_list, param_list = hierarchify_wrapper(
-        args.input, args.clusters, args.iterations, args.cutoff
+        args.input, args.clusters, args.iterations, args.cutoff,args.params
     )
 
     print("Building hierarchical clustering")
@@ -314,6 +322,12 @@ def main():
         "--input",
         required=True,
         help="Input file with data to build hierarchical clustering",
+    )
+    build_parser.add_argument(
+        "-p",
+        "--params",
+        required=False,
+        help="Input file with ctfs to build hierarchical clustering"
     )
     build_parser.add_argument(
         "-k", "--clusters", type=int, default=3, help="Number of clusters (default 3)"

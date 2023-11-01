@@ -21,6 +21,21 @@ def find_cluster(node_list, T):
         n_curr = nn
     return n_curr
 
+def find_ctf_cluster(node_list_with_params, T):
+    n_curr = 0
+    # search_list = []
+    # search representative nodes
+    while node_list[n_curr].data_refs is None:
+        min_dist = float("inf")
+        nn = 0
+        for i in node_list[n_curr].children:
+            dist = np.linalg.norm(node_list[i].val - node_list[i].params)
+            if dist < min_dist:
+                nn = i
+                min_dist = dist
+        # search_list.append(nn)
+        n_curr = nn
+    return n_curr
 
 def search_tree(node_list, data_list, T):
     """

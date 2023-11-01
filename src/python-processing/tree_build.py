@@ -34,7 +34,6 @@ def construct_data_list(node_list, data_shape=None):
     # print(img_count)
     return data_list, param_list
 
-
 def construct_tree(M, P, k=3, R=30, C=-1):
     """
     Builds a hierarchical clustering on the input data M
