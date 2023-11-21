@@ -21,6 +21,7 @@ def find_cluster(node_list, T):
         n_curr = nn
     return n_curr
 
+
 def find_ctf_cluster(node_list_with_params, T):
     n_curr = 0
     # search_list = []
@@ -36,6 +37,7 @@ def find_ctf_cluster(node_list_with_params, T):
         # search_list.append(nn)
         n_curr = nn
     return n_curr
+
 
 def search_tree(node_list, data_list, T):
     """

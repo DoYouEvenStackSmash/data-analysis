@@ -20,7 +20,7 @@ def param_loader(filename, count=1):
     return [{"id": i, "weight": 1} for i in range(count)]
 
 
-def hierarchify_wrapper(filename, k, R, C,param_file = None):
+def hierarchify_wrapper(filename, k, R, C, param_file=None):
     """
     Wrapper function for building a hierarchical clustering
     """
@@ -28,18 +28,20 @@ def hierarchify_wrapper(filename, k, R, C,param_file = None):
     # M = np.random.randint(0, 10, (10, 2, 2))
     P = None
     if param_file != None:
-        P = param_loader(param_file,len(M))
+        P = param_loader(param_file, len(M))
     else:
         P = param_loader(filename, len(M))
-    
+
     # print(P)
     nl, dl, pl = hierarchify(M, P, k, R, C)
     return nl, dl, pl
+
 
 def param_wrapper(param_file):
     param_list = np.load(param_file)
     # return [{"id":i,"weight":1} for i in range(len(param_list))]
     return param_list
+
 
 def hierarchify(M, P, k=3, R=4, C=-1):
     """
@@ -85,7 +87,7 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
         params = {
             "input": args.input,
             "output": args.output,
-            "params_file":args.params,
+            "params_file": args.params,
             "k": args.clusters,
             "R": args.iterations,
             "C": args.cutoff,
@@ -97,7 +99,7 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
         "resources": {
             "node_vals_file": f"{output_prefix}_tree_node_vals.npy",
             "data_list_file": f"{output_prefix}_tree_data_list.npy",
-            "param_list_file": f"{output_prefix}_tree_param_list.npy"
+            "param_list_file": f"{output_prefix}_tree_param_list.npy",
         },
     }
 
@@ -162,7 +164,6 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
 
     np.save(f"{output_prefix}_tree_node_vals.npy", np.array(tree_node_vals))
     np.save(f"{output_prefix}_tree_data_list.npy", np.array(data_list))
-    
 
 
 def build_wrapper(args):
@@ -170,7 +171,7 @@ def build_wrapper(args):
     Wrapper function for constructing a hierarchical clustering from input and serializing the output
     """
     node_list, data_list, param_list = hierarchify_wrapper(
-        args.input, args.clusters, args.iterations, args.cutoff,args.params
+        args.input, args.clusters, args.iterations, args.cutoff, args.params
     )
 
     print("Building hierarchical clustering")
@@ -330,7 +331,7 @@ def main():
         "-p",
         "--params",
         required=False,
-        help="Input file with ctfs to build hierarchical clustering"
+        help="Input file with ctfs to build hierarchical clustering",
     )
     build_parser.add_argument(
         "-k", "--clusters", type=int, default=3, help="Number of clusters (default 3)"

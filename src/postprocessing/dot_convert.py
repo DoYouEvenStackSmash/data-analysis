@@ -6,17 +6,17 @@ from pygraphml import GraphMLParser, Graph
 f = open("tree.txt", "r")
 dot_graph = [i.rstrip().split(",") for i in f.readlines()]
 f.close()
-str_conv = lambda a : f"Node{a[1:]}" if a[0] == 'N' else f"Data{a[1:]}"
+str_conv = lambda a: f"Node{a[1:]}" if a[0] == "N" else f"Data{a[1:]}"
 data = []
 for elem in dot_graph:
-  a,b = elem
-  a_str = ""
-  b_str = ""
-  color = "pink"
-  if b[0] == 'D':
-    color = "purple"
-  d = (color,str_conv(a),str_conv(b))
-  data.append(d)
+    a, b = elem
+    a_str = ""
+    b_str = ""
+    color = "pink"
+    if b[0] == "D":
+        color = "purple"
+    d = (color, str_conv(a), str_conv(b))
+    data.append(d)
 
 G = nx.DiGraph()
 node_colors = {}
@@ -35,7 +35,6 @@ for color, A, B in data:
 nx.set_node_attributes(G, node_colors, "color")
 # Save the graph in GraphML format
 nx.write_graphml(G, "tree_representation.graphml")
-
 
 
 # # Parse the DOT graph using pydot
