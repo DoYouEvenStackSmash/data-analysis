@@ -1,0 +1,17 @@
+namespace Experiment;
+
+table Parameters {
+  amplitude:[[float]];
+  defocus:[float];
+  b_factor:[float];
+  img_dims:[float];
+  num_pixels:[float];
+  pixel_width:[float];
+  sigma:[float];
+  elecwavel:[float];
+  snr:[float];
+  experiment_parameters:[float];
+  seed:[float];
+  structures:[float];
+  coordinates:[float];
+}

@@ -1,13 +1,13 @@
 #!/usr/bin/python3
-import numpy as np
-
-import torch
-
-from filter_gen import *
+from filegroup import *
+from transform_generator import *
+from ctf_generator import *
+from image_generator import *
+from dataloader import Dataloader as dl
 
 # load coordinates
-ps = np.load("/home/aroot/stuff/fft/posStruc.npy")
-ps.shape
+ps = dl.load_coords("/home/aroot/stuff/fft/posStruc.npy")
+# ps.shape
 tps = torch.from_numpy(ps)
 
 grid = gen_grid(128, 0.3).reshape(-1, 1)
