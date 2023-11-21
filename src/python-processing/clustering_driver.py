@@ -28,9 +28,10 @@ def hierarchify_wrapper(filename, k, R, C,param_file = None):
     # M = np.random.randint(0, 10, (10, 2, 2))
     P = None
     if param_file != None:
-        p = param_wrapper(param_file)
+        P = param_loader(param_file,len(M))
     else:
         P = param_loader(filename, len(M))
+    
     # print(P)
     nl, dl, pl = hierarchify(M, P, k, R, C)
     return nl, dl, pl
@@ -84,6 +85,7 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
         params = {
             "input": args.input,
             "output": args.output,
+            "params_file":args.params,
             "k": args.clusters,
             "R": args.iterations,
             "C": args.cutoff,
@@ -94,8 +96,8 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
         "parameters": params,
         "resources": {
             "node_vals_file": f"{output_prefix}_tree_node_vals.npy",
-            "data_list_file": f"{output_prefix}_tree_data_list.npy"
-            # "param_list_file": f"{output_prefix}_tree_param_list.npy"
+            "data_list_file": f"{output_prefix}_tree_data_list.npy",
+            "param_list_file": f"{output_prefix}_tree_param_list.npy"
         },
     }
 
@@ -160,6 +162,7 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
 
     np.save(f"{output_prefix}_tree_node_vals.npy", np.array(tree_node_vals))
     np.save(f"{output_prefix}_tree_data_list.npy", np.array(data_list))
+    
 
 
 def build_wrapper(args):

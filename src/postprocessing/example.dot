@@ -1,0 +1,31 @@
+digraph cryo_EM_workflow {
+  rankdir=LR; // Left to Right direction
+  
+  // Nodes
+  node [shape=box, style=rounded, width=1.5, height=0.8];
+  0 [label="Image X\n(256x256 matrix)"];
+  1 [label="Structure Y\n(List of coordinates)"];
+  2 [label="Rotation R\n(3x3 matrix)"];
+  3 [label="Point Spread Function\n(P)"];
+  4 [label="Preprocessing"];
+  5 [label="Rotate\nStructure"];
+  6 [label="Evaluate Electron Density"];
+  7 [label="Project to 2D Image (I)"];
+  8 [label="Apply\nPoint Spread Function"];
+  9 [label="Evaluate Euclidean Distance"];
+  10 [label="Negative Distance\n(Scaled by Noise Variance)"];
+  
+  // Edges
+  0 -> 4;
+  1 -> 4;
+  2 -> 5;
+  1 -> 5;
+  5 -> 6;
+  6 -> 7;
+  7 -> 8;
+  3 -> 8;
+  4 -> 9;
+  7 -> 9;
+  0 -> 9;
+  9 -> 10;
+}
