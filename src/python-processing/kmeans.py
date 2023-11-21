@@ -138,3 +138,86 @@ def kmeans(M, k, max_iter=100):
         centroids = new_centroids
 
     return clusters, centroids
+
+
+def kmeanspp_refs(data_store, data_ref_arr, k):
+    dlen = len(data_ref_arr)
+    start_center = np.random.randint(dlen)
+    not_chosen = deque(i for i in range(dlen) if i != start_center)
+
+    centroids = [data_store[data_ref_arr[start_center]]]
+
+    # chosen = {start_center}
+    weights = None  # np.zeros(dlen)
+    min_dist = float("inf")
+
+    for _ in range(k - 1):
+        weights = np.zeros(len(not_chosen))
+        for idx, mdx in enumerate(not_chosen):
+            min_dist = float("inf")
+            m = data_store[data_ref_arr[mdx]]
+            for ctx, ctr in enumerate(centroids):
+                min_dist = min(min_dist, np.linalg.norm(m - ctr))
+
+            weights[idx] = np.square(min_dist)
+
+        selected_point = weighted_sample(weights)
+        # print(selected_point)
+        # print(len(not_chosen))
+        centroids.append(data_store[data_ref_arr[not_chosen[selected_point]]])
+
+        # chosen.add(not_chosen[selected_point])
+        not_chosen.remove(not_chosen[selected_point])
+        if not len(not_chosen):
+            break
+    centroids = np.array(centroids)
+    return centroids
+
+
+def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
+    """
+    Perform K-Means clustering iterations for a subset of data references.
+
+    Args:
+        data_store (list of numpy arrays): Data points to be clustered.
+        data_ref_arr (list of ints): Indices referring to elements in data_store.
+        centroids (list of numpy arrays): Initial cluster centroids.
+        FIRST_FLAG (bool): Flag to indicate the first iteration (default False).
+
+    Returns:
+        new_data_ref_clusters (list of lists): Updated cluster assignments for data references.
+        new_centroids (numpy array): Updated cluster centroids.
+    """
+
+    data_ref_clusters = [[] for _ in centroids]
+    data_ref_means = [np.zeros(data_store[0].shape) for _ in centroids]
+    nn = None
+    pdist = None
+    min_dist = float("inf")
+
+    for dref_idx, dref in enumerate(data_ref_arr):
+        min_dist = float("inf")
+        nn = None
+        for ctx, ctr in enumerate(centroids):
+            if FIRST_FLAG:
+                if np.array_equal(data_store[dref], ctr):
+                    continue
+
+            pdist = np.linalg.norm(data_store[dref] - ctr)
+            if pdist < min_dist:
+                min_dist = pdist
+                nn = ctx
+        if nn != None:
+            data_ref_clusters[nn].append(data_ref_arr[dref_idx])
+
+    new_data_ref_clusters = []
+    new_centroids = []
+    for i in range(len(data_ref_clusters)):
+        if not len(data_ref_clusters[i]):
+            continue
+        new_data_ref_clusters.append(data_ref_clusters[i])
+        new_centroids.append(
+            np.mean([data_store[i] for i in new_data_ref_clusters[-1]], axis=0)
+        )
+
+    return new_data_ref_clusters, np.array(new_centroids)

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from clustering_driver import *
 from clustering_imports import *
-
+from tree_search_operations import *
 from decimal import Decimal
 
 
@@ -77,7 +77,7 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1)
         )
 
     end_time = time.perf_counter() - start_time
-    logger.info("tree_match_likelihood time: {}".format(end_time))
+    logger.info("{},{}".format(len(input_list), end_time))
 
     likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
     return likelihood_omega_m
@@ -186,6 +186,21 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise=1):
     return likelihood_omega_m
 
 
+def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
+    """
+    Testbench function for head to head comparison of tree approximation and global search
+    """
+    if input_noise is None:
+        input_noise = calculate_noise(input_list)
+
+    nn_likelihoods = evaluate_tree_neighbor_likelihood(
+        node_list, data_list, input_list, input_noise
+    )
+    global_likelihoods = evaluate_global_likelihood(data_list, input_list, input_noise)
+
+    return nn_likelihoods, global_likelihoods
+
+
 def evaluate_global_likelihood(data_list, input_list, noise=1):
     """
     Given reference data and some input data,
@@ -203,8 +218,8 @@ def evaluate_global_likelihood(data_list, input_list, noise=1):
             likelihood_omega_m[idx] += weight * likelihood(omega, m, n_pix, noise)
 
     end_time = time.perf_counter() - start_time
-    logger.info("global_likelihood time: {}".format(end_time))
 
+    logger.info("{},{}".format(len(input_list), end_time))
     likelihood_omega_m = postprocessing_adjust(
         likelihood_omega_m, noise, approx_scale_constant
     )
