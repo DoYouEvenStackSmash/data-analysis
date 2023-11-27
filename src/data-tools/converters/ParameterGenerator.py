@@ -3,7 +3,7 @@ import argparse
 import torch
 import numpy as np
 import flatbuffers
-from Experiment.Parameters import ParametersT
+from DataModel.Parameters import ParametersT
 
 
 def generate_interval(field):
@@ -71,7 +71,7 @@ def main():
     po.amplitude = generate_interval(args.amplitude)
     po.defocus = generate_interval(args.defocus)
     
-    po.b_factor = generate_interval(args.b_factor)
+    po.bFactor = generate_interval(args.b_factor)
     po.img_dims = generate_interval(args.img_dims)
     # po.numPixels = generate_interval(args.num_pixels)
     po.pixelWidth = generate_interval(args.pixel_width)
@@ -82,7 +82,7 @@ def main():
     po.seed = generate_interval(args.seed)
     po.structures = generate_interval(args.structures)
     po.coordinates = generate_interval(args.coordinates)
-    builder = flatbuffers.Builder(1024)  # You can choose an appropriate size
+    builder = flatbuffers.Builder(2048) 
     serialized_buffer = ParametersT.Pack(po, builder)
     sb = builder.Finish(serialized_buffer)
     sb = builder.Output()

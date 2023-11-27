@@ -1,18 +1,61 @@
-namespace Experiment;
+namespace DataModel;
+
+/// table for looking up constants
+table ConstantTable {
+  amplitude:bool=true;
+  defocus:bool=false;
+  b_factor:bool=true;
+  img_dims:bool=true;
+  num_pixels:bool=true;
+  pixel_width:bool=true;
+  elecwavel:bool=true;
+  snr:bool=true;
+  experiment_parameters:bool=true;
+  /// random seed
+  seed:bool=true;
+  /// placeholder for structures
+  structures:bool=true;
+  /// placeholder for coordinates
+  coordinates:bool=true;
+}
 
 table Parameters {
+  /// voltage amplitude
   amplitude:[float];
+
+  /// lens defocus
   defocus:[float];
+
+  /// envelope b factor
   b_factor:[float];
+
+  /// image dimensions
   img_dims:[float];
+
+  /// number of pixels in abstract grid
   num_pixels:[int];
+
+  /// width of pixel on abstract grid
   pixel_width:[float];
+
+  /// sigma
   sigma:[float];
+
+  /// electron wavelength
   elecwavel:[float];
+
+  /// signal to noise ratio
   snr:[float];
+
+  /// experiment parameters
   experiment_parameters:[float];
+  /// random seed
   seed:[float];
+
+  /// placeholder for structures
   structures:[float];
+
+  /// placeholder for coordinates
   coordinates:[float];
 }
 

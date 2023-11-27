@@ -20,23 +20,23 @@ def generate_ctfs(N_images, hyperparams=None, seed=12345):
     pixel_size = 0.3
 
     if hyperparams != None:
-        amp = hyperparams["amp"]
-        b_factor = hyperparams["b_factor"]
-        seed = hyperparams["seed"]
-        defocus_min = hyperparams["defocus_min"]
-        defocus_max = hyperparams["defocus_max"]
-
-    defocus = (
-        torch.rand(N_images, dtype=torch.float64)  # set defocus value
-        * (defocus_max - defocus_min)
-        + defocus_min
-    )  ## defocus
+        amp = hyperparams.amplitude[0]
+        b_factor = hyperparams.bFactor[0]
+        seed = hyperparams.seed
+        defocus = torch.tensor(hyperparams.defocus, dtype=float)
+        N_images = defocus.shape[0]
+    else:
+        defocus = (
+            torch.rand(N_images, dtype=torch.float64)  # set defocus value
+            * (defocus_max - defocus_min)
+            + defocus_min
+            )  ## defocus
 
     elecwavel = 0.019866  ## electron wavelength in Angstrom
     gamma = defocus * (
         np.pi * 2.0 * 10000 * elecwavel
     )  ## gamma coefficient in SI equation 4 that include the defocus
-
+    # print(gamma.shape)
     freq_pix_1d = torch.fft.fftfreq(
         n_pixel, d=pixel_size, dtype=torch.float64
     )  # get the fft bins
@@ -45,11 +45,11 @@ def generate_ctfs(N_images, hyperparams=None, seed=12345):
     )  # create a 2d grid for x and y
     freq2_2d = freq_x**2 + freq_y**2  ## square of modulus of spatial frequency
 
-    ctf_batch = calc_ctf_torch_batch(freq2_2d, amp, gamma, b_factor)
+    ctf_batch = _calc_ctf_torch_batch(freq2_2d, amp, gamma, b_factor)
     return ctf_batch
 
 
-def calc_ctf_torch_batch(freq2_2d, amp, gamma, b_factor):
+def _calc_ctf_torch_batch(freq2_2d, amp, gamma, b_factor):
     """
     calc_ctf_torch_batch : function : generate random Contrast transfer function (CTF)
     called by generate_ctfs
