@@ -1,7 +1,7 @@
 namespace Experiment;
 
 table Parameters {
-  amplitude:[[float]];
+  amplitude:[float];
   defocus:[float];
   b_factor:[float];
   img_dims:[float];
@@ -15,3 +15,5 @@ table Parameters {
   structures:[float];
   coordinates:[float];
 }
+
+root_type Parameters;
