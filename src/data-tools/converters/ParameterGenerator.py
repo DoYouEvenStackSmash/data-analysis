@@ -2,45 +2,18 @@
 import argparse
 import torch
 import numpy as np
-import Experiment.Parameters as Parameters
-
-def create_parameters(builder, field_values):
-    # Serialize each field in reverse order (because FlatBuffers uses a stack)
-    for value in reversed(field_values):
-        Parameters.ParametersStart(builder, value)
-    
-    # Create the Parameters table and add all the fields
-    Parameters.ParametersStart(builder)
-    Parameters.ParametersAddAmplitude(builder, amplitude)
-    Parameters.ParametersAddDefocus(builder, defocus)
-    Parameters.ParametersAddBFactor(builder, b_factor)
-    Parameters.ParametersAddImgDims(builder, img_dims)
-    Parameters.ParametersAddNumPixels(builder, num_pixels)
-    Parameters.ParametersAddPixelWidth(builder, pixel_width)
-    Parameters.ParametersAddSigma(builder, sigma)
-    Parameters.ParametersAddElecwavel(builder, elecwavel)
-    Parameters.ParametersAddSnr(builder, snr)
-    Parameters.ParametersAddExperimentParameters(builder, experiment_parameters)
-    Parameters.ParametersAddSeed(builder, seed)
-    Parameters.ParametersAddStructures(builder, structures)
-    Parameters.ParametersAddCoordinates(builder, coordinates)
-
-    # Finish building the Parameters table
-    parameters = Parameters.ParametersEnd(builder)
-
-    # Finish building the buffer
-    builder.Finish(parameters)
-
-    # Get the serialized data
-    serialized_data = builder.Output()
-
-    return serialized_data
+import flatbuffers
+from Experiment.Parameters import ParametersT
 
 
-def generate_interval(L,U,S):
-    step_size = int((U-L) / S)
-    print(step_size)
-    return np.linspace(L,U,int(S))
+def generate_interval(field):
+    if field == None:
+        return None
+    if len(field) == 1:
+        return [field[0]]
+    L,U,S = field[0],field[1],field[2]
+    step_size = (U-L) / S
+    return [L + (step_size * i) for i in range(int(S))]
     
     
 # Function to parse triplet values [L, U, S]
@@ -92,23 +65,43 @@ def main():
 
     # Parse the command line arguments
     args = parser.parse_args()
-
-    create_parameters()
-    # Display the parsed arguments
-    print("Parsed Arguments:")
-    print(f"Amplitude: {generate_interval(args.amplitude[0],args.amplitude[1],args.amplitude[2])}")
-    print(f"Defocus: {args.defocus}")
-    print(f"B Factor: {args.b_factor}")
-    print(f"Image Dimensions: {args.img_dims}")
-    print(f"Number of Pixels: {args.num_pixels}")
-    print(f"Pixel Width: {args.pixel_width}")
-    print(f"Sigma: {args.sigma}")
-    print(f"Electron Wavelength: {args.elecwavel}")
-    print(f"Signal-to-Noise Ratio: {args.snr}")
-    print(f"Experiment Parameters: {args.experiment_parameters}")
-    print(f"Seed: {args.seed}")
-    print(f"Structures: {args.structures}")
-    print(f"Coordinates: {args.coordinates}")
+    po = ParametersT()
+    po.amplitude = generate_interval(args.amplitude)
+    po.defocus = generate_interval(args.defocus)
+    
+    po.b_factor = generate_interval(args.b_factor)
+    po.img_dims = generate_interval(args.img_dims)
+    # po.numPixels = generate_interval(args.num_pixels)
+    po.pixelWidth = generate_interval(args.pixel_width)
+    po.sigma = generate_interval(args.sigma)
+    po.elecwavel = generate_interval(args.elecwavel)
+    po.snr = generate_interval(args.snr)
+    po.experimentParameters = generate_interval(args.experiment_parameters)
+    po.seed = generate_interval(args.seed)
+    po.structures = generate_interval(args.structures)
+    po.coordinates = generate_interval(args.coordinates)
+    builder = flatbuffers.Builder(1024)  # You can choose an appropriate size
+    serialized_buffer = ParametersT.Pack(po, builder)
+    sb = builder.Finish(serialized_buffer)
+    sb = builder.Output()
+    f = open("file.fbs",'wb')
+    f.write(sb)
+    f.close()
+    # # Display the parsed arguments
+    # print("Parsed Arguments:")
+    # print(f"Amplitude: {generate_interval(args.amplitude[0],args.amplitude[1],args.amplitude[2])}")
+    # print(f"Defocus: {args.defocus}")
+    # print(f"B Factor: {args.b_factor}")
+    # print(f"Image Dimensions: {args.img_dims}")
+    # print(f"Number of Pixels: {args.num_pixels}")
+    # print(f"Pixel Width: {args.pixel_width}")
+    # print(f"Sigma: {args.sigma}")
+    # print(f"Electron Wavelength: {args.elecwavel}")
+    # print(f"Signal-to-Noise Ratio: {args.snr}")
+    # print(f"Experiment Parameters: {args.experiment_parameters}")
+    # print(f"Seed: {args.seed}")
+    # print(f"Structures: {args.structures}")
+    # print(f"Coordinates: {args.coordinates}")
 
 if __name__ == '__main__':
     main()

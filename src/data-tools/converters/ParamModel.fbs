@@ -5,7 +5,7 @@ table Parameters {
   defocus:[float];
   b_factor:[float];
   img_dims:[float];
-  num_pixels:[float];
+  num_pixels:[int];
   pixel_width:[float];
   sigma:[float];
   elecwavel:[float];

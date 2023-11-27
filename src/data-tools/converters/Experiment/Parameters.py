@@ -129,31 +129,11 @@ class Parameters(object):
         return o == 0
 
     # Parameters
-    def NumPixels(self, j):
+    def NumPixels(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
-            a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
-
-    # Parameters
-    def NumPixelsAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
-        if o != 0:
-            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Float32Flags, o)
-        return 0
-
-    # Parameters
-    def NumPixelsLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
-        if o != 0:
-            return self._tab.VectorLen(o)
-        return 0
-
-    # Parameters
-    def NumPixelsIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
-        return o == 0
 
     # Parameters
     def PixelWidth(self, j):
@@ -380,8 +360,7 @@ def ParametersAddBFactor(builder, bFactor): builder.PrependUOffsetTRelativeSlot(
 def ParametersStartBFactorVector(builder, numElems): return builder.StartVector(4, numElems, 4)
 def ParametersAddImgDims(builder, imgDims): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(imgDims), 0)
 def ParametersStartImgDimsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddNumPixels(builder, numPixels): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(numPixels), 0)
-def ParametersStartNumPixelsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def ParametersAddNumPixels(builder, numPixels): builder.PrependInt32Slot(4, numPixels, 0)
 def ParametersAddPixelWidth(builder, pixelWidth): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(pixelWidth), 0)
 def ParametersStartPixelWidthVector(builder, numElems): return builder.StartVector(4, numElems, 4)
 def ParametersAddSigma(builder, sigma): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(sigma), 0)
@@ -413,7 +392,7 @@ class ParametersT(object):
         self.defocus = None  # type: List[float]
         self.bFactor = None  # type: List[float]
         self.imgDims = None  # type: List[float]
-        self.numPixels = None  # type: List[float]
+        self.numPixels = 0  # type: int
         self.pixelWidth = None  # type: List[float]
         self.sigma = None  # type: List[float]
         self.elecwavel = None  # type: List[float]
@@ -467,13 +446,7 @@ class ParametersT(object):
                     self.imgDims.append(parameters.ImgDims(i))
             else:
                 self.imgDims = parameters.ImgDimsAsNumpy()
-        if not parameters.NumPixelsIsNone():
-            if np is None:
-                self.numPixels = []
-                for i in range(parameters.NumPixelsLength()):
-                    self.numPixels.append(parameters.NumPixels(i))
-            else:
-                self.numPixels = parameters.NumPixelsAsNumpy()
+        self.numPixels = parameters.NumPixels()
         if not parameters.PixelWidthIsNone():
             if np is None:
                 self.pixelWidth = []
@@ -565,14 +538,6 @@ class ParametersT(object):
                 for i in reversed(range(len(self.imgDims))):
                     builder.PrependFloat32(self.imgDims[i])
                 imgDims = builder.EndVector(len(self.imgDims))
-        if self.numPixels is not None:
-            if np is not None and type(self.numPixels) is np.ndarray:
-                numPixels = builder.CreateNumpyVector(self.numPixels)
-            else:
-                ParametersStartNumPixelsVector(builder, len(self.numPixels))
-                for i in reversed(range(len(self.numPixels))):
-                    builder.PrependFloat32(self.numPixels[i])
-                numPixels = builder.EndVector(len(self.numPixels))
         if self.pixelWidth is not None:
             if np is not None and type(self.pixelWidth) is np.ndarray:
                 pixelWidth = builder.CreateNumpyVector(self.pixelWidth)
@@ -646,8 +611,7 @@ class ParametersT(object):
             ParametersAddBFactor(builder, bFactor)
         if self.imgDims is not None:
             ParametersAddImgDims(builder, imgDims)
-        if self.numPixels is not None:
-            ParametersAddNumPixels(builder, numPixels)
+        ParametersAddNumPixels(builder, self.numPixels)
         if self.pixelWidth is not None:
             ParametersAddPixelWidth(builder, pixelWidth)
         if self.sigma is not None:
