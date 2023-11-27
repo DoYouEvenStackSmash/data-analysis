@@ -28,6 +28,7 @@ table Matrix {
 table Datum {
   m1:Matrix;
   m2:Matrix;
+  param_id:int;
 }
 
 table DataSet {

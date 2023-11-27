@@ -101,7 +101,9 @@ def main():
     parser.add_argument(
         "-c", "--coordinates", type=parse_triplet, help="Coordinates field"
     )
-    parser.add_argument("-o","--output",default="param_set.fbs",help="output file for parameters")
+    parser.add_argument(
+        "-o", "--output", default="param_set.fbs", help="output file for parameters"
+    )
     # Parse the command line arguments
     args = parser.parse_args()
     sb = create_parameter_buf_from_args(args)
