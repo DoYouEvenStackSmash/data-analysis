@@ -1,0 +1,45 @@
+namespace DataModel;
+
+/// Mathematical model used for calculating the projection of the atom
+enum AtomicModel : byte {Point = 0, Sphere=1, Gaussian = 2}
+
+/// Point Coordinate in R3
+struct P {
+  x:float;
+  y:float;
+  z:float;
+}
+
+/// Quaternion h = a + bi + cj + dk
+struct Quaternion {
+  /// a
+  a:float;
+  /// bi
+  b:float;
+  ///cj
+  c:float;
+  ///dk
+  d:float;
+}
+
+/// Atom
+table Atom {
+  /// Position point
+  pos:P;
+  /// Atomic mass
+  mass:float;
+  /// Element number
+  name:int;
+  /// Atomic model (for rendering)
+  model:AtomicModel = Point;
+}
+
+/// A group of associated atoms corresponding to a conformation with at least one (implicit) orientation
+table Structure {
+  /// Points in the cloud
+  atoms:[Atom];
+  /// Quaternion orientations
+  orientations:[Quaternion];
+}
+
+root_type Structure;
