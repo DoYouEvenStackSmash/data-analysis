@@ -1,30 +1,38 @@
 
-include "Structure.fbs"
-include "ParamModel.fbs"
 
+include "Structure.fbs";
+include "ParamModel.fbs";
+namespace DataModel;
 enum DataClass : byte {Sim = 0, Synth = 1, Exp = 2}
 enum Domain: byte {Real=0,Frequency=1}
-enum DataType : byte {Image=0, Filter=1}
+enum DataType : byte {Image=0, Filter=1,Other=2}
 
-table Filter {
-  pixels:[ubyte];
-  filter_class:DataClass=Sim;
-  filter_space:Domain=Real;
-}
+/// could be an image or a filter
+table Matrix {
+  /// content of the matrix
+  real_pixels:[float];
+  imag_pixels:[float];
 
-table Image {
-  pixels:[ubyte];
-  parent_structure:int;
+  /// auxiliary in case of image
   orientation_id:int;
-  data_class:DataClass=Sim;
-  data_space:Domain=Real;
+  
+  /// peek whether the data is an image or a filter
+  data_type:DataType;
+  /// peek whether the data is in real space or frequency space
+  data_space:Domain;
+
+  /// auxiliary in case of image
+  parent_structure:int;
 }
 
-table DataModel {
-  structureId:int;
-  image:Image;
-  filter:Filter;
+table Datum {
+  m1:Matrix;
+  m2:Matrix;
+}
+
+table DataSet {
+  data:[Datum];
   params:Parameters;
 }
 
-root_type DataModel;
+root_type DataSet;

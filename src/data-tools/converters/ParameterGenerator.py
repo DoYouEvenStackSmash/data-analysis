@@ -7,6 +7,9 @@ from DataModel.Parameters import ParametersT
 
 
 def generate_interval(field):
+    """
+    Generates an array of S evenly spaced values, or returns None/val if there's only a single element
+    """
     if field == None:
         return None
     if type(field) != list:
@@ -18,8 +21,11 @@ def generate_interval(field):
     return [L + (step_size * i) for i in range(int(S))]
 
 
-# Function to parse triplet values [L, U, S]
+
 def parse_triplet(arg):
+    """
+    Function to parse triplet values [L, U, S]
+    """
     try:
         values = list(map(float, arg.strip("[]").split(",")))
 
@@ -34,25 +40,20 @@ def parse_triplet(arg):
 
 
 def create_parameterT_from_args(args):
+    """
+    Use generated object API to store values from args
+    """
     po = ParametersT()
-    po.amplitude = generate_interval(args.amplitude)
-    po.defocus = generate_interval(args.defocus)
+    for k,v in vars(args).items():
+        setattr(po,k,v)
 
-    po.bFactor = generate_interval(args.b_factor)
-    po.img_dims = generate_interval(args.img_dims)
-    po.numPixels = generate_interval(args.num_pixels)
-    po.pixelWidth = generate_interval(args.pixel_width)
-    po.sigma = generate_interval(args.sigma)
-    po.elecwavel = generate_interval(args.elecwavel)
-    po.snr = generate_interval(args.snr)
-    po.experimentParameters = generate_interval(args.experiment_parameters)
-    po.seed = generate_interval(args.seed)
-    po.structures = generate_interval(args.structures)
-    po.coordinates = generate_interval(args.coordinates)
     return po
 
 
 def create_parameter_buf_from_args(args):
+    """
+    Wrapper for generating a flatbuffer from arguments
+    """
     po = create_parameterT_from_args(args)
     builder = flatbuffers.Builder(2048)
     serialized_buffer = ParametersT.Pack(po, builder)
@@ -61,6 +62,9 @@ def create_parameter_buf_from_args(args):
 
 
 def main():
+    """
+    Main parser loop
+    """
     parser = argparse.ArgumentParser(description="Experiment Parameters CLI")
 
     # Adding arguments for each field
@@ -100,21 +104,6 @@ def main():
     # Parse the command line arguments
     args = parser.parse_args()
     sb = create_parameter_buf_from_args(args)
-    # po = ParametersT()
-    # po.amplitude = generate_interval(args.amplitude)
-    # po.defocus = generate_interval(args.defocus)
-
-    # po.bFactor = generate_interval(args.b_factor)
-    # po.img_dims = generate_interval(args.img_dims)
-    # # po.numPixels = generate_interval(args.num_pixels)
-    # po.pixelWidth = generate_interval(args.pixel_width)
-    # po.sigma = generate_interval(args.sigma)
-    # po.elecwavel = generate_interval(args.elecwavel)
-    # po.snr = generate_interval(args.snr)
-    # po.experimentParameters = generate_interval(args.experiment_parameters)
-    # po.seed = generate_interval(args.seed)
-    # po.structures = generate_interval(args.structures)
-    # po.coordinates = generate_interval(args.coordinates)
 
     f = open("file.fbs", "wb")
     f.write(sb)

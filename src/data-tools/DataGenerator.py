@@ -12,6 +12,12 @@ from DataModel.P import P, PT
 from DataModel.AtomicModel import *
 from DataModel.Parameters import Parameters, ParametersT
 
+from DataModel.DataClass import DataClass
+from DataModel.Datum import Datum,DatumT
+from DataModel.Matrix import Matrix,MatrixT
+from DataModel.Domain import Domain
+from DataModel.DataType import DataType
+from DataModel.DataSet import DataSet,DataSetT
 from filegroup import *
 from transform_generator import *
 from ctf_generator import *
@@ -21,9 +27,9 @@ from dataloader import Dataloader as dl
 
 def raw_images_wrapper(args):
     """
-    Wrapper function for generating images
+    raw flatbuffers accessors purely for historical reasons
     """
-    # raw flatbuffers
+    
     print("images_wrapper")
     
     get_atoms = lambda s: s.Atoms
@@ -68,7 +74,6 @@ def prep_structures(structures, params):
     
     coords = torch.tensor(coords_list, dtype=torch.float32)
         
-    # coords = torch.tensor(structures[i].atoms[])
     return coords,torch_grid
     
   
@@ -82,10 +87,7 @@ def images_wrapper(args):
     print(c.shape)
     print(g.shape)
     imgs = simulate_images(c,g,params.sigma[0])
-    print(imgs.shape)
-    # print([structures[i].atoms for i in range(len(structures))])
-    
-    # print(vars(params))
+    print(type(imgs))
 
 def ctf_wrapper(args):
     """
@@ -94,14 +96,42 @@ def ctf_wrapper(args):
     print("ctfs_wrapper")
     params = _hidden_parameters_unpacker(args)
     ctf_batch = generate_ctfs(1, params)
+    print(ctf_batch.shape)
+    
+    if args.output:
+        ds_t = DataSetT()
+        data = []
+        builder = flatbuffers.Builder(1024)
+        for i in ctf_batch:
+            ctf_T = DatumT()
+            m1 = MatrixT()
+            i = i.reshape(-1,1)
+            
+            m1.realPixels = [np.real(val) for val in i]
+            m1.imagPixels = [np.imag(val) for val in i]
+            print(m1.imagPixels)
+            m1.dataType = 1
+            m1.dataSpace = 1
+            ctf_T.m1 = m1
+            data.append(ctf_T)
+        ds_t.params = params
+        ds_t.data = data
+        sb = DataSetT.Pack(ds_t,builder)
+        sb = builder.Finish(sb)
+        
+        f = open(args.output,'wb')
+        f.write(builder.Output())
+        f.close()
+      
+      
+        
+      
     
 
-def help_wrapper(args):
-    print(args)
 
 def main():
     parser = argparse.ArgumentParser(description="CLI with subparsers")
-    # parser.set_defaults(func=help_wrapper)
+    
     subparsers = parser.add_subparsers(dest="command", help="Subcommand")
 
     # Subparser for ctfs
@@ -113,6 +143,12 @@ def main():
         help="Filename to flatbuffers file for parameters",
     )
     # ctfs_subparser(ctfs_parser)
+    ctfs_parser.add_argument(
+        "-o",
+        "--output",
+        default="ctfs.fbs",
+        help="filename to save ctfs to"
+    )
     ctfs_parser.set_defaults(func=ctf_wrapper)
 
     # Subparser for images
