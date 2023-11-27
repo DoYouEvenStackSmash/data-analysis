@@ -3,7 +3,9 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+
 colors = list(set(mcolors.CSS4_COLORS))
+
 
 def graham_scan_convex_hull(points):
     def cross_product(p, q, r):
@@ -33,6 +35,7 @@ def graham_scan_convex_hull(points):
         convex_hull.append(point)
 
     return convex_hull
+
 
 def display_clusters(clusters, centroids):
     """
@@ -81,27 +84,29 @@ def display_clusters(clusters, centroids):
         plt.scatter(cx_coords[i], cy_coords[i], marker="x", color=colors[i + ci], s=10)
     plt.show()
 
+
 def main():
-  f = open("output.json", "r")
-  s = json.loads(f.read())
-  f.close()
-  centroids = []
-  clusters = []
-  for i,c in enumerate(s["clusters"]):
-    cluster = c[f"{i}"]
-    centroid = np.array([cluster[0]["x"],cluster[0]["y"]])
-    centroids.append(centroid)
-    clst = []
-    for pt in cluster[1:]:
-      clst.append(np.array([pt["x"],pt["y"]]))
-    clusters.append(np.array(clst))
-  centroids = np.array(centroids)
-  # print(clusters)
-  display_clusters(clusters, centroids)
+    f = open("output.json", "r")
+    s = json.loads(f.read())
+    f.close()
+    centroids = []
+    clusters = []
+    for i, c in enumerate(s["clusters"]):
+        cluster = c[f"{i}"]
+        centroid = np.array([cluster[0]["x"], cluster[0]["y"]])
+        centroids.append(centroid)
+        clst = []
+        for pt in cluster[1:]:
+            clst.append(np.array([pt["x"], pt["y"]]))
+        clusters.append(np.array(clst))
+    centroids = np.array(centroids)
+    # print(clusters)
+    display_clusters(clusters, centroids)
     # centroids.append(np.array([c[0]["x"],c[0]["y"]]))
 
     # cluster = np.array([c[i]["x"],c[i]["y"]])
 
+
 # print(json.dumps(s, indent=2))
-if __name__ == '__main__':
-  main()
+if __name__ == "__main__":
+    main()

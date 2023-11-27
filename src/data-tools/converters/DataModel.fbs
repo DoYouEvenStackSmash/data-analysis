@@ -1,0 +1,54 @@
+namespace DataModel;
+
+enum AtomicModel : byte {Point = 0, Sphere=1, Gaussian = 2}
+enum DataClass : byte {Sim = 0, Synth = 1, Exp = 2}
+enum Domain: byte {Real=0,Frequency=1}
+enum DataType : byte {Image=0, Filter=1}
+
+struct P {
+  x:float;
+  y:float;
+  z:float;
+}
+
+struct Quaternion {
+  r:float;
+  i:float;
+  j:float;
+  k:float;
+}
+
+table Atom {
+  pos:P;
+  mass:float;
+  name:int;
+  model:AtomicModel = Point;
+}
+
+table Image {
+  pixels:[ubyte];
+  parent_structure:int;
+  orientation_id:int;
+  data_class:DataClass=Sim;
+  data_space:Domain=Real;
+}
+
+table Filter {
+  pixels:[ubyte];
+  filter_class:DataClass=Sim;
+  filter_space:Domain=Real;
+}
+
+table Structure {
+  atoms:[Atom];
+  orientations:[Quaternion];
+}
+
+table DataSet {
+  structures:[Structure];
+  images:[Image];
+  filters:[Filter];
+  params:[Parameters];
+}
+
+root_type DataSet;
