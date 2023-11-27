@@ -9,6 +9,8 @@ from Experiment.Parameters import ParametersT
 def generate_interval(field):
     if field == None:
         return None
+    if type(field) != list:
+        return field
     if len(field) == 1:
         return [field[0]]
     L,U,S = field[0],field[1],field[2]
@@ -20,9 +22,9 @@ def generate_interval(field):
 def parse_triplet(arg):
     try:
         values = list(map(float, arg.strip("[]").split(",")))
-        print(values)
-        if len(values) == 1:
-            return values[0]
+        
+        if type(values) != list or len(values) == 1:
+            return [values[0]]
         elif len(values) == 3:
             return values
         else:
@@ -87,21 +89,7 @@ def main():
     f = open("file.fbs",'wb')
     f.write(sb)
     f.close()
-    # # Display the parsed arguments
-    # print("Parsed Arguments:")
-    # print(f"Amplitude: {generate_interval(args.amplitude[0],args.amplitude[1],args.amplitude[2])}")
-    # print(f"Defocus: {args.defocus}")
-    # print(f"B Factor: {args.b_factor}")
-    # print(f"Image Dimensions: {args.img_dims}")
-    # print(f"Number of Pixels: {args.num_pixels}")
-    # print(f"Pixel Width: {args.pixel_width}")
-    # print(f"Sigma: {args.sigma}")
-    # print(f"Electron Wavelength: {args.elecwavel}")
-    # print(f"Signal-to-Noise Ratio: {args.snr}")
-    # print(f"Experiment Parameters: {args.experiment_parameters}")
-    # print(f"Seed: {args.seed}")
-    # print(f"Structures: {args.structures}")
-    # print(f"Coordinates: {args.coordinates}")
+
 
 if __name__ == '__main__':
     main()
