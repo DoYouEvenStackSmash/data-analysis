@@ -138,14 +138,14 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Int32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
         return 0
 
     # Parameters
     def NumPixelsAsNumpy(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
-            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Int32Flags, o)
+            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Float32Flags, o)
         return 0
 
     # Parameters
@@ -426,7 +426,7 @@ class ParametersT(object):
         self.defocus = None  # type: List[float]
         self.bFactor = None  # type: List[float]
         self.imgDims = None  # type: List[float]
-        self.numPixels = None  # type: List[int]
+        self.numPixels = None  # type: List[float]
         self.pixelWidth = None  # type: List[float]
         self.sigma = None  # type: List[float]
         self.elecwavel = None  # type: List[float]
@@ -584,7 +584,7 @@ class ParametersT(object):
             else:
                 ParametersStartNumPixelsVector(builder, len(self.numPixels))
                 for i in reversed(range(len(self.numPixels))):
-                    builder.PrependInt32(self.numPixels[i])
+                    builder.PrependFloat32(self.numPixels[i])
                 numPixels = builder.EndVector(len(self.numPixels))
         if self.pixelWidth is not None:
             if np is not None and type(self.pixelWidth) is np.ndarray:

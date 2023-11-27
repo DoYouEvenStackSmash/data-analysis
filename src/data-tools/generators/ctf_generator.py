@@ -30,7 +30,7 @@ def generate_ctfs(N_images, hyperparams=None, seed=12345):
             torch.rand(N_images, dtype=torch.float64)  # set defocus value
             * (defocus_max - defocus_min)
             + defocus_min
-            )  ## defocus
+        )  ## defocus
 
     elecwavel = 0.019866  ## electron wavelength in Angstrom
     gamma = defocus * (

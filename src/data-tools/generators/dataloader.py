@@ -26,3 +26,16 @@ class Dataloader:
 
         return coord_arr
 
+    def load_flatbuffer(filename):
+        """Loads a flatbuffer file
+
+        Args:
+            filename (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        f = open(f"{filename}", "rb")
+        buf = f.read()
+        f.close()
+        return buf

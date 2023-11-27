@@ -33,7 +33,7 @@ table Parameters {
   img_dims:[float];
 
   /// number of pixels in abstract grid
-  num_pixels:[int];
+  num_pixels:[float];
 
   /// width of pixel on abstract grid
   pixel_width:[float];

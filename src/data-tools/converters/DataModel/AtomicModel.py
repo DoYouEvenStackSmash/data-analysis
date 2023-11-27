@@ -2,9 +2,9 @@
 
 # namespace: DataModel
 
+
 # Mathematical model used for calculating the projection of the atom
 class AtomicModel(object):
     Point = 0
     Sphere = 1
     Gaussian = 2
-

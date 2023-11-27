@@ -4,22 +4,39 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
+
 
 # Point Coordinate in R3
 class P(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     # P
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # P
-    def X(self): return self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0))
+    def X(self):
+        return self._tab.Get(
+            flatbuffers.number_types.Float32Flags,
+            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0),
+        )
+
     # P
-    def Y(self): return self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(4))
+    def Y(self):
+        return self._tab.Get(
+            flatbuffers.number_types.Float32Flags,
+            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(4),
+        )
+
     # P
-    def Z(self): return self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(8))
+    def Z(self):
+        return self._tab.Get(
+            flatbuffers.number_types.Float32Flags,
+            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(8),
+        )
+
 
 def CreateP(builder, x, y, z):
     builder.Prep(4, 12)
@@ -30,7 +47,6 @@ def CreateP(builder, x, y, z):
 
 
 class PT(object):
-
     # PT
     def __init__(self):
         self.x = 0.0  # type: float

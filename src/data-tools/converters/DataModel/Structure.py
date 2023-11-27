@@ -4,11 +4,13 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
+
 
 # A group of associated atoms corresponding to a conformation with at least one (implicit) orientation
 class Structure(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAsStructure(cls, buf, offset):
@@ -30,6 +32,7 @@ class Structure(object):
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
             from DataModel.Atom import Atom
+
             obj = Atom()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -55,6 +58,7 @@ class Structure(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 16
             from DataModel.Quaternion import Quaternion
+
             obj = Quaternion()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -72,22 +76,45 @@ class Structure(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         return o == 0
 
-def StructureStart(builder): builder.StartObject(2)
-def StructureAddAtoms(builder, atoms): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(atoms), 0)
-def StructureStartAtomsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def StructureAddOrientations(builder, orientations): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(orientations), 0)
-def StructureStartOrientationsVector(builder, numElems): return builder.StartVector(16, numElems, 4)
-def StructureEnd(builder): return builder.EndObject()
+
+def StructureStart(builder):
+    builder.StartObject(2)
+
+
+def StructureAddAtoms(builder, atoms):
+    builder.PrependUOffsetTRelativeSlot(
+        0, flatbuffers.number_types.UOffsetTFlags.py_type(atoms), 0
+    )
+
+
+def StructureStartAtomsVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def StructureAddOrientations(builder, orientations):
+    builder.PrependUOffsetTRelativeSlot(
+        1, flatbuffers.number_types.UOffsetTFlags.py_type(orientations), 0
+    )
+
+
+def StructureStartOrientationsVector(builder, numElems):
+    return builder.StartVector(16, numElems, 4)
+
+
+def StructureEnd(builder):
+    return builder.EndObject()
+
 
 import DataModel.Atom
 import DataModel.Quaternion
+
 try:
     from typing import List
 except:
     pass
 
-class StructureT(object):
 
+class StructureT(object):
     # StructureT
     def __init__(self):
         self.atoms = None  # type: List[DataModel.Atom.AtomT]
@@ -123,7 +150,9 @@ class StructureT(object):
                 if structure.Orientations(i) is None:
                     self.orientations.append(None)
                 else:
-                    quaternion_ = DataModel.Quaternion.QuaternionT.InitFromObj(structure.Orientations(i))
+                    quaternion_ = DataModel.Quaternion.QuaternionT.InitFromObj(
+                        structure.Orientations(i)
+                    )
                     self.orientations.append(quaternion_)
 
     # StructureT

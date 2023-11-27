@@ -4,11 +4,13 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
+
 
 # Quaternion h = a + bi + cj + dk
 class Quaternion(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     # Quaternion
     def Init(self, buf, pos):
@@ -16,16 +18,36 @@ class Quaternion(object):
 
     # a
     # Quaternion
-    def A(self): return self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0))
+    def A(self):
+        return self._tab.Get(
+            flatbuffers.number_types.Float32Flags,
+            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0),
+        )
+
     # bi
     # Quaternion
-    def B(self): return self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(4))
-    #cj
+    def B(self):
+        return self._tab.Get(
+            flatbuffers.number_types.Float32Flags,
+            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(4),
+        )
+
+    # cj
     # Quaternion
-    def C(self): return self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(8))
-    #dk
+    def C(self):
+        return self._tab.Get(
+            flatbuffers.number_types.Float32Flags,
+            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(8),
+        )
+
+    # dk
     # Quaternion
-    def D(self): return self._tab.Get(flatbuffers.number_types.Float32Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(12))
+    def D(self):
+        return self._tab.Get(
+            flatbuffers.number_types.Float32Flags,
+            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(12),
+        )
+
 
 def CreateQuaternion(builder, a, b, c, d):
     builder.Prep(4, 16)
@@ -37,7 +59,6 @@ def CreateQuaternion(builder, a, b, c, d):
 
 
 class QuaternionT(object):
-
     # QuaternionT
     def __init__(self):
         self.a = 0.0  # type: float

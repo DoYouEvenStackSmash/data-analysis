@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
+
 sys.path.append("./converters")
 sys.path.append("./generators")
 from DataModel.Parameters import ParametersT
@@ -23,10 +24,10 @@ from dataloader import Dataloader as dl
 # pb = Parameters.GetRootAsParameters(s, 0)
 # pt = ParametersT.InitFromObj(pb)
 # ctf_batch = generate_ctfs(10, pt)
-f = open("struct_0.fbs",'rb')
+f = open("struct_0.fbs", "rb")
 s = f.read()
 f.close()
-structure = Structure.GetRootAsStructure(s,0)
+structure = Structure.GetRootAsStructure(s, 0)
 # st = StructureT.InitFromObj(sb)
 # Access individual atoms
 for i in range(structure.AtomsLength()):

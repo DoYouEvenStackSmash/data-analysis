@@ -4,11 +4,13 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
+
 
 # Atom
 class Atom(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAsAtom(cls, buf, offset):
@@ -28,6 +30,7 @@ class Atom(object):
         if o != 0:
             x = o + self._tab.Pos
             from DataModel.P import P
+
             obj = P()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -38,7 +41,9 @@ class Atom(object):
     def Mass(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags, o + self._tab.Pos
+            )
         return 0.0
 
     # Element number
@@ -57,21 +62,40 @@ class Atom(object):
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
 
-def AtomStart(builder): builder.StartObject(4)
-def AtomAddPos(builder, pos): builder.PrependStructSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(pos), 0)
-def AtomAddMass(builder, mass): builder.PrependFloat32Slot(1, mass, 0.0)
-def AtomAddName(builder, name): builder.PrependInt32Slot(2, name, 0)
-def AtomAddModel(builder, model): builder.PrependInt8Slot(3, model, 0)
-def AtomEnd(builder): return builder.EndObject()
+
+def AtomStart(builder):
+    builder.StartObject(4)
+
+
+def AtomAddPos(builder, pos):
+    builder.PrependStructSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(pos), 0)
+
+
+def AtomAddMass(builder, mass):
+    builder.PrependFloat32Slot(1, mass, 0.0)
+
+
+def AtomAddName(builder, name):
+    builder.PrependInt32Slot(2, name, 0)
+
+
+def AtomAddModel(builder, model):
+    builder.PrependInt8Slot(3, model, 0)
+
+
+def AtomEnd(builder):
+    return builder.EndObject()
+
 
 import DataModel.P
+
 try:
     from typing import Optional
 except:
     pass
 
-class AtomT(object):
 
+class AtomT(object):
     # AtomT
     def __init__(self):
         self.pos = None  # type: Optional[DataModel.P.PT]
