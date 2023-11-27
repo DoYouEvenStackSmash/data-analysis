@@ -2,7 +2,7 @@
 
 # namespace: DataModel
 
+
 class Domain(object):
     Real = 0
     Frequency = 1
-

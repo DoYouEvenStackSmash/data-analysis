@@ -4,11 +4,13 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
+
 
 # could be an image or a filter
 class Matrix(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAsMatrix(cls, buf, offset):
@@ -27,7 +29,10 @@ class Matrix(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Matrix
@@ -54,7 +59,10 @@ class Matrix(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Matrix
@@ -108,24 +116,58 @@ class Matrix(object):
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
-def MatrixStart(builder): builder.StartObject(6)
-def MatrixAddRealPixels(builder, realPixels): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(realPixels), 0)
-def MatrixStartRealPixelsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def MatrixAddImagPixels(builder, imagPixels): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(imagPixels), 0)
-def MatrixStartImagPixelsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def MatrixAddOrientationId(builder, orientationId): builder.PrependInt32Slot(2, orientationId, 0)
-def MatrixAddDataType(builder, dataType): builder.PrependInt8Slot(3, dataType, 0)
-def MatrixAddDataSpace(builder, dataSpace): builder.PrependInt8Slot(4, dataSpace, 0)
-def MatrixAddParentStructure(builder, parentStructure): builder.PrependInt32Slot(5, parentStructure, 0)
-def MatrixEnd(builder): return builder.EndObject()
+
+def MatrixStart(builder):
+    builder.StartObject(6)
+
+
+def MatrixAddRealPixels(builder, realPixels):
+    builder.PrependUOffsetTRelativeSlot(
+        0, flatbuffers.number_types.UOffsetTFlags.py_type(realPixels), 0
+    )
+
+
+def MatrixStartRealPixelsVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def MatrixAddImagPixels(builder, imagPixels):
+    builder.PrependUOffsetTRelativeSlot(
+        1, flatbuffers.number_types.UOffsetTFlags.py_type(imagPixels), 0
+    )
+
+
+def MatrixStartImagPixelsVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def MatrixAddOrientationId(builder, orientationId):
+    builder.PrependInt32Slot(2, orientationId, 0)
+
+
+def MatrixAddDataType(builder, dataType):
+    builder.PrependInt8Slot(3, dataType, 0)
+
+
+def MatrixAddDataSpace(builder, dataSpace):
+    builder.PrependInt8Slot(4, dataSpace, 0)
+
+
+def MatrixAddParentStructure(builder, parentStructure):
+    builder.PrependInt32Slot(5, parentStructure, 0)
+
+
+def MatrixEnd(builder):
+    return builder.EndObject()
+
 
 try:
     from typing import List
 except:
     pass
 
-class MatrixT(object):
 
+class MatrixT(object):
     # MatrixT
     def __init__(self):
         self.realPixels = None  # type: List[float]

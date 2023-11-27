@@ -5,7 +5,7 @@ import flatbuffers
 import numpy as np
 
 # Import the generated module based on your schema (you need to generate this with FlatBuffers)
-from DataModel.Parameters import Parameters,ParametersT
+from DataModel.Parameters import Parameters, ParametersT
 from DataModel.Atom import Atom, AtomT
 from DataModel.Structure import Structure, StructureT
 from DataModel.Quaternion import Quaternion, QuaternionT
@@ -18,7 +18,7 @@ def test_create_structure_buf():
     Create a structure flatbuffer starting from a list of coordinates
     """
     coordinates_list = [(1.0, 2.0, 3.0), (4.0, 5.0, 6.0), (7.0, 8.0, 9.0)]
-    
+
     structure_t = StructureT()
     atom_list = []
     for coord in coordinates_list:
@@ -30,8 +30,7 @@ def test_create_structure_buf():
         atom_t.pos = point_t
         atom_list.append(atom_t)
     structure_t.atoms = atom_list
-    
-    
+
     builder = flatbuffers.Builder(1024)  # You can choose an appropriate size
 
     serialized_buffer = StructureT.Pack(structure_t, builder)
@@ -41,7 +40,8 @@ def test_create_structure_buf():
     # get root of buffer
     structure = Structure.GetRootAsStructure(sb, 0)
     print(structure)
-    
+
+
 def test_create_params_buf():
     """
     Create a parameters flatbuffer by initializing important fields
@@ -65,10 +65,11 @@ def test_create_params_buf():
     serialized_buffer = ParametersT.Pack(params, builder)
     sb = builder.Finish(serialized_buffer)
     sb = builder.Output()
-    
+
     # get root of buffer
     param = Parameters.GetRootAsParameters(sb, 0)
     print(param)
+
 
 def load_struct(sb):
     structure = Structure.GetRootAsStructure(sb, 0)
@@ -82,9 +83,11 @@ def load_struct(sb):
         print(f"    Model: {atom.Model()}")
         print("\n")
 
+
 def main():
     test_create_structure_buf()
     test_create_params_buf()
-    
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     main()

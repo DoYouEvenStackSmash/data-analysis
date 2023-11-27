@@ -21,7 +21,6 @@ def generate_interval(field):
     return [L + (step_size * i) for i in range(int(S))]
 
 
-
 def parse_triplet(arg):
     """
     Function to parse triplet values [L, U, S]
@@ -44,8 +43,8 @@ def create_parameterT_from_args(args):
     Use generated object API to store values from args
     """
     po = ParametersT()
-    for k,v in vars(args).items():
-        setattr(po,k,v)
+    for k, v in vars(args).items():
+        setattr(po, k, v)
 
     return po
 

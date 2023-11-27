@@ -24,7 +24,7 @@ def create_structureT_from_coords(coordinates):
         atom_t = AtomT()
         atom_t.pos = point_t
         atom_list.append(atom_t)
-    
+
     structure_t.atoms = atom_list
     return structure_t
 
@@ -38,7 +38,6 @@ def create_structure_buf_from_coords(coordinates):
     serialized_buffer = StructureT.Pack(st, builder)
     sb = builder.Finish(serialized_buffer)
     return builder.Output()
-
 
 
 def load_numpy_array(filename):
@@ -76,7 +75,6 @@ def main():
     )
     args = parser.parse_args()
 
-    
     numpy_array = load_numpy_array(args.filename)
 
     for i in range(min(len(numpy_array), args.num_structs)):

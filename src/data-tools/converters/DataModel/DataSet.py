@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class DataSet(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAsDataSet(cls, buf, offset):
@@ -28,6 +30,7 @@ class DataSet(object):
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
             from DataModel.Datum import Datum
+
             obj = Datum()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -51,26 +54,47 @@ class DataSet(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from DataModel.Parameters import Parameters
+
             obj = Parameters()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-def DataSetStart(builder): builder.StartObject(2)
-def DataSetAddData(builder, data): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0)
-def DataSetStartDataVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def DataSetAddParams(builder, params): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(params), 0)
-def DataSetEnd(builder): return builder.EndObject()
+
+def DataSetStart(builder):
+    builder.StartObject(2)
+
+
+def DataSetAddData(builder, data):
+    builder.PrependUOffsetTRelativeSlot(
+        0, flatbuffers.number_types.UOffsetTFlags.py_type(data), 0
+    )
+
+
+def DataSetStartDataVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def DataSetAddParams(builder, params):
+    builder.PrependUOffsetTRelativeSlot(
+        1, flatbuffers.number_types.UOffsetTFlags.py_type(params), 0
+    )
+
+
+def DataSetEnd(builder):
+    return builder.EndObject()
+
 
 import DataModel.Datum
 import DataModel.Parameters
+
 try:
     from typing import List, Optional
 except:
     pass
 
-class DataSetT(object):
 
+class DataSetT(object):
     # DataSetT
     def __init__(self):
         self.data = None  # type: List[DataModel.Datum.DatumT]

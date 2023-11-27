@@ -2,8 +2,8 @@
 
 # namespace: DataModel
 
+
 class DataClass(object):
     Sim = 0
     Synth = 1
     Exp = 2
-

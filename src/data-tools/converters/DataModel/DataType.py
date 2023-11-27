@@ -2,8 +2,8 @@
 
 # namespace: DataModel
 
+
 class DataType(object):
     Image = 0
     Filter = 1
     Other = 2
-

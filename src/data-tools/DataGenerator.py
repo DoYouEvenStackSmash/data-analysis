@@ -62,7 +62,7 @@ def prep_structures(structures, params):
     preprocessing for image generation
     """
     get_posn = lambda a : [a.pos.x,a.pos.y,a.pos.z]
-    torch_grid = gen_grid(int(params.numPixels[0]), int(params.pixelWidth[0])).reshape(-1, 1)
+    torch_grid = gen_grid(int(params.numPixels[0]), params.pixelWidth[0]).reshape(-1, 1)
     sigma = params.sigma[0]
     coords_list = []
     for i,s in enumerate(structures):
@@ -72,11 +72,36 @@ def prep_structures(structures, params):
         coord_list.append(get_posn(a))
       coords_list.append(coord_list)
     
-    coords = torch.tensor(coords_list, dtype=torch.float32)
+    coords = torch.tensor(coords_list, dtype=torch.float64)
         
     return coords,torch_grid
     
-  
+
+def build_data_set(data_batch,params,datatype,dataspace):
+  """
+  Closing function in prep for serialization
+  """
+  ds_t = DataSetT()
+  data = []
+  for i in data_batch:
+      data_T = DatumT()
+      m1 = MatrixT()
+      i = i.reshape(-1,1)
+      # print(max(i))
+      m1.realPixels = [torch.real(val) for val in i]
+      if type(i[0]) == complex:
+        m1.imagPixels = [torch.imag(val) for val in i]
+      else:
+        m1.imagPixels = [0 for val in i]
+      # print(m1.imagPixels)
+      m1.dataType = datatype
+      m1.dataSpace = dataspace
+      data_T.m1 = m1
+      data.append(data_T)
+  ds_t.params = params
+  ds_t.data = data
+  return ds_t
+
 def images_wrapper(args):
     """
     wrapper function for generating images
@@ -86,8 +111,21 @@ def images_wrapper(args):
     c,g = prep_structures(structures, params)
     print(c.shape)
     print(g.shape)
-    imgs = simulate_images(c,g,params.sigma[0])
-    print(type(imgs))
+    print(c[0])
+    print(vars(params))
+    img_batch = simulate_images(c,g,params.sigma[0])
+  
+    ds_t = build_data_set(img_batch, params, 0, 0)
+    builder = flatbuffers.Builder(1024)
+    sb = DataSetT.Pack(ds_t,builder)
+    sb = builder.Finish(sb)
+      
+    f = open(args.output,'wb')
+    f.write(builder.Output())
+    f.close()
+      
+      
+    # print(type(imgs))
 
 def ctf_wrapper(args):
     """
@@ -98,35 +136,15 @@ def ctf_wrapper(args):
     ctf_batch = generate_ctfs(1, params)
     print(ctf_batch.shape)
     
-    if args.output:
-        ds_t = DataSetT()
-        data = []
-        builder = flatbuffers.Builder(1024)
-        for i in ctf_batch:
-            ctf_T = DatumT()
-            m1 = MatrixT()
-            i = i.reshape(-1,1)
-            
-            m1.realPixels = [np.real(val) for val in i]
-            m1.imagPixels = [np.imag(val) for val in i]
-            print(m1.imagPixels)
-            m1.dataType = 1
-            m1.dataSpace = 1
-            ctf_T.m1 = m1
-            data.append(ctf_T)
-        ds_t.params = params
-        ds_t.data = data
-        sb = DataSetT.Pack(ds_t,builder)
-        sb = builder.Finish(sb)
-        
-        f = open(args.output,'wb')
-        f.write(builder.Output())
-        f.close()
+    ds_t = build_data_set(ctf_batch, params,1, 1)
+
+    builder = flatbuffers.Builder(1024)
+    sb = DataSetT.Pack(ds_t,builder)
+    sb = builder.Finish(sb)
       
-      
-        
-      
-    
+    f = open(args.output,'wb')
+    f.write(builder.Output())
+    f.close()
 
 
 def main():
@@ -165,6 +183,12 @@ def main():
         nargs="+",
         required=True,
         help="List of filenames to FlatBuffers files for structs",
+    )
+    images_parser.add_argument(
+        "-o",
+        "--output",
+        default="images.fbs",
+        help="filename to save images to"
     )
     images_parser.set_defaults(func=images_wrapper)
 
