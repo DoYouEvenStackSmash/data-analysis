@@ -108,13 +108,11 @@ def images_wrapper(args):
     """
     structures = _hidden_structure_unpacker(args)
     params = _hidden_parameters_unpacker(args)
-    c,g = prep_structures(structures, params)
-    print(c.shape)
-    print(g.shape)
-    print(c[0])
-    print(vars(params))
-    img_batch = simulate_images(c,g,params.sigma[0])
-  
+    
+    coordinate_tensor,abstract_grid_tensor = prep_structures(structures, params)
+    
+    img_batch = simulate_images(coordinate_tensor,abstract_grid_tensor,params.sigma[0])
+    
     ds_t = build_data_set(img_batch, params, 0, 0)
     builder = flatbuffers.Builder(1024)
     sb = DataSetT.Pack(ds_t,builder)

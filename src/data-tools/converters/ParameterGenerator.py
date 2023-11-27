@@ -10,6 +10,7 @@ def generate_interval(field):
     """
     Generates an array of S evenly spaced values, or returns None/val if there's only a single element
     """
+    print(field)
     if field == None:
         return None
     if type(field) != list:
@@ -44,7 +45,8 @@ def create_parameterT_from_args(args):
     """
     po = ParametersT()
     for k, v in vars(args).items():
-        setattr(po, k, v)
+        # print(k)
+        setattr(po, k, generate_interval(v))
 
     return po
 
@@ -69,15 +71,15 @@ def main():
     # Adding arguments for each field
     parser.add_argument("-a", "--amplitude", type=parse_triplet, help="Amplitude field")
     parser.add_argument("-d", "--defocus", type=parse_triplet, help="Defocus field")
-    parser.add_argument("-bf", "--b_factor", type=parse_triplet, help="B Factor field")
+    parser.add_argument("-bf", "--bFactor", type=parse_triplet, help="B Factor field")
     parser.add_argument(
-        "-id", "--img_dims", type=parse_triplet, help="Image Dimensions field"
+        "-id", "--imgDims", type=parse_triplet, help="Image Dimensions field"
     )
     parser.add_argument(
-        "-np", "--num_pixels", type=parse_triplet, help="Number of Pixels field"
+        "-np", "--numPixels", type=parse_triplet, help="Number of Pixels field"
     )
     parser.add_argument(
-        "-pw", "--pixel_width", type=parse_triplet, help="Pixel Width field"
+        "-pw", "--pixelWidth", type=parse_triplet, help="Pixel Width field"
     )
     parser.add_argument("-s", "--sigma", type=parse_triplet, help="Sigma field")
     parser.add_argument(
@@ -88,7 +90,7 @@ def main():
     )
     parser.add_argument(
         "-ep",
-        "--experiment_parameters",
+        "--experimentParameters",
         type=parse_triplet,
         help="Experiment Parameters field",
     )
@@ -99,12 +101,12 @@ def main():
     parser.add_argument(
         "-c", "--coordinates", type=parse_triplet, help="Coordinates field"
     )
-
+    parser.add_argument("-o","--output",default="param_set.fbs",help="output file for parameters")
     # Parse the command line arguments
     args = parser.parse_args()
     sb = create_parameter_buf_from_args(args)
 
-    f = open("file.fbs", "wb")
+    f = open(args.output, "wb")
     f.write(sb)
     f.close()
 
