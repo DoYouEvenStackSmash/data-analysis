@@ -173,14 +173,13 @@ def _hidden_synthesizer(args):
 
 def synth_wrapper(args):
     
-
     n_ds = _hidden_synthesizer(args)
     for idx, n in enumerate(n_ds):
         builder = flatbuffers.Builder(1024)
         sb = DataSetT.Pack(n, builder)
         builder.Finish(sb)
         sb = builder.Output()
-        f = open(f"synth_dataset_{idx}.fbs", "wb")
+        f = open(f"{args.output_tag}_synth_dataset_{idx}.fbs", "wb")
         f.write(sb)
         f.close()
 
@@ -251,6 +250,7 @@ def main():
     synth_parser.add_argument(
         "-c", "--ctfs", required=True, help="Input contrast transfer functions"
     )
+    synth_parser.add_argument("-o","--output_tag", default = 'MYFI', help="tag for identifying different structure datasets in lieu of a proper integration")
 
     synth_parser.set_defaults(func=synth_wrapper)
 
