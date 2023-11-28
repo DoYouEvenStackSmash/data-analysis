@@ -208,7 +208,7 @@ def ctf_wrapper(args):
     print("ctfs_wrapper")
     params = _hidden_parameters_unpacker(args)
     ctf_batch = generate_ctfs(1, params)
-    print(ctf_batch.shape)
+    # print(ctf_batch.shape)
 
     ds_t = build_data_set(ctf_batch, params, 1, 1)
 
