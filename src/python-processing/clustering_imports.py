@@ -7,7 +7,7 @@ import argparse
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from scipy.cluster.hierarchy import dendrogram, linkage
-
+import time
 colors = list(set(mcolors.CSS4_COLORS))
 from render_support import *
 

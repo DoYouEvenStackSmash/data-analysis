@@ -191,8 +191,8 @@ def _hidden_synthesizer(args):
 def synth_wrapper(args):
     
     n_ds = _hidden_synthesizer(args)
+    builder = flatbuffers.Builder(4096)
     for idx, n in enumerate(n_ds):
-        builder = flatbuffers.Builder(1024)
         sb = DataSetT.Pack(n, builder)
         builder.Finish(sb)
         sb = builder.Output()
