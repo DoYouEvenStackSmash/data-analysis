@@ -7,6 +7,13 @@ from DataModel.Structure import Structure, StructureT
 from DataModel.Quaternion import Quaternion, QuaternionT
 from DataModel.P import P, PT
 from DataModel.AtomicModel import *
+
+sys.path.append("./generators")
+from filegroup import *
+from transform_generator import *
+from ctf_generator import *
+from image_generator import *
+from dataloader import Dataloader as dl
 import argparse
 
 
@@ -29,15 +36,32 @@ def create_structureT_from_coords(coordinates):
     return structure_t
 
 
-def create_structure_buf_from_coords(coordinates):
+def create_structure_buf_from_args(args):
     """
     Wrapper for generating a flatbuffer from arguments
     """
-    st = create_structureT_from_coords(coordinates)
-    builder = flatbuffers.Builder(1024)
-    serialized_buffer = StructureT.Pack(st, builder)
-    sb = builder.Finish(serialized_buffer)
-    return builder.Output()
+    to_components = lambda q: {"a":q[0],"b":q[1],"c":q[2],"d":q[3]}
+    
+    quat_tensors = gen_quat_torch(args.num_orientations)
+    quat_list = []
+    for idx,qa in enumerate(quat_tensors):
+        qt = QuaternionT()
+        for k,v in to_components(qa).items():
+            setattr(qt,k,v)
+        quat_list.append(qt)
+    
+    numpy_array = load_numpy_array(args.filename)
+    for i in range(min(len(numpy_array), args.num_structs)):
+        st = create_structureT_from_coords(numpy_array[i])
+        st.orientations = quat_list
+    
+        builder = flatbuffers.Builder(1024)
+        serialized_buffer = StructureT.Pack(st, builder)
+        builder.Finish(serialized_buffer)
+        sb = builder.Output()
+        f = open(f"struct_{i}.fbs", "wb")
+        f.write(sb)
+        f.close()
 
 
 def load_numpy_array(filename):
@@ -73,14 +97,33 @@ def main():
     parser.add_argument(
         "--num_structs", type=int, default=1, help="number of structures to save"
     )
+    parser.add_argument(
+        "--num_orientations",type=int, default=0, help="number of orientations"
+    )
+    parser.set_defaults(func=create_structure_buf_from_args)
     args = parser.parse_args()
+    args.func(args)
 
-    numpy_array = load_numpy_array(args.filename)
+    # # numpy_array = load_numpy_array(args.filename)
 
-    for i in range(min(len(numpy_array), args.num_structs)):
-        f = open(f"struct_{i}.fbs", "wb")
-        f.write(create_structure_buf_from_coords(numpy_array[i]))
-        f.close()
+    # for i in range(min(len(numpy_array), args.num_structs)):
+    #     # so = create_structureT_from_coords(numpy_array[i])
+    #     # so.orientations = quat_list
+    #     # builder = flatbuffers.Builder(1024)
+    #     # serialized_buffer = StructureT.Pack(st, builder)
+    #     # builder.Finish(serialized_buffer)
+    #     # sb = builder.Output()
+        
+    #     # quat_list = []
+        
+    #     # quat_list = []
+    #     # setattr(qt, )
+    #     # quat_list = []
+        
+    #     f = open(f"struct_{i}.fbs", "wb")
+    #     # f.write(sb)
+    #     f.write(create_structure_buf_from_coords(numpy_array[i]))
+    #     f.close()
 
 
 if __name__ == "__main__":

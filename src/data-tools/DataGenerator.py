@@ -63,21 +63,38 @@ def _hidden_structure_unpacker(args):
     ]
     return structures
 
+def apply_rotation(coordinates, quat_orientation):
+    qm = quaternion_to_matrix(quat_orientation)
+    coords = [torch.matmul(torch.tensor(np.array(c,dtype=float).reshape((3,1)),dtype=torch.float64), qm) for c in coordinates]
+    return coords
 
 def prep_structures(structures, params):
     """
     preprocessing for image generation
     """
+    unpack_quat = lambda q: [q.a, q.b, q.c, q.d]
+    
+    get_orientation_quats = lambda s: [torch.tensor(unpack_quat(q)) for q in s.orientations]
+    
     get_posn = lambda a: [a.pos.x, a.pos.y, a.pos.z]
     torch_grid = gen_grid(int(params.numPixels[0]), params.pixelWidth[0]).reshape(-1, 1)
     sigma = params.sigma[0]
     coords_list = []
     for i, s in enumerate(structures):
         a = s.atoms
-        coord_list = []
+        coord_list = []            
         for a in s.atoms:
             coord_list.append(get_posn(a))
+        
+        # for idx,qo in enumerate(oq):
         coords_list.append(coord_list)
+        oq = get_orientation_quats(s)
+        converted_coords = [torch.tensor(np.array(c,dtype=float).reshape((3,1)),dtype=torch.float32) for c in coord_list]
+        if len(oq):
+            quat_mat = [quaternion_to_matrix(quat) for quat in oq]
+            for idx,q in enumerate(quat_mat):
+                oriented_coords_list = [torch.matmul(q,c) for c in converted_coords]
+                coords_list.append(oriented_coords_list)
 
     coords = torch.tensor(coords_list, dtype=torch.float64)
 
@@ -182,7 +199,6 @@ def synth_wrapper(args):
         f = open(f"{args.output_tag}_synth_dataset_{idx}.fbs", "wb")
         f.write(sb)
         f.close()
-
 
 
 def ctf_wrapper(args):
