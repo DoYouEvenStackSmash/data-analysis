@@ -3,6 +3,7 @@ import flatbuffers
 import sys
 import argparse
 import torch
+
 sys.path.append("./converters")
 sys.path.append("./generators")
 from DataModel.Atom import Atom, AtomT
@@ -12,6 +13,12 @@ from DataModel.P import P, PT
 from DataModel.AtomicModel import *
 from DataModel.Parameters import Parameters, ParametersT
 
+from DataModel.DataClass import DataClass
+from DataModel.Datum import Datum, DatumT
+from DataModel.Matrix import Matrix, MatrixT
+from DataModel.Domain import Domain
+from DataModel.DataType import DataType
+from DataModel.DataSet import DataSet, DataSetT
 from filegroup import *
 from transform_generator import *
 from ctf_generator import *
@@ -21,13 +28,13 @@ from dataloader import Dataloader as dl
 
 def raw_images_wrapper(args):
     """
-    Wrapper function for generating images
+    raw flatbuffers accessors purely for historical reasons
     """
-    # raw flatbuffers
+
     print("images_wrapper")
-    
+
     get_atoms = lambda s: s.Atoms
-    get_pos = lambda a: [a.Pos().X(),a.Pos().Y(),a.Pos().Z()]
+    get_pos = lambda a: [a.Pos().X(), a.Pos().Y(), a.Pos().Z()]
     structures = [
         Structure.GetRootAsStructure(dl.load_flatbuffer(f), 0) for f in args.structs
     ]
@@ -35,57 +42,148 @@ def raw_images_wrapper(args):
     params = Parameters.GetRootAsParameters(dl.load_flatbuffer(args.params), 0)
     print(params)
 
+
 def _hidden_parameters_unpacker(args):
     """
     helper function to hide flatbuffers monstrosities
     """
-    params = ParametersT.InitFromObj(Parameters.GetRootAsParameters(dl.load_flatbuffer(args.params), 0))
+    params = ParametersT.InitFromObj(
+        Parameters.GetRootAsParameters(dl.load_flatbuffer(args.params), 0)
+    )
     return params
+
 
 def _hidden_structure_unpacker(args):
     """
     helper function to hide flatbuffers monstrosities
     """
     structures = [
-        StructureT.InitFromObj(Structure.GetRootAsStructure(dl.load_flatbuffer(f), 0)) for f in args.structs
+        StructureT.InitFromObj(Structure.GetRootAsStructure(dl.load_flatbuffer(f), 0))
+        for f in args.structs
     ]
     return structures
-  
+
+
 def prep_structures(structures, params):
     """
     preprocessing for image generation
     """
-    get_posn = lambda a : [a.pos.x,a.pos.y,a.pos.z]
-    torch_grid = gen_grid(int(params.numPixels[0]), int(params.pixelWidth[0])).reshape(-1, 1)
+    get_posn = lambda a: [a.pos.x, a.pos.y, a.pos.z]
+    torch_grid = gen_grid(int(params.numPixels[0]), params.pixelWidth[0]).reshape(-1, 1)
     sigma = params.sigma[0]
     coords_list = []
-    for i,s in enumerate(structures):
-      a = s.atoms
-      coord_list = []
-      for a in s.atoms:
-        coord_list.append(get_posn(a))
-      coords_list.append(coord_list)
-    
-    coords = torch.tensor(coords_list, dtype=torch.float32)
-        
-    # coords = torch.tensor(structures[i].atoms[])
-    return coords,torch_grid
-    
-  
+    for i, s in enumerate(structures):
+        a = s.atoms
+        coord_list = []
+        for a in s.atoms:
+            coord_list.append(get_posn(a))
+        coords_list.append(coord_list)
+
+    coords = torch.tensor(coords_list, dtype=torch.float64)
+
+    return coords, torch_grid
+
+
+def build_data_set(data_batch, params, datatype, dataspace):
+    """
+    Closing function in prep for serialization
+    """
+    ds_t = DataSetT()
+    data = []
+    for i in data_batch:
+        data_T = DatumT()
+        m1 = MatrixT()
+        i = i.reshape(-1, 1)
+        # print(max(i))
+        m1.realPixels = [torch.real(val) for val in i]
+        if type(i[0]) == complex:
+            m1.imagPixels = [torch.imag(val) for val in i]
+        else:
+            m1.imagPixels = [0 for val in i]
+        # print(m1.imagPixels)
+        m1.dataType = datatype
+        m1.dataSpace = dataspace
+        data_T.m1 = m1
+        data.append(data_T)
+    ds_t.params = params
+    ds_t.data = data
+    return ds_t
+
+
 def images_wrapper(args):
     """
     wrapper function for generating images
     """
     structures = _hidden_structure_unpacker(args)
     params = _hidden_parameters_unpacker(args)
-    c,g = prep_structures(structures, params)
-    print(c.shape)
-    print(g.shape)
-    imgs = simulate_images(c,g,params.sigma[0])
-    print(imgs.shape)
-    # print([structures[i].atoms for i in range(len(structures))])
+
+    coordinate_tensor, abstract_grid_tensor = prep_structures(structures, params)
+
+    img_batch = simulate_images(
+        coordinate_tensor, abstract_grid_tensor, params.sigma[0]
+    )
+
+    ds_t = build_data_set(img_batch, params, 0, 0)
+    builder = flatbuffers.Builder(1024)
+    sb = DataSetT.Pack(ds_t, builder)
+    sb = builder.Finish(sb)
+
+    f = open(args.output, "wb")
+    f.write(builder.Output())
+    f.close()
+
+
+def _hidden_dataset_unpacker(filename):
+    return DataSet.GetRootAsDataSet(dl.load_flatbuffer(filename), 0)
+
+
+def _hidden_matrix1_unpacker(filename):
+    get_data = lambda ds: [ds.Data(j) for j in range(ds.DataLength())]
+    get_complex_pixels = lambda rp, ip: rp + 1j * ip
+    mat = torch.tensor(
+        np.array(
+            [
+                get_complex_pixels(
+                    i.M1().RealPixelsAsNumpy(), i.M1().ImagPixelsAsNumpy()
+                ).reshape((128, 128))
+                for i in get_data(
+                    DataSet.GetRootAsDataSet(dl.load_flatbuffer(filename), 0)
+                )
+            ]
+        )
+    )
+    return mat
+
+
+def _hidden_synthesizer(args):
+    get_data = lambda ds: [ds.Data(j) for j in range(ds.DataLength())]
+    get_complex_pixels = lambda rp, ip: rp + 1j * ip
+
+    img_mats = _hidden_matrix1_unpacker(args.images)
+    ctf_mats = _hidden_matrix1_unpacker(args.ctfs)
+    params = ParametersT.InitFromObj(_hidden_dataset_unpacker(args.ctfs).Params())
+    new_ds = []
+    for i, img in enumerate(img_mats):
+        new_batch = apply_ctf_batch(img.view(1, 128, 128), ctf_mats)
+        ds_t = build_data_set(new_batch, params, datatype=2, dataspace=0)
+        new_ds.append(ds_t)
+
+    return new_ds
+
+
+def synth_wrapper(args):
     
-    # print(vars(params))
+    n_ds = _hidden_synthesizer(args)
+    for idx, n in enumerate(n_ds):
+        builder = flatbuffers.Builder(1024)
+        sb = DataSetT.Pack(n, builder)
+        builder.Finish(sb)
+        sb = builder.Output()
+        f = open(f"{args.output_tag}_synth_dataset_{idx}.fbs", "wb")
+        f.write(sb)
+        f.close()
+
+
 
 def ctf_wrapper(args):
     """
@@ -94,14 +192,22 @@ def ctf_wrapper(args):
     print("ctfs_wrapper")
     params = _hidden_parameters_unpacker(args)
     ctf_batch = generate_ctfs(1, params)
-    
+    print(ctf_batch.shape)
 
-def help_wrapper(args):
-    print(args)
+    ds_t = build_data_set(ctf_batch, params, 1, 1)
+
+    builder = flatbuffers.Builder(1024)
+    sb = DataSetT.Pack(ds_t, builder)
+    sb = builder.Finish(sb)
+
+    f = open(args.output, "wb")
+    f.write(builder.Output())
+    f.close()
+
 
 def main():
     parser = argparse.ArgumentParser(description="CLI with subparsers")
-    # parser.set_defaults(func=help_wrapper)
+
     subparsers = parser.add_subparsers(dest="command", help="Subcommand")
 
     # Subparser for ctfs
@@ -113,6 +219,9 @@ def main():
         help="Filename to flatbuffers file for parameters",
     )
     # ctfs_subparser(ctfs_parser)
+    ctfs_parser.add_argument(
+        "-o", "--output", default="ctfs.fbs", help="filename to save ctfs to"
+    )
     ctfs_parser.set_defaults(func=ctf_wrapper)
 
     # Subparser for images
@@ -130,7 +239,20 @@ def main():
         required=True,
         help="List of filenames to FlatBuffers files for structs",
     )
+    images_parser.add_argument(
+        "-o", "--output", default="images.fbs", help="filename to save images to"
+    )
+
     images_parser.set_defaults(func=images_wrapper)
+
+    synth_parser = subparsers.add_parser("synth", help="synthesize images")
+    synth_parser.add_argument("-i", "--images", required=True, help="Input images")
+    synth_parser.add_argument(
+        "-c", "--ctfs", required=True, help="Input contrast transfer functions"
+    )
+    synth_parser.add_argument("-o","--output_tag", default = 'MYFI', help="tag for identifying different structure datasets in lieu of a proper integration")
+
+    synth_parser.set_defaults(func=synth_wrapper)
 
     args = parser.parse_args()
     args.func(args)

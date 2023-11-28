@@ -52,6 +52,7 @@ def simulate_images(coord, grid, sigma, batch_size=32):
     # how many CTFS to generate
     n_struc = coord.shape[0]  # get total number of structures
     n_atoms = coord.shape[1]  # get total number of atoms
+    print(n_atoms)
     norm = 0.5 / (np.pi * sigma**2 * n_atoms)  # likelihood normalization constant
 
     N_images = n_struc  # number of images is the sae as number of structures
@@ -75,6 +76,7 @@ def simulate_images(coord, grid, sigma, batch_size=32):
         start = i * batch_size  # choose a start index
         end = (i + 1) * batch_size  # choose an end index
         coords_batch = coord[start:end]  # get a batch of transformed coordinates
+        print(coords_batch)
 
         image_batch = gen_img_torch_batch(
             coords_batch, grid, sigma, norm

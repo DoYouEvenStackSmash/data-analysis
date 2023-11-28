@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Parameters(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAsParameters(cls, buf, offset):
@@ -26,7 +28,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -54,7 +59,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -82,7 +90,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -110,7 +121,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -138,7 +152,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -166,7 +183,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -194,7 +214,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -222,7 +245,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -250,7 +276,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -278,7 +307,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -306,7 +338,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -334,7 +369,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -362,7 +400,10 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+            return self._tab.Get(
+                flatbuffers.number_types.Float32Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4),
+            )
         return 0
 
     # Parameters
@@ -384,42 +425,152 @@ class Parameters(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         return o == 0
 
-def ParametersStart(builder): builder.StartObject(13)
-def ParametersAddAmplitude(builder, amplitude): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(amplitude), 0)
-def ParametersStartAmplitudeVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddDefocus(builder, defocus): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(defocus), 0)
-def ParametersStartDefocusVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddBFactor(builder, bFactor): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(bFactor), 0)
-def ParametersStartBFactorVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddImgDims(builder, imgDims): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(imgDims), 0)
-def ParametersStartImgDimsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddNumPixels(builder, numPixels): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(numPixels), 0)
-def ParametersStartNumPixelsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddPixelWidth(builder, pixelWidth): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(pixelWidth), 0)
-def ParametersStartPixelWidthVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddSigma(builder, sigma): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(sigma), 0)
-def ParametersStartSigmaVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddElecwavel(builder, elecwavel): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(elecwavel), 0)
-def ParametersStartElecwavelVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddSnr(builder, snr): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(snr), 0)
-def ParametersStartSnrVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddExperimentParameters(builder, experimentParameters): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(experimentParameters), 0)
-def ParametersStartExperimentParametersVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddSeed(builder, seed): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(seed), 0)
-def ParametersStartSeedVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddStructures(builder, structures): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(structures), 0)
-def ParametersStartStructuresVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersAddCoordinates(builder, coordinates): builder.PrependUOffsetTRelativeSlot(12, flatbuffers.number_types.UOffsetTFlags.py_type(coordinates), 0)
-def ParametersStartCoordinatesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ParametersEnd(builder): return builder.EndObject()
+
+def ParametersStart(builder):
+    builder.StartObject(13)
+
+
+def ParametersAddAmplitude(builder, amplitude):
+    builder.PrependUOffsetTRelativeSlot(
+        0, flatbuffers.number_types.UOffsetTFlags.py_type(amplitude), 0
+    )
+
+
+def ParametersStartAmplitudeVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddDefocus(builder, defocus):
+    builder.PrependUOffsetTRelativeSlot(
+        1, flatbuffers.number_types.UOffsetTFlags.py_type(defocus), 0
+    )
+
+
+def ParametersStartDefocusVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddBFactor(builder, bFactor):
+    builder.PrependUOffsetTRelativeSlot(
+        2, flatbuffers.number_types.UOffsetTFlags.py_type(bFactor), 0
+    )
+
+
+def ParametersStartBFactorVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddImgDims(builder, imgDims):
+    builder.PrependUOffsetTRelativeSlot(
+        3, flatbuffers.number_types.UOffsetTFlags.py_type(imgDims), 0
+    )
+
+
+def ParametersStartImgDimsVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddNumPixels(builder, numPixels):
+    builder.PrependUOffsetTRelativeSlot(
+        4, flatbuffers.number_types.UOffsetTFlags.py_type(numPixels), 0
+    )
+
+
+def ParametersStartNumPixelsVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddPixelWidth(builder, pixelWidth):
+    builder.PrependUOffsetTRelativeSlot(
+        5, flatbuffers.number_types.UOffsetTFlags.py_type(pixelWidth), 0
+    )
+
+
+def ParametersStartPixelWidthVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddSigma(builder, sigma):
+    builder.PrependUOffsetTRelativeSlot(
+        6, flatbuffers.number_types.UOffsetTFlags.py_type(sigma), 0
+    )
+
+
+def ParametersStartSigmaVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddElecwavel(builder, elecwavel):
+    builder.PrependUOffsetTRelativeSlot(
+        7, flatbuffers.number_types.UOffsetTFlags.py_type(elecwavel), 0
+    )
+
+
+def ParametersStartElecwavelVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddSnr(builder, snr):
+    builder.PrependUOffsetTRelativeSlot(
+        8, flatbuffers.number_types.UOffsetTFlags.py_type(snr), 0
+    )
+
+
+def ParametersStartSnrVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddExperimentParameters(builder, experimentParameters):
+    builder.PrependUOffsetTRelativeSlot(
+        9, flatbuffers.number_types.UOffsetTFlags.py_type(experimentParameters), 0
+    )
+
+
+def ParametersStartExperimentParametersVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddSeed(builder, seed):
+    builder.PrependUOffsetTRelativeSlot(
+        10, flatbuffers.number_types.UOffsetTFlags.py_type(seed), 0
+    )
+
+
+def ParametersStartSeedVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddStructures(builder, structures):
+    builder.PrependUOffsetTRelativeSlot(
+        11, flatbuffers.number_types.UOffsetTFlags.py_type(structures), 0
+    )
+
+
+def ParametersStartStructuresVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersAddCoordinates(builder, coordinates):
+    builder.PrependUOffsetTRelativeSlot(
+        12, flatbuffers.number_types.UOffsetTFlags.py_type(coordinates), 0
+    )
+
+
+def ParametersStartCoordinatesVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
+
+
+def ParametersEnd(builder):
+    return builder.EndObject()
+
 
 try:
     from typing import List
 except:
     pass
 
-class ParametersT(object):
 
+class ParametersT(object):
     # ParametersT
     def __init__(self):
         self.amplitude = None  # type: List[float]
@@ -620,9 +771,13 @@ class ParametersT(object):
                 snr = builder.EndVector(len(self.snr))
         if self.experimentParameters is not None:
             if np is not None and type(self.experimentParameters) is np.ndarray:
-                experimentParameters = builder.CreateNumpyVector(self.experimentParameters)
+                experimentParameters = builder.CreateNumpyVector(
+                    self.experimentParameters
+                )
             else:
-                ParametersStartExperimentParametersVector(builder, len(self.experimentParameters))
+                ParametersStartExperimentParametersVector(
+                    builder, len(self.experimentParameters)
+                )
                 for i in reversed(range(len(self.experimentParameters))):
                     builder.PrependFloat32(self.experimentParameters[i])
                 experimentParameters = builder.EndVector(len(self.experimentParameters))

@@ -23,7 +23,7 @@ def generate_ctfs(N_images, hyperparams=None, seed=12345):
         amp = hyperparams.amplitude[0]
         b_factor = hyperparams.bFactor[0]
         seed = hyperparams.seed
-        defocus = torch.tensor(hyperparams.defocus, dtype=float)
+        defocus = torch.tensor(hyperparams.defocus, dtype=torch.float64)
         N_images = defocus.shape[0]
     else:
         defocus = (
