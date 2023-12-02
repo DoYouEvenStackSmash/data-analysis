@@ -26,7 +26,9 @@ from ctf_generator import *
 from image_generator import *
 from dataloader import Dataloader as dl
 import matplotlib.pyplot as plt
-    # from DataGenerator import *
+
+# from DataGenerator import *
+
 
 def _hidden_matrix1_unpacker(filename):
     get_data = lambda ds: [ds.Data(j) for j in range(ds.DataLength())]
@@ -45,10 +47,14 @@ def _hidden_matrix1_unpacker(filename):
     )
     return mat
 
+
 def serialize_fbs_datasets(filenames):
-    matrices = np.concatenate(np.array([_hidden_matrix1_unpacker(f).numpy() for f in filenames]),axis=0)
+    matrices = np.concatenate(
+        np.array([_hidden_matrix1_unpacker(f).numpy() for f in filenames]), axis=0
+    )
     print(matrices.shape)
     np.save("serialized_files.npy", matrices)
+
 
 def serialize_fbs_dataset(filename):
     data_numpy = []

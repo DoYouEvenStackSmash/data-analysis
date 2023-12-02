@@ -40,27 +40,27 @@ def create_structure_buf_from_args(args):
     """
     Wrapper for generating a flatbuffer from arguments
     """
-    to_components = lambda q: {"a":q[0],"b":q[1],"c":q[2],"d":q[3]}
+    to_components = lambda q: {"a": q[0], "b": q[1], "c": q[2], "d": q[3]}
     print(args)
     quat_tensors = gen_quat_torch(args.num_orientations)
     quat_list = []
     if len(quat_tensors) == 1:
         qt = QuaternionT()
-        for k,v in to_components(quat_tensors[0]).items():
-            setattr(qt,k,v)
+        for k, v in to_components(quat_tensors[0]).items():
+            setattr(qt, k, v)
         quat_list.append(qt)
     else:
-        for idx,qa in enumerate(quat_tensors):
+        for idx, qa in enumerate(quat_tensors):
             qt = QuaternionT()
-            for k,v in to_components(qa).items():
-                setattr(qt,k,v)
+            for k, v in to_components(qa).items():
+                setattr(qt, k, v)
             quat_list.append(qt)
     print(len(quat_list))
     numpy_array = load_numpy_array(args.filename)
     for i in range(min(len(numpy_array), args.num_structs)):
         st = create_structureT_from_coords(numpy_array[i])
         st.orientations = quat_list
-    
+
         builder = flatbuffers.Builder(1024)
         serialized_buffer = StructureT.Pack(st, builder)
         builder.Finish(serialized_buffer)
@@ -104,7 +104,7 @@ def main():
         "--num_structs", type=int, default=1, help="number of structures to save"
     )
     parser.add_argument(
-        "--num_orientations",type=int, default=0, help="number of orientations"
+        "--num_orientations", type=int, default=0, help="number of orientations"
     )
     parser.set_defaults(func=create_structure_buf_from_args)
     args = parser.parse_args()
@@ -119,13 +119,13 @@ def main():
     #     # serialized_buffer = StructureT.Pack(st, builder)
     #     # builder.Finish(serialized_buffer)
     #     # sb = builder.Output()
-        
+
     #     # quat_list = []
-        
+
     #     # quat_list = []
     #     # setattr(qt, )
     #     # quat_list = []
-        
+
     #     f = open(f"struct_{i}.fbs", "wb")
     #     # f.write(sb)
     #     f.write(create_structure_buf_from_coords(numpy_array[i]))
