@@ -1,12 +1,13 @@
 % Load data from CSV files
-path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\s256_im2048_snr1e-1_likelihoods.csv'
+path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\testlikeli_likelihoods.csv'
 % files = []
 % search_tree_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\search_tree_likelihoods.csv');
 % global_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\all_pairs_likelihoods.csv');
 likelihoods = readtable(path);
+
 % Extract single point likelihood and area likelihood data
-single_point_likelihoods = likelihoods.approximate_likelihood;
-area_likelihoods = likelihoods.true_likelihood;
+single_point_likelihoods = likelihoods.single_point_likelihood;
+area_likelihoods = likelihoods.area_likelihood;
 
 % Calculate the average of single point likelihoods and area likelihoods
 spl_average = mean(single_point_likelihoods);

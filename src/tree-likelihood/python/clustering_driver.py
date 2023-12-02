@@ -294,7 +294,7 @@ def likelihood_wrapper(args):
             node_list, data_list, N
         )
         out_file = f"{args.output}_likelihoods.csv"
-        write_csv(approximate_likelihood, true_likelihood, out_file)
+        write_csv(np.real(approximate_likelihood), np.real(true_likelihood), out_file)
         return
     (
         search_tree_nn_likelihood,
@@ -302,7 +302,7 @@ def likelihood_wrapper(args):
     ) = search_tree_likelihoods(node_list, data_list, N)
     search_file = f"{args.output}_likelihoods.csv"
     write_csv(
-        search_tree_nn_likelihood, search_tree_whole_cluster_likelihood, search_file
+        np.real(search_tree_nn_likelihood), np.real(search_tree_whole_cluster_likelihood), search_file
     )
     if args.true_likelihood:
         # return
@@ -310,7 +310,7 @@ def likelihood_wrapper(args):
             data_list, N
         )
         ap_file = "all_pairs_likelihoods.csv"
-        write_csv(all_pairs_nn_likelihood, all_pairs_global_likelihood, ap_file)
+        write_csv(np.real(all_pairs_nn_likelihood), np.real(all_pairs_global_likelihood), ap_file)
     # if args.output:
 
 

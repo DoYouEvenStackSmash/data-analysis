@@ -1,5 +1,5 @@
 from clustering_imports import *
-
+import time
 
 def find_cluster(node_list, T):
     """
@@ -88,7 +88,7 @@ def search_tree_associations(node_list, data_list, input_list):
 
     end_time = time.perf_counter()
     time_to_locate = end_time - start_time
-    logger.info("{}".format(time_to_locate))
+    # logger.info("{}".format(time_to_locate))
     # print("Time taken for tree-based search:", time_to_locate)
 
     return di_match_indices, ds_match_distances
@@ -131,6 +131,6 @@ def all_pairs_associations(data_list, input_list):
     end_time = time.perf_counter()
     total_execution_time = end_time - start_time
 
-    logger.info("{}".format(total_execution_time))
+    # logger.info("{}".format(total_execution_time))
 
     return mi_match_indices, ms_match_distances
