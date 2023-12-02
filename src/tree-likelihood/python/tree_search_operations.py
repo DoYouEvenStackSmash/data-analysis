@@ -1,6 +1,36 @@
 from clustering_imports import *
 import time
 
+
+def level_order_search(node_list, T, TAU=1e-8):
+    LEVEL_FLAG = -1
+    q = []
+    q.append(0)
+    # q.append(-1)
+    reachable_cluster_refs = []
+    level_counter = 0
+    while len(q):
+        q.append(LEVEL_FLAG)
+        level_counter+=1
+        reachable_cluster_refs.append([])
+
+        while q[0] != LEVEL_FLAG:
+            elem_id = q.pop(0)      
+            elem = node_list[elem_id]
+            
+            if elem.data_refs != None:
+                reachable_cluster_refs[-1].append(elem_id)
+                continue
+            
+            for cidx in elem.children:
+                res_elem_tensor = apply_d1m2_to_d2m1(T, node_list[cidx].val)
+                dist = torch.linalg.norm(T.m1 - res_elem_tensor)
+                if dist > TAU:
+                    continue
+                q.append(cidx)
+        flag = q.pop(0)
+    return reachable_cluster_refs
+
 def find_cluster(node_list, T):
     """
     Searches for the cluster containing(ish) T
@@ -13,7 +43,7 @@ def find_cluster(node_list, T):
         min_dist = float("inf")
         nn = 0
         for i in node_list[n_curr].children:
-            dist = np.linalg.norm(node_list[i].val - T.m1.numpy())
+            dist = custom_distance(node_list[i].val,T)
             if dist < min_dist:
                 nn = i
                 min_dist = dist
@@ -51,7 +81,7 @@ def search_tree(node_list, data_list, T):
     min_dist = float("inf")
     for idx in node_list[n_curr].data_refs:
         # print(idx)
-        dist = np.linalg.norm(data_list[idx] - T.m1.numpy())
+        dist = custom_distance(data_list[idx],T)
         if dist < min_dist:
             closest_idx = idx
             min_dist = dist
@@ -118,7 +148,7 @@ def all_pairs_associations(data_list, input_list):
 
         # Compare the input point with all data points
         for data_index, data_point in enumerate(data_list):
-            distance = np.linalg.norm(input_point.m1.numpy() - data_point)
+            distance = custom_distance(input_point,data_point)
 
             # Update nearest neighbor if a closer one is found
             if distance < min_distance:

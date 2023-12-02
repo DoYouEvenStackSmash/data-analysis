@@ -97,7 +97,7 @@ def construct_tree(M, k=3, R=30, C=-1):
                 continue
 
             data = [data_store[dref] for dref in data_ref_arr]
-            if dlen > k:
+            if dlen >= k:
                 mlist, distances = preprocess(data, k)
                 total_sum = float("inf")
 

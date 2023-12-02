@@ -190,6 +190,27 @@ def build_wrapper(args):
         serialize_wrapper(args, node_list, data_list, param_list)
     return node_list, data_list
 
+def datum_loader(np_array_1,np_array_2 = None):
+    """Wrapper function to load a numpy array into datumT objects
+
+    Args:
+        np_array_1 (_type_): _description_
+        np_array_2 (_type_, optional): _description_. Defaults to None.
+    """
+    
+    mat2_gen = lambda np_array_2, x : 1
+    if np_array_2 != None:
+        mat2_gen = lambda np_array_2, x : np_array_2[x]
+    
+    datumT_arr = []
+    for idx,mat1 in enumerate(np_array_1):
+        mat2 = mat2_gen(np_array_2, idx)
+        datumT_val = DatumT()
+        datumT_val.m1 = torch.tensor(mat1)
+        datumT_val.m2 = torch.tensor(mat2)
+        datumT_arr.append(datumT_val)
+        
+    return datumT_arr    
 
 def tree_loader(filename):
     """
@@ -217,10 +238,10 @@ def tree_loader(filename):
     f.close()
 
     # load values of internal tree nodes
-    tree_node_vals = np.load(parsed_data["resources"]["node_vals_file"])
+    tree_node_vals = datum_loader(np.load(parsed_data["resources"]["node_vals_file"]))
 
     # load data referred to by leaf nodes
-    data_list = np.load(parsed_data["resources"]["data_list_file"])
+    data_list = datum_loader(np.load(parsed_data["resources"]["data_list_file"]))
 
     # load node_list
     node_list_data = parsed_data["node_list"]

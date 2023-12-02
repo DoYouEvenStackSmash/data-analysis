@@ -33,8 +33,8 @@ def update_medioids(clusters, mlist, distances):
     Returns an array of np arrays
     """
     new_mlist = []
-    print(type(distances[0]))
-    print(distances)
+    
+    
     for midx in mlist:
         cluster = clusters[mlist.index(midx)]
         cluster_distances = np.sum(distances[cluster][:, cluster], axis=1)
