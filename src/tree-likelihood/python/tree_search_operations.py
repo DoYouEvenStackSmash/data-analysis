@@ -13,7 +13,7 @@ def find_cluster(node_list, T):
         min_dist = float("inf")
         nn = 0
         for i in node_list[n_curr].children:
-            dist = np.linalg.norm(node_list[i].val - T)
+            dist = np.linalg.norm(node_list[i].val - T.m1.numpy())
             if dist < min_dist:
                 nn = i
                 min_dist = dist
@@ -51,7 +51,7 @@ def search_tree(node_list, data_list, T):
     min_dist = float("inf")
     for idx in node_list[n_curr].data_refs:
         # print(idx)
-        dist = np.linalg.norm(data_list[idx] - T)
+        dist = np.linalg.norm(data_list[idx] - T.m1.numpy())
         if dist < min_dist:
             closest_idx = idx
             min_dist = dist
@@ -118,7 +118,7 @@ def all_pairs_associations(data_list, input_list):
 
         # Compare the input point with all data points
         for data_index, data_point in enumerate(data_list):
-            distance = np.linalg.norm(input_point - data_point)
+            distance = np.linalg.norm(input_point.m1.numpy() - data_point)
 
             # Update nearest neighbor if a closer one is found
             if distance < min_distance:

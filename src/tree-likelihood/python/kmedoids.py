@@ -21,7 +21,7 @@ def calculate_sum(clusters, mlist, distances):
     """
     Calculates the total sum over all clusters of distances between elements and centroids
     """
-    total_sum = np.sum(
+    total_sum = sum(
         [distances[idx, midx] for midx in mlist for idx in clusters[mlist.index(midx)]]
     )
     return total_sum
@@ -33,7 +33,8 @@ def update_medioids(clusters, mlist, distances):
     Returns an array of np arrays
     """
     new_mlist = []
-
+    print(type(distances[0]))
+    print(distances)
     for midx in mlist:
         cluster = clusters[mlist.index(midx)]
         cluster_distances = np.sum(distances[cluster][:, cluster], axis=1)
@@ -46,9 +47,14 @@ def compute_distance_matrix(M_flat):
     """
     Build an nxn matrix of all pairwise distances between elements
     """
-    pairwise_distances = np.sqrt(
-        np.sum(np.square(M_flat[:, np.newaxis] - M_flat), axis=2)
-    )
+    num_tensors, _, width, height = M_flat.shape
+
+    # Reshape M_flat to (num_tensors, width*height)
+    M_flat_reshaped = M_flat.view(num_tensors, -1)
+
+    # Compute pairwise distances
+    pairwise_distances = torch.norm(M_flat_reshaped[:, None] - M_flat_reshaped, dim=2)
+
     return pairwise_distances
 
 
@@ -58,27 +64,32 @@ def preprocess(M, k=3):
     Computes an initial set of medioids, and a distances matrix between every pair of points
     Returns a list of indices referring to M, and a distances matrix
     """
-    n = M.shape[0]
+    n = len(M)
 
     # Flatten the 2x2 matrices to 1D arrays for pairwise calculations
     pairwise_distances = None
 
-    M_flat = M.reshape(n, -1)
-
+    # M_flat = M.reshape(n, -1)
+    M_flat = torch.stack([m.m1 for m in M])
+    print(M_flat.shape)
     pairwise_distances = compute_distance_matrix(M_flat)
-
+    for p in pairwise_distances:
+        print(p)
     # Step 1-2: Calculate denominators efficiently
-    denominators = np.sum(pairwise_distances, axis=1)
+    denominators = torch.sum(pairwise_distances, axis=1)
 
-    # Calculate v values using vectorized operations
-    v_values = pairwise_distances / denominators[:, np.newaxis]
+    # Calculate v values using vectorized operations in PyTorch
+    v_values = pairwise_distances / denominators.view(-1, 1)
 
-    np.fill_diagonal(v_values, 0)  # Set diagonal values to 0
+    # Set diagonal values to 0
+    # torch.fill_diagonal(v_values, 0)
+    v_values = v_values - torch.diag(v_values.diag())
 
-    v_sums = np.sum(v_values, axis=1)
+    # Sum along axis 1
+    v_sums = torch.sum(v_values, dim=1)
 
     # Initialize objects using list comprehension
-    data = [(idx, v_sums[idx]) for idx in range(n)]
+    data = [(idx, v_sums[idx].item()) for idx in range(n)]
 
     # Sort the data objects by v values
     sortkey = lambda d: d[1]
@@ -87,7 +98,11 @@ def preprocess(M, k=3):
     # Get the indices of the k medioids
     medioid_indices = [d[0] for d in sorted_data[:k]]
 
-    return medioid_indices, pairwise_distances
+    # Convert pairwise_distances to NumPy array if needed
+    pairwise_distances_np = pairwise_distances.numpy()
+
+    return medioid_indices, pairwise_distances_np
+
 
 
 def postprocess(M, clusters, mlist):
