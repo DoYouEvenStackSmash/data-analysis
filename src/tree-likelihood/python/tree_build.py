@@ -35,13 +35,13 @@ def construct_data_list(node_list, data_shape=None):
     return data_list, param_list
 
 
-def construct_tree(M, k=3, R=30, C=-1):
+def construct_tree(M, k=3, R=30, C=1):
     """
     Builds a hierarchical clustering on the input data M
     Returns a flat tree as a list of nodes, where node_list[0] is the root.
     """
     data_store = M
-    # param_store = P
+    
     node_list = []
     node_queue = deque()
     dref_queue = deque()

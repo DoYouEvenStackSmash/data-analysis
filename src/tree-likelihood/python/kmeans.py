@@ -141,6 +141,10 @@ def kmeans(M, k, max_iter=100):
 
 
 def kmeanspp_refs(data_store, data_ref_arr, k):
+    """
+    Compute a probably-better-than-random set of k centroids using kmeans++
+    Returns a torch tensor array of k centroids
+    """
     dlen = len(data_ref_arr)
     start_center = np.random.randint(dlen)
     not_chosen = deque(i for i in range(dlen) if i != start_center)
@@ -162,11 +166,9 @@ def kmeanspp_refs(data_store, data_ref_arr, k):
             weights[idx] = torch.square(min_dist)
 
         selected_point = weighted_sample(weights)
-        # print(selected_point)
-        # print(len(not_chosen))
+
         centroids.append(data_store[data_ref_arr[not_chosen[selected_point]]])
 
-        # chosen.add(not_chosen[selected_point])
         not_chosen.remove(not_chosen[selected_point])
         if not len(not_chosen):
             break
