@@ -36,9 +36,9 @@ from dataloader import Dataloader as dl
 # import matplotlib.pyplot as plt
 
 from datum_helpers import *
+
 def custom_distance(k, m):
     return torch.linalg.norm(k.m1 - m.m1)
-    # return torch.sqrt(torch.sum(torch.power(k - m, 2)))
 
 
 def dataloader(filename):

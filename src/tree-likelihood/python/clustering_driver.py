@@ -37,7 +37,7 @@ def hierarchify_wrapper(filename, k=3, R=30, C=1, param_file=None):
     """
     
     M = data_loading_wrapper(filename)
-    
+    print(type(M))
     node_list, data_list, param_list = hierarchify(M, k, R, C)
     return node_list, data_list, param_list
 
@@ -112,7 +112,8 @@ def data_loading_wrapper(filename):
         datumT_list = lift_datum_buf_to_datumT(datum_buf, param_buf)
         M = datumT_list
     else:
-        M = dataloader(filename)
+        M = datum_loader(dataloader(filename))
+        
     return M
 
 
@@ -229,7 +230,7 @@ def build_wrapper(args):
         serialize_wrapper(args, node_list, data_list, param_list)
     return node_list, data_list
 
-def datum_loader(np_array_1,np_array_2 = None):
+def datum_loader(np_array_1,np_array_2=None):
     """Wrapper function to load a numpy array into datumT objects
 
     Args:
@@ -240,10 +241,12 @@ def datum_loader(np_array_1,np_array_2 = None):
         datumT_arr (list(DatumT)): Ordered list of DatumT
     """
     
-    mat2_gen = lambda np_array_2, x : 1
-    if np_array_2 != None:
-        mat2_gen = lambda np_array_2, x : np_array_2[x]
-    
+    mat2_gen = lambda np_array_2, x : np_array_2[x]
+    if type(np_array_2) == type(None):
+        mat2_gen = lambda np_array_2, x : 1
+    else:
+        print(len(np_array_2))
+    # print(type(np_array_2[0]))
     datumT_arr = []
     for idx,mat1 in enumerate(np_array_1):
         mat2 = mat2_gen(np_array_2, idx)
@@ -363,8 +366,14 @@ def likelihood_wrapper(args):
         args: Argparse object
     """
     node_list, data_list, tree_params = tree_loader(args.models)
-
-    N = data_loading_wrapper(args.images)
+    N = None
+    if args.ctfs != None:
+        img_arr,ctf_arr = dataloader(args.images), dataloader(args.ctfs)
+        print(type(ctf_arr))
+        N = datum_loader(img_arr, ctf_arr)
+    else:
+        N = data_loading_wrapper(args.images)
+    
     if args.test:
         approximate_likelihood, true_likelihood = testbench_likelihood(
             node_list, data_list, N
@@ -472,6 +481,10 @@ def main():
     likelihood_parser.add_argument(
         "--images", required=True, help="npy array containing images"
     )
+    likelihood_parser.add_argument(
+        "--ctfs", help="npy array containing ctfs"
+    )
+    
     likelihood_parser.add_argument(
         "-o", "--output", help="prefix of output file for saving the densities"
     )

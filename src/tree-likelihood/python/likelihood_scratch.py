@@ -47,7 +47,7 @@ def likelihood(omega, m, N_pix, noise=1):
     """
     lambda_square = noise**2
     coeff = 1
-    l2 = np.exp(-1.0 * (np.square(np.linalg.norm(omega - m)) / (2 * lambda_square)))
+    l2 = np.exp(-1.0 * (np.square(custom_distance(omega,m)) / (2 * lambda_square)))
     return coeff * l2
 
 
@@ -60,7 +60,7 @@ def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1)
     returns a list of likelihoods associated with the data_list members
     """
     # in application, this is 16384 <- 128 x 128
-    n_pix = data_list[0].shape[1] ** 2.0
+    n_pix = data_list[0].m1.shape[1] ** 2.0
 
     approx_scale_constant = len(data_list)
     weight = 1  # / len(data_list)
@@ -90,7 +90,7 @@ def evaluate_tree_cluster_likelihood(node_list, data_list, input_list, noise=1):
 
     returns a list of likelihoods associated with the data_list members
     """
-    n_pix = data_list[0].shape[1] ** 2
+    n_pix = data_list[0].m1.shape[1] ** 2
 
     approx_scale_constant = len(data_list)
 
@@ -120,11 +120,12 @@ def calculate_noise(input_list):
     """
     Calculate the noise as the standard deviation
     """
-    avg = np.mean(input_list)
+    input_arr = np.array([input_list[i].m1.numpy() for i in range(len(input_list))])
+    avg = np.mean(input_arr)
     noise = np.sqrt(
         np.divide(
-            np.sum(np.array([np.square(x - avg) for x in input_list])),
-            input_list.shape[0] - 1,
+            np.sum(np.array([np.square(x - avg) for x in input_arr])),
+            input_arr.shape[0] - 1,
         )
     )
     return noise
@@ -159,7 +160,7 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise=1):
     Nearest neighbor
     returns a list of likelihoods associated with the data_list members
     """
-    n_pix = data_list[0].shape[0] * data_list[0].shape[1]
+    n_pix = data_list[0].m1.shape[0] * data_list[0].m1.shape[1]
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
     approx_scale_constant = len(data_list)
     weight = 1 / len(data_list)
@@ -169,7 +170,7 @@ def evaluate_global_neighbor_likelihood(data_list, input_list, noise=1):
         min_distance = float("inf")
         nn_index = 0
         for midx, m in enumerate(data_list):
-            distance = np.linalg.norm(omega - m)
+            distance = custom_distance(omega, m)
             # Update nearest neighbor if a closer one is found
             if distance < min_distance:
                 min_distance = distance
@@ -206,7 +207,7 @@ def evaluate_global_likelihood(data_list, input_list, noise=1):
     Given reference data and some input data,
     Accumulate the likelihoods according to the paper in the structure indices
     """
-    n_pix = data_list[0].shape[1] ** 2.0
+    n_pix = data_list[0].m1.shape[1] ** 2.0
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
     approx_scale_constant = len(data_list)
     weight = 1 / len(data_list)

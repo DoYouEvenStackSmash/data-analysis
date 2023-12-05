@@ -47,7 +47,7 @@ def compute_distance_matrix(M_flat):
     """
     Build an nxn matrix of all pairwise distances between elements
     """
-    num_tensors, _, width, height = M_flat.shape
+    num_tensors, width, height = M_flat.shape
 
     # Reshape M_flat to (num_tensors, width*height)
     M_flat_reshaped = M_flat.view(num_tensors, -1)
