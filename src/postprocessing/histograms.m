@@ -1,5 +1,6 @@
 % Load data from CSV files
-path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\testlikeli_likelihoods.csv'
+path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\tree-likelihood\python\testlikeli_likelihoods.csv'
+% path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\tree-likelihood\python\all_pairs_likelihoods.csv'
 % files = []
 % search_tree_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\search_tree_likelihoods.csv');
 % global_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\all_pairs_likelihoods.csv');
