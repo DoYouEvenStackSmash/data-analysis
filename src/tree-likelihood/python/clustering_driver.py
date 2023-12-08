@@ -20,65 +20,110 @@ def param_loader(filename, count=1):
     return [{"id": i, "weight": 1} for i in range(count)]
 
 
-def hierarchify_wrapper(filename, k, R, C, param_file=None):
-    """
-    Wrapper function for building a hierarchical clustering
-    """
-    M = data_loading_wrapper(filename)
-    # M = np.random.randint(0, 10, (10, 2, 2))
-    P = None
-    if param_file != None:
-        P = param_loader(param_file, len(M))
-    else:
-        P = param_loader(filename, len(M))
+def hierarchify_wrapper(filename, k=3, R=30, C=1, param_file=None):
+    """Wrapper function for building a hierarchical clustering
 
-    # print(P)
-    nl, dl, pl = hierarchify(M, P, k, R, C)
-    return nl, dl, pl
+    Args:
+        filename (string): a filename for loading the data over which a clustering will be computed
+        k (int, optional): Number of sublevel clusters  Defaults to 3.
+        R (int, optional): Number of iterations for kmeans and kmedioids. Defaults to 4.
+        C (int, optional): Cutoff threshold, maximum number of elements per cluster in the leaves of the tree. Defaults to -1.
+        param_file (string, optional): a filename for a numpy array of parameters. Unused
+
+    Returns:
+        node_list (list(ClusterTreeNode)): Flattened tree
+        [DatumT]: Ordered list of DatumT associated with the clusters. (M in a different order)
+        param_list: legacy and unused
+    """
+    
+    M = data_loading_wrapper(filename)
+    print(type(M))
+    node_list, data_list, param_list = hierarchify(M, k, R, C)
+    return node_list, data_list, param_list
 
 
 def param_wrapper(param_file):
+    """Loads a list of parameters from a file. Unused
+
+    Args:
+        param_file (string): a filename for a numpy array of parameters
+
+    Returns:
+        (list(strings)): A list of parameters
+    """
     param_list = np.load(param_file)
-    # return [{"id":i,"weight":1} for i in range(len(param_list))]
     return param_list
 
 
-def hierarchify(M, P, k=3, R=4, C=-1):
+def hierarchify(M, k=3, R=30, C=1):
+    """Computes a hierarchical clustering over the input set M
+
+    Args:
+        M (DatumT): A list of DatumT objects
+        k (int, optional): Number of sublevel clusters  Defaults to 3.
+        R (int, optional): Number of iterations for kmeans and kmedioids. Defaults to 4.
+        C (int, optional): Cutoff threshold, maximum number of elements per cluster in the leaves of the tree. Defaults to -1.
+
+    Returns:
+        node_list (list(ClusterTreeNode)): Flattened tree
+        [DatumT]: Ordered list of DatumT associated with the clusters. (M in a different order)
+        param_list: legacy and unused
     """
-    Wrapper function for execution of clustering
-    """
+    
+    
     global logger
     tree_build = time.perf_counter()
-    node_list = construct_tree(M, P, k, R, C)
+    print(len(M))
+    node_list = construct_tree(M, k, R, C)
+    print(node_list)
     tree_build = time.perf_counter() - tree_build
 
     # print("building data reference list...")
     data_build = time.perf_counter()
-    data_list, param_list = construct_data_list(node_list, M.shape)
+    data_list, param_list = construct_data_list(node_list, [len(M),M[0].m1.shape[0],M[0].m1.shape[1]])
     data_build = time.perf_counter() - data_build
 
     # N D k R tree_build data_build
     # Log the metrics in CSV format
     logger.info(
         "{},{},{},{},{},{},{}".format(
-            M.shape[0], np.product(M.shape[1:]), k, R, C, tree_build, data_build
+            len(M), np.product(M[0].m1.shape), k, R, C, tree_build, data_build
         )
     )
     return node_list, data_list, param_list
 
 
 def data_loading_wrapper(filename):
+    """Wrapper for data loader. returns a loaded data array
+
+    Args:
+        filename (string): A flatbuffers filename
+
+    Returns:
+        M (list(DatumT)): A list of DatumT objects
     """
-    Wrapper for data loader
-    returns a loaded data array
-    """
-    M = dataloader(filename)
+    
+    M = None
+    if filename.split(".")[-1] == "fbs":
+        exp_fb = dl.load_flatbuffer(filename)
+        exp_buf = DataSet.GetRootAsDataSet(exp_fb,0)
+        param_buf = extract_params(exp_buf)
+        datum_buf = extract_datum(exp_buf)
+        datumT_list = lift_datum_buf_to_datumT(datum_buf, param_buf)
+        M = datumT_list
+    else:
+        M = datum_loader(dataloader(filename))
+        
     return M
 
 
 def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
-    """
-    Wrapper function for serializing a constructed clustering with params
+    """Wrapper function for serializing a constructed clustering with params
+
+    Args:
+        node_list (list(ClusterTreeNode)): Flattened tree
+        data_list (list(DatumT)): Ordered list of DatumT associated with the clusters.
+        param_list: legacy and unused
     """
     params = {}
     if tree_params != None:
@@ -132,13 +177,13 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
                     "data_refs": [
                         didx for didx in node.data_refs
                     ],  # array of references to elements of data_list
-                    "param_refs": [pidx for pidx in node.param_refs],
+                    # "param_refs": [pidx for pidx in node.param_refs],
                 }
             )
             # special handling of node's value
             # since node.val for a leaf node is a member of the input data, we add the same member from
             # data_list using node.val_idx
-            tree_node_vals.append(np.array(data_list[node.val_idx]))
+            tree_node_vals.append(data_list[node.val_idx])
         else:
             tree_node_list.append(
                 {
@@ -150,25 +195,31 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
                         c for c in node.children
                     ],  # array of references to other elements of tree_node_list
                     "data_refs": None,  # internal node has no data_refs
-                    "param_refs": None,
+                    # "param_refs": None,
                 }
             )
             # node.val of an internal node is generated by kmeans, and only exists in the node
-            tree_node_vals.append(np.array(node.val))
+            tree_node_vals.append(node.val.m1.numpy())
 
     tree_dict["node_list"] = tree_node_list
-    tree_dict["param_list"] = tree_param_vals
+    # tree_dict["param_list"] = tree_param_vals
     f = open(f"{output_prefix}_tree_hierarchy.json", "w")
     f.write(json.dumps(tree_dict, indent=2))
     f.close()
 
     np.save(f"{output_prefix}_tree_node_vals.npy", np.array(tree_node_vals))
-    np.save(f"{output_prefix}_tree_data_list.npy", np.array(data_list))
+    np.save(f"{output_prefix}_tree_data_list.npy", np.stack([data_list[i] for i in range(len(data_list))]))
 
 
 def build_wrapper(args):
-    """
-    Wrapper function for constructing a hierarchical clustering from input and serializing the output
+    """Wrapper function for constructing a hierarchical clustering from input and serializing the output
+
+    Args:
+        args: argparse object
+
+    Returns:
+        node_list (list(ClusterTreeNode)): Flattened tree
+        data_list (list(DatumT)): Ordered list of DatumT associated with the clusters.
     """
     node_list, data_list, param_list = hierarchify_wrapper(
         args.input, args.clusters, args.iterations, args.cutoff, args.params
@@ -179,6 +230,32 @@ def build_wrapper(args):
         serialize_wrapper(args, node_list, data_list, param_list)
     return node_list, data_list
 
+def datum_loader(np_array_1,np_array_2=None):
+    """Wrapper function to load a numpy array into datumT objects
+
+    Args:
+        np_array_1: a numpy array for m1 of DatumT
+        np_array_2 (_type_, optional): a numpy array for m2 of DatumT. Defaults to None.
+    
+    Returns:
+        datumT_arr (list(DatumT)): Ordered list of DatumT
+    """
+    
+    mat2_gen = lambda np_array_2, x : np_array_2[x]
+    if type(np_array_2) == type(None):
+        mat2_gen = lambda np_array_2, x : 1
+    else:
+        print(len(np_array_2))
+    # print(type(np_array_2[0]))
+    datumT_arr = []
+    for idx,mat1 in enumerate(np_array_1):
+        mat2 = mat2_gen(np_array_2, idx)
+        datumT_val = DatumT()
+        datumT_val.m1 = torch.tensor(mat1)
+        datumT_val.m2 = torch.tensor(mat2)
+        datumT_arr.append(datumT_val)
+        
+    return datumT_arr    
 
 def tree_loader(filename):
     """
@@ -206,14 +283,14 @@ def tree_loader(filename):
     f.close()
 
     # load values of internal tree nodes
-    tree_node_vals = np.load(parsed_data["resources"]["node_vals_file"])
+    tree_node_vals = datum_loader(np.load(parsed_data["resources"]["node_vals_file"]))
 
     # load data referred to by leaf nodes
-    data_list = np.load(parsed_data["resources"]["data_list_file"])
+    data_list = datum_loader(np.load(parsed_data["resources"]["data_list_file"]))
 
     # load node_list
     node_list_data = parsed_data["node_list"]
-    param_list = parsed_data["param_list"]
+    # param_list = parsed_data["param_list"]
     tree_params = parsed_data["parameters"]
 
     # process root node
@@ -223,7 +300,7 @@ def tree_loader(filename):
         val_idx=root_node_data["node_val_idx"],
         children=root_node_data["children"],
         data=root_node_data["data_refs"],
-        params=root_node_data["param_refs"],
+        # params=root_node_data["param_refs"],
     )
 
     node_list = [root_node]
@@ -239,11 +316,11 @@ def tree_loader(filename):
                 ],  # get actual value of node using node_val_idx
                 children=node_data["children"],
                 data=node_data["data_refs"],
-                params=node_data["param_refs"],
+                # params=node_data["param_refs"],
             )
         )
 
-    return node_list, data_list, param_list, tree_params
+    return node_list, data_list, tree_params
 
 
 def load_wrapper(args):
@@ -252,15 +329,11 @@ def load_wrapper(args):
     Returns a node_list and data_list
     """
     print("Loading hierarchical clustering")
-    node_list, data_list, param_list, tree_params = tree_loader(args.tree)
+    node_list, data_list, tree_params = tree_loader(args.tree)
     if args.G:
         build_tree_diagram(node_list, data_list)
     if args.output:
         serialize_wrapper(args, node_list, data_list, param_list, tree_params)
-    print(len(data_list))
-    # if args.G:
-    #     graph_serialize(node_list, data_list)
-    return
 
 
 def search_wrapper(args):
@@ -268,7 +341,7 @@ def search_wrapper(args):
     Wrapper function for searching a hierarchical cluster tree for some list of points
     returns the list of associations and distances
     """
-    node_list, data_list, param_list, tree_params = tree_loader(args.tree)
+    node_list, data_list, tree_params = tree_loader(args.tree)
     print(len(data_list))
     N = data_loading_wrapper(args.input)
     print("Searching hierarchical clustering")
@@ -286,9 +359,21 @@ def search_wrapper(args):
 
 
 def likelihood_wrapper(args):
-    node_list, data_list, param_list, tree_params = tree_loader(args.models)
+    """Wrapper function for computing log likelihood of a preexisting tree. 
+    Serializes the results in a csv.
 
-    N = data_loading_wrapper(args.images)
+    Args:
+        args: Argparse object
+    """
+    node_list, data_list, tree_params = tree_loader(args.models)
+    N = None
+    if args.ctfs != None:
+        img_arr,ctf_arr = dataloader(args.images), dataloader(args.ctfs)
+        print(type(ctf_arr))
+        N = datum_loader(img_arr, ctf_arr)
+    else:
+        N = data_loading_wrapper(args.images)
+    
     if args.test:
         approximate_likelihood, true_likelihood = testbench_likelihood(
             node_list, data_list, N
@@ -311,7 +396,7 @@ def likelihood_wrapper(args):
         )
         ap_file = "all_pairs_likelihoods.csv"
         write_csv(np.real(all_pairs_nn_likelihood), np.real(all_pairs_global_likelihood), ap_file)
-    # if args.output:
+    
 
 
 def main():
@@ -396,6 +481,10 @@ def main():
     likelihood_parser.add_argument(
         "--images", required=True, help="npy array containing images"
     )
+    likelihood_parser.add_argument(
+        "--ctfs", help="npy array containing ctfs"
+    )
+    
     likelihood_parser.add_argument(
         "-o", "--output", help="prefix of output file for saving the densities"
     )

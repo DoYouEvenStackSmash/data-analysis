@@ -7,7 +7,7 @@ from clustering_imports import *
 
 
 def initial_centroids(d, k):
-    start_center = np.random.randint(len(d))  # Choose a random starting center index
+    start_center = torch.random.randint(len(d))  # Choose a random starting center index
     centroids = [d[start_center]]  # Initialize centroids list with the starting center
 
     # Create a deque of indices for non-center points
@@ -26,7 +26,7 @@ def weighted_sample(weights):
     returns an index
     """
     # normalize total_w to be in [0,1]
-    total_w = weights / np.sum(weights)
+    total_w = weights / torch.sum(weights)
     sample_val = np.random.uniform(0, 1)
     for idx, w in enumerate(total_w):
         sample_val -= w
@@ -35,9 +35,9 @@ def weighted_sample(weights):
     return len(weights) - 1
 
 
-def distance(k, m):
-    return np.linalg.norm(k - m)
-    # return np.sqrt(np.sum(np.power(k - m, 2)))
+def custom_distance(k, m):
+    return torch.linalg.norm(k.m1 - m.m1)
+    # return torch.sqrt(torch.sum(torch.power(k - m, 2)))
 
 
 def assign_kmeans_clusters(data, centroids, FIRST_FLAG=False, k=3):
@@ -54,9 +54,9 @@ def assign_kmeans_clusters(data, centroids, FIRST_FLAG=False, k=3):
         nn = None
         for idx, ctr in enumerate(centroids):
             if FIRST_FLAG:
-                if np.array_equal(data[i], ctr):
+                if torch.tensor_equal(data[i], ctr):
                     continue
-            pdist = distance(data[i], ctr)
+            pdist = custom_distance(data[i], ctr)
             if pdist < min_dist:
                 min_dist = pdist
                 nn = idx
@@ -64,15 +64,15 @@ def assign_kmeans_clusters(data, centroids, FIRST_FLAG=False, k=3):
             clusters[nn].append(data[i])
 
     # convert clusters lists to numpy arrays
-    # np.random.randint(len(data))
+    # torch.random.randint(len(data))
     new_clusters = []
     for i in range(len(clusters)):
         if not len(clusters[i]):
             # TODO: Investigate Estop Behavior
-            # val = np.stack(np.array([data[np.random.randint(len(data))]]))
+            # val = torch.stack(torch.tensor([data[torch.random.randint(len(data))]]))
             # new_clusters.append(val)
             continue
-        new_clusters.append(np.stack(np.array([j for j in clusters[i]])))
+        new_clusters.append(torch.stack(torch.tensor([j for j in clusters[i]])))
 
     return new_clusters
 
@@ -82,7 +82,7 @@ def update_centroids(clusters):
     Evaluate new centroids based on the existing clusters
     Returns an array of np arrays
     """
-    return np.array([np.mean(cluster, axis=0) for cluster in clusters])
+    return torch.tensor([torch.mean(cluster, axis=0) for cluster in clusters])
 
 
 def kmeanspp(M, k, centroids, not_chosen, chosen):
@@ -92,16 +92,16 @@ def kmeanspp(M, k, centroids, not_chosen, chosen):
     """
 
     for _ in range(k - 1):
-        weights = np.zeros(len(not_chosen))
+        weights = torch.zeros(len(not_chosen))
 
         # distance lambda function
-        D = lambda ck, m: np.linalg.norm(ck - m)
+        D = lambda ck, m: torch.linalg.norm(ck - m)
         for idx, mdx in enumerate(not_chosen):
             m = M[mdx]
             min_dist = float("inf")
             for ck in centroids:
                 min_dist = min(min_dist, D(ck, m))
-            weights[idx] = np.power(min_dist, 2)
+            weights[idx] = torch.power(min_dist, 2)
 
         selected_point = weighted_sample(weights)
         centroids.append(M[not_chosen[selected_point]])
@@ -109,7 +109,7 @@ def kmeanspp(M, k, centroids, not_chosen, chosen):
         chosen.add(not_chosen[selected_point])
         not_chosen.remove(not_chosen[selected_point])
 
-    centroids = np.array(centroids)
+    centroids = torch.tensor(centroids)
     return centroids
 
 
@@ -119,7 +119,7 @@ def kmeans(M, k, max_iter=100):
     Returns a numpy array of centroids, and an array of np arrays of clusters
     """
     # initialize a random starting centroid
-    start_center = np.random.randint(M.shape[0])
+    start_center = torch.random.randint(M.shape[0])
     centroids = [M[start_center]]
 
     not_chosen = deque(i for i in range(len(M)) if i != start_center)
@@ -132,7 +132,7 @@ def kmeans(M, k, max_iter=100):
     for _ in range(max_iter):
         clusters = assign_kmeans_clusters(M, centroids)
         new_centroids = update_centroids(clusters)
-        if np.array_equal(centroids, new_centroids):
+        if torch.tensor_equal(centroids, new_centroids):
             break
 
         centroids = new_centroids
@@ -141,6 +141,10 @@ def kmeans(M, k, max_iter=100):
 
 
 def kmeanspp_refs(data_store, data_ref_arr, k):
+    """
+    Compute a probably-better-than-random set of k centroids using kmeans++
+    Returns a torch tensor array of k centroids
+    """
     dlen = len(data_ref_arr)
     start_center = np.random.randint(dlen)
     not_chosen = deque(i for i in range(dlen) if i != start_center)
@@ -148,29 +152,27 @@ def kmeanspp_refs(data_store, data_ref_arr, k):
     centroids = [data_store[data_ref_arr[start_center]]]
 
     # chosen = {start_center}
-    weights = None  # np.zeros(dlen)
+    weights = None  # torch.zeros(dlen)
     min_dist = float("inf")
 
     for _ in range(k - 1):
-        weights = np.zeros(len(not_chosen))
+        weights = torch.zeros(len(not_chosen))
         for idx, mdx in enumerate(not_chosen):
             min_dist = float("inf")
             m = data_store[data_ref_arr[mdx]]
             for ctx, ctr in enumerate(centroids):
-                min_dist = min(min_dist, np.linalg.norm(m - ctr))
+                min_dist = min(min_dist, custom_distance(m, ctr))
 
-            weights[idx] = np.square(min_dist)
+            weights[idx] = torch.square(min_dist)
 
         selected_point = weighted_sample(weights)
-        # print(selected_point)
-        # print(len(not_chosen))
+
         centroids.append(data_store[data_ref_arr[not_chosen[selected_point]]])
 
-        # chosen.add(not_chosen[selected_point])
         not_chosen.remove(not_chosen[selected_point])
         if not len(not_chosen):
             break
-    centroids = np.array(centroids)
+    
     return centroids
 
 
@@ -190,25 +192,26 @@ def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
     """
 
     data_ref_clusters = [[] for _ in centroids]
-    data_ref_means = [np.zeros(data_store[0].shape) for _ in centroids]
     nn = None
     pdist = None
     min_dist = float("inf")
-
     for dref_idx, dref in enumerate(data_ref_arr):
         min_dist = float("inf")
         nn = None
         for ctx, ctr in enumerate(centroids):
             if FIRST_FLAG:
-                if np.array_equal(data_store[dref], ctr):
+                if torch.equal(data_store[dref].m1, ctr.m1):
                     continue
 
-            pdist = np.linalg.norm(data_store[dref] - ctr)
+
+            pdist = custom_distance(data_store[dref],ctr)
             if pdist < min_dist:
                 min_dist = pdist
                 nn = ctx
         if nn != None:
             data_ref_clusters[nn].append(data_ref_arr[dref_idx])
+        else:
+            print("no parent?")
 
     new_data_ref_clusters = []
     new_centroids = []
@@ -216,8 +219,7 @@ def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
         if not len(data_ref_clusters[i]):
             continue
         new_data_ref_clusters.append(data_ref_clusters[i])
-        new_centroids.append(
-            np.mean([data_store[i] for i in new_data_ref_clusters[-1]], axis=0)
-        )
-
-    return new_data_ref_clusters, np.array(new_centroids)
+        new_centroids.append(DatumT())
+        new_centroids[-1].m1 = torch.mean(torch.stack([data_store[i].m1 for i in new_data_ref_clusters[-1]]),axis=0)
+    
+    return new_data_ref_clusters, new_centroids

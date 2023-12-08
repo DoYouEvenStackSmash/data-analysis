@@ -60,7 +60,7 @@ def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_ds
                         "purple",
                         f"Node{i+1}",
                         f"Data{idx}",
-                        np.linalg.norm(node.val - data_list[idx]),
+                        float(custom_distance(node.val,data_list[idx]).numpy()),
                     )
                 )
         else:
@@ -70,10 +70,11 @@ def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_ds
                         "blue",
                         f"Node{i+1}",
                         f"Node{c}",
-                        np.linalg.norm(node.val - node_list[c].val),
+                        float(custom_distance(node.val,node_list[c].val).numpy()),
                     )
                 )
-
+    print([type(i) for i in data[0]])
+    
     # Create a directed graph
     G = nx.DiGraph()
     node_colors = {}
@@ -85,7 +86,7 @@ def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_ds
             node_colors[B] = color
         else:
             node_colors[B] = color
-
+    print(node_colors)
     # Add nodes and edges based on relationships
     for color, A, B, distance in data:
         G.add_edge(A, B, weight=distance, color=color)

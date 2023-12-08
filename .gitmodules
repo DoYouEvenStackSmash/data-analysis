@@ -1,0 +1,3 @@
+[submodule "src/ingest-pipeline"]
+	path = src/ingest-pipeline
+	url = https://github.com/DoYouEvenStackSmash/ingest-pipeline

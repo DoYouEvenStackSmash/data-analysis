@@ -1,9 +1,52 @@
 from clustering_imports import *
 import time
 
+
+def level_order_search(node_list, T, TAU=1e-8):
+    """Level order traversal of the hierarchical clustering for valid clusters for T within 
+    distance TAU
+
+    Args:
+        node_list (list of ClusterTreeNodes): _description_
+        T (DatumT): _description_
+        TAU (_t, optional): _description_. Defaults to 1e-8.
+
+    Returns:
+        reachable_cluster_refs (list of ints): The reference indices of the clusters within TAU
+    """
+    LEVEL_FLAG = -1
+    q = []
+    q.append(0)
+    reachable_cluster_refs = []
+    # tracks the level in the tree
+    level_counter = 0
+    while len(q):
+        q.append(LEVEL_FLAG)
+        level_counter+=1
+        reachable_cluster_refs.append([])
+
+        while q[0] != LEVEL_FLAG:
+            elem_id = q.pop(0)      
+            elem = node_list[elem_id]
+            
+            if elem.data_refs != None:
+                reachable_cluster_refs[-1].append(elem_id)
+                continue
+            
+            for cidx in elem.children:
+                res_elem_tensor = apply_d1m2_to_d2m1(T, node_list[cidx].val)
+                dist = torch.linalg.norm(T.m1 - res_elem_tensor)
+                if dist > TAU:
+                    continue
+                q.append(cidx)
+        # track level end for metrics purposes
+        flag = q.pop(0)
+        
+    return reachable_cluster_refs
+
 def find_cluster(node_list, T):
     """
-    Searches for the cluster containing(ish) T
+    DFS for the cluster containing(ish) T
     returns an index to a node in node_list
     """
     n_curr = 0
@@ -13,24 +56,7 @@ def find_cluster(node_list, T):
         min_dist = float("inf")
         nn = 0
         for i in node_list[n_curr].children:
-            dist = np.linalg.norm(node_list[i].val - T)
-            if dist < min_dist:
-                nn = i
-                min_dist = dist
-        # search_list.append(nn)
-        n_curr = nn
-    return n_curr
-
-
-def find_ctf_cluster(node_list_with_params, T):
-    n_curr = 0
-    # search_list = []
-    # search representative nodes
-    while node_list[n_curr].data_refs is None:
-        min_dist = float("inf")
-        nn = 0
-        for i in node_list[n_curr].children:
-            dist = np.linalg.norm(node_list[i].val - node_list[i].params)
+            dist = custom_distance(node_list[i].val,T)
             if dist < min_dist:
                 nn = i
                 min_dist = dist
@@ -41,7 +67,7 @@ def find_ctf_cluster(node_list_with_params, T):
 
 def search_tree(node_list, data_list, T):
     """
-    Searches for the closest_idx point in data_list to target T
+    DFS for the closest_idx point in data_list to target T
     Returns closest_idx of the nearest point to T, and the distance between them
     """
     n_curr = find_cluster(node_list, T)
@@ -51,7 +77,10 @@ def search_tree(node_list, data_list, T):
     min_dist = float("inf")
     for idx in node_list[n_curr].data_refs:
         # print(idx)
-        dist = np.linalg.norm(data_list[idx] - T)
+        res = apply_d1m2_to_d2m1(data_list[idx],T)
+        d = DatumT()
+        d.m1 = res
+        dist = custom_distance(d,T)
         if dist < min_dist:
             closest_idx = idx
             min_dist = dist
@@ -66,8 +95,8 @@ def search_tree_associations(node_list, data_list, input_list):
 
     Args:
         node_list (list of ClusterTreeNode): List of nodes representing a search tree structure.
-        data_list (list of numpy arrays): List of data points for comparison.
-        input_list (list of numpy arrays): List of input points to find matches for.
+        data_list (list of DatumT): List of data points for comparison.
+        input_list (list of DatumT): List of input points to find matches for.
 
     Returns:
         di_match (list of ints): List of indices representing nearest neighbors found in the search tree.
@@ -99,8 +128,8 @@ def all_pairs_associations(data_list, input_list):
     Computes nearest neighbor matches using all pairs comparison.
 
     Args:
-        data_list (list of numpy arrays): List of data points for comparison.
-        input_list (list of numpy arrays): List of input points to find matches for.
+        data_list (list of DatumT): List of data points for comparison.
+        input_list (list of DatumT): List of input points to find matches for.
 
     Returns:
         mi_match (list of ints): List of indices representing nearest neighbors.
@@ -118,7 +147,7 @@ def all_pairs_associations(data_list, input_list):
 
         # Compare the input point with all data points
         for data_index, data_point in enumerate(data_list):
-            distance = np.linalg.norm(input_point - data_point)
+            distance = custom_distance(input_point,data_point)
 
             # Update nearest neighbor if a closer one is found
             if distance < min_distance:
