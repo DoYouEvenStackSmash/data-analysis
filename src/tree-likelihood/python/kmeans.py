@@ -4,7 +4,8 @@ import numpy as np
 
 from collections import deque
 from clustering_imports import *
-
+import jax
+import jax.numpy as jnp
 
 def initial_centroids(d, k):
     start_center = torch.random.randint(len(d))  # Choose a random starting center index
@@ -26,7 +27,7 @@ def weighted_sample(weights):
     returns an index
     """
     # normalize total_w to be in [0,1]
-    total_w = weights / torch.sum(weights)
+    total_w = weights / jnp.sum(weights)
     sample_val = np.random.uniform(0, 1)
     for idx, w in enumerate(total_w):
         sample_val -= w
@@ -36,7 +37,7 @@ def weighted_sample(weights):
 
 
 def custom_distance(k, m):
-    return torch.linalg.norm(k.m1 - m.m1)
+    return jnp.linalg.norm(k.m1 - m.m1)
     # return torch.sqrt(torch.sum(torch.power(k - m, 2)))
 
 
@@ -156,16 +157,16 @@ def kmeanspp_refs(data_store, data_ref_arr, k):
     min_dist = float("inf")
 
     for _ in range(k - 1):
-        weights = torch.zeros(len(not_chosen))
+        weights = np.zeros(len(not_chosen))
         for idx, mdx in enumerate(not_chosen):
             min_dist = float("inf")
             m = data_store[data_ref_arr[mdx]]
             for ctx, ctr in enumerate(centroids):
                 min_dist = min(min_dist, custom_distance(m, ctr))
 
-            weights[idx] = torch.square(min_dist)
+            weights[idx] = np.square(min_dist)
 
-        selected_point = weighted_sample(weights)
+        selected_point = weighted_sample(jnp.array(weights))
 
         centroids.append(data_store[data_ref_arr[not_chosen[selected_point]]])
 
@@ -200,7 +201,7 @@ def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
         nn = None
         for ctx, ctr in enumerate(centroids):
             if FIRST_FLAG:
-                if torch.equal(data_store[dref].m1, ctr.m1):
+                if jnp.array_equal(data_store[dref].m1, ctr.m1):
                     continue
 
 
@@ -220,6 +221,6 @@ def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
             continue
         new_data_ref_clusters.append(data_ref_clusters[i])
         new_centroids.append(DatumT())
-        new_centroids[-1].m1 = torch.mean(torch.stack([data_store[i].m1 for i in new_data_ref_clusters[-1]]),axis=0)
+        new_centroids[-1].m1 = jnp.mean(jnp.stack([data_store[i].m1 for i in new_data_ref_clusters[-1]]),axis=0)
     
     return new_data_ref_clusters, new_centroids

@@ -34,11 +34,12 @@ from ctf_generator import *
 from image_generator import *
 from dataloader import Dataloader as dl
 # import matplotlib.pyplot as plt
-
+import jax
+import jax.numpy as jnp
 from datum_helpers import *
 
 def custom_distance(k, m):
-    return torch.linalg.norm(k.m1 - m.m1)
+    return jnp.linalg.norm(k.m1 - m.m1)
 
 
 def dataloader(filename):

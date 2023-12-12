@@ -77,7 +77,7 @@ def search_tree(node_list, data_list, T):
     min_dist = float("inf")
     for idx in node_list[n_curr].data_refs:
         # print(idx)
-        res = apply_d1m2_to_d2m1(data_list[idx],T)
+        res = jax_apply_d1m2_to_d2m1(data_list[idx],T)
         d = DatumT()
         d.m1 = res
         dist = custom_distance(d,T)
