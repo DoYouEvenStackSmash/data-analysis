@@ -69,8 +69,8 @@ void serialize_clusters(std::vector<std::vector<std::vector<double>>> &data, std
 void mock_data_loader(std::vector<MatrixXd> &data_store, std::vector<int> &data_refs) {
     std::srand(12345);
     double max_val = 100.0;
-    int r = 128;
-    int c = 128;
+    int r = 2;
+    int c = 1;
     int num_matrices = 1000;
 
     for (int i = 0; i < num_matrices; ++i) {
