@@ -38,7 +38,7 @@ def hierarchify_wrapper(filename, k=3, R=30, C=1, param_file=None):
     """
     
     M = data_loading_wrapper(filename)
-    print(type(M))
+    print(type(M[0].m1))
     node_list, data_list, param_list = hierarchify(M, k, R, C)
     return node_list, data_list, param_list
 
@@ -110,7 +110,7 @@ def data_loading_wrapper(filename):
         exp_buf = DataSet.GetRootAsDataSet(exp_fb,0)
         param_buf = extract_params(exp_buf)
         datum_buf = extract_datum(exp_buf)
-        datumT_list = lift_datum_buf_to_datumT(datum_buf, param_buf)
+        datumT_list = jax_lift_datum_buf_to_datumT(datum_buf, param_buf)
         M = datumT_list
     else:
         M = datum_loader(dataloader(filename))

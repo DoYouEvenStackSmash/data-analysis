@@ -95,7 +95,7 @@ def construct_tree(M, k=3, R=30, C=1):
             dlen = len(data_ref_arr)
             if not dlen:
                 continue
-
+            
             data = [data_store[dref] for dref in data_ref_arr]
             if dlen >= k:
                 mlist, distances = preprocess(data, k)
@@ -119,13 +119,13 @@ def construct_tree(M, k=3, R=30, C=1):
 
             elif dlen > 1:
                 # for _ in range(k):  # Assuming k is the number of clusters
-                D = torch.zeros(len(data_ref_arr))
+                D = jnp.zeros(len(data_ref_arr))
                 
                 for i in range(len(data_ref_arr)):
                     for j in range(len(data_ref_arr)):
-                        D[i] += torch.linalg.norm(data_store[data_ref_arr[i]].m1 - data_store[data_ref_arr[j]].m1)
+                        D[i] += jnp.linalg.norm(data_store[data_ref_arr[i]].m1 - data_store[data_ref_arr[j]].m1)
 
-                min_idx = torch.argmin(D).item()
+                min_idx = jnp.argmin(D).item()
                 medioids.append(data_store[min_idx])
                 clusters = [[data_store[i] for i in data_refs]]
                 

@@ -34,8 +34,8 @@ def level_order_search(node_list, T, TAU=1e-8):
                 continue
             
             for cidx in elem.children:
-                res_elem_tensor = apply_d1m2_to_d2m1(T, node_list[cidx].val)
-                dist = torch.linalg.norm(T.m1 - res_elem_tensor)
+                res_elem_tensor = jax_apply_d1m2_to_d2m1(T, node_list[cidx].val)
+                dist = jnp.linalg.norm(T.m1 - res_elem_tensor)
                 if dist > TAU:
                     continue
                 q.append(cidx)
