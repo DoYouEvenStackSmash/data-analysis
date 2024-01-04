@@ -22,9 +22,9 @@ def construct_data_list(node_list, data_shape=None):
                 data_idx = []
                 # param_idx = []
                 for j, img in enumerate(node.data_refs):
-                    if torch.linalg.norm(img.m1 - node.val.m1) == 0.0:
+                    if jnp.linalg.norm(img.m1 - node.val.m1) == 0.0:
                         node.val_idx = img_count
-                    data_list[img_count] = img.m1.numpy()
+                    data_list[img_count] = img.m1#.numpy()
                     # param_list[img_count] = node.param_refs[j]
                     data_idx.append(img_count)
                     # param_idx.append(img_count)
@@ -66,13 +66,13 @@ def construct_tree(M, k=3, R=30, C=1):
                 
                 if (
                     len(new_centroids) != len(centroids)
-                    or torch.linalg.norm(torch.stack([centroids[i].m1 for i in range(len(centroids))]) - \
-                        torch.stack([new_centroids[i].m1 for i in range(len(new_centroids))])) == 0.0
+                    or jnp.linalg.norm(jnp.stack([centroids[i].m1 for i in range(len(centroids))]) - \
+                        jnp.stack([new_centroids[i].m1 for i in range(len(new_centroids))])) == 0.0
                 ):
                     centroids = new_centroids
                     break
                 centroids = new_centroids
-            print(f"shorted: {len(centroids)}")
+            # print(f"shorted: {len(centroids)}")
             # create new nodes for centroids, and add each centroid/data pair to queues
             for i, ctr in enumerate(centroids):
                 idx = len(node_list)

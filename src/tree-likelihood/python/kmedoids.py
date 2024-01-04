@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 from clustering_imports import *
 
-
+import jax
+import jax.numpy as jnp
 def assign_clusters(dlen, mlist, distances):
     """
     Implicitly assigns elements to clusters using the distances matrix
@@ -36,9 +37,9 @@ def update_medioids(clusters, mlist, distances):
     
     
     for midx in mlist:
-        cluster = clusters[mlist.index(midx)]
-        cluster_distances = np.sum(distances[cluster][:, cluster], axis=1)
-        new_mlist.append(cluster[np.argmin(cluster_distances)])
+        cluster = jnp.array(clusters[mlist.index(midx)])
+        cluster_distances = jnp.sum(distances[cluster][:, cluster], axis=1)
+        new_mlist.append(cluster[jnp.argmin(cluster_distances)])
 
     return new_mlist
 
@@ -50,10 +51,10 @@ def compute_distance_matrix(M_flat):
     num_tensors, width, height = M_flat.shape
 
     # Reshape M_flat to (num_tensors, width*height)
-    M_flat_reshaped = M_flat.view(num_tensors, -1)
+    M_flat_reshaped = M_flat.reshape((num_tensors, -1))
 
     # Compute pairwise distances
-    pairwise_distances = torch.norm(M_flat_reshaped[:, None] - M_flat_reshaped, dim=2)
+    pairwise_distances = jnp.linalg.norm(M_flat_reshaped[:, None] - M_flat_reshaped, axis=2)
 
     return pairwise_distances
 
@@ -70,23 +71,25 @@ def preprocess(M, k=3):
     pairwise_distances = None
 
     # M_flat = M.reshape(n, -1)
-    M_flat = torch.stack([m.m1 for m in M])
-    print(M_flat.shape)
+    M_flat = jnp.stack([m.m1 for m in M])
+    #print(M_flat.shape)
     pairwise_distances = compute_distance_matrix(M_flat)
-    for p in pairwise_distances:
-        print(p)
+    # for p in pairwise_distances:
+    #     print(p)
     # Step 1-2: Calculate denominators efficiently
-    denominators = torch.sum(pairwise_distances, axis=1)
+    denominators = jnp.sum(pairwise_distances, axis=1)
 
     # Calculate v values using vectorized operations in PyTorch
-    v_values = pairwise_distances / denominators.view(-1, 1)
+    v_values = pairwise_distances / denominators.reshape(-1, 1)
 
     # Set diagonal values to 0
-    # torch.fill_diagonal(v_values, 0)
-    v_values = v_values - torch.diag(v_values.diag())
+    v_values_jax = jnp.array(v_values)
+
+    # Equivalent JAX code for v_values - torch.diag(v_values.diag())
+    v_values_jax = v_values_jax - jnp.diag(jnp.diag(v_values_jax))
 
     # Sum along axis 1
-    v_sums = torch.sum(v_values, dim=1)
+    v_sums = jnp.sum(v_values_jax, axis=1)
 
     # Initialize objects using list comprehension
     data = [(idx, v_sums[idx].item()) for idx in range(n)]
@@ -99,7 +102,7 @@ def preprocess(M, k=3):
     medioid_indices = [d[0] for d in sorted_data[:k]]
 
     # Convert pairwise_distances to NumPy array if needed
-    pairwise_distances_np = pairwise_distances.numpy()
+    pairwise_distances_np = pairwise_distances#.numpy()
 
     return medioid_indices, pairwise_distances_np
 

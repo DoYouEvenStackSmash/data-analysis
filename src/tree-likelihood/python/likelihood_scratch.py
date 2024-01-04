@@ -47,7 +47,7 @@ def likelihood(omega, m, N_pix, noise=1):
     """
     lambda_square = noise**2
     coeff = 1
-    l2 = np.exp(-1.0 * (np.square(custom_distance(omega,m)) / (2 * lambda_square)))
+    l2 = jnp.exp(-1.0 * (jnp.square(custom_distance(omega,m)) / (2 * lambda_square)))
     return coeff * l2
 
 
@@ -120,11 +120,11 @@ def calculate_noise(input_list):
     """
     Calculate the noise as the standard deviation
     """
-    input_arr = np.array([input_list[i].m1.numpy() for i in range(len(input_list))])
-    avg = np.mean(input_arr)
-    noise = np.sqrt(
-        np.divide(
-            np.sum(np.array([np.square(x - avg) for x in input_arr])),
+    input_arr = np.array([input_list[i].m1 for i in range(len(input_list))])
+    avg = jnp.mean(input_arr)
+    noise = jnp.sqrt(
+        jnp.divide(
+            jnp.sum(jnp.array([jnp.square(x - avg) for x in input_arr])),
             input_arr.shape[0] - 1,
         )
     )
