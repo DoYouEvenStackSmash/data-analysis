@@ -96,15 +96,16 @@ def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_ds
 
 
 def build_tree_diagram(node_list, data_list):
+    print(node_list)
     """
     Given the node and data lists, creates an adjacency list which represents the tree
     Serializes the output as tree_representation.grpahml
     """
-    SINGLE_ROOT = False  # unify clusters by taking mean of root node
+    SINGLE_ROOT = True  # unify clusters by taking mean of root node
     data = []
-    node_list[0].val = np.mean(
-        np.array([node_list[i].val for i in node_list[0].children]), axis=0
-    )
+    # node_list[0].val = np.mean(
+    #     np.array([node_list[i].val for i in node_list[0].children]), axis=0
+    # )
     for i, n in enumerate(node_list):
         if i == 0 and not SINGLE_ROOT:
             continue
@@ -116,17 +117,21 @@ def build_tree_diagram(node_list, data_list):
                             "purple",
                             f"Node{i}",
                             f"Data{c}",
-                            np.linalg.norm(node_list[i].val - data_list[c]),
+                            np.linalg.norm(node_list[i].val.m1 - data_list[c].m1),
                         )
                     )
             continue
         for c in node_list[i].children:
+            # res_elem_tensor = jax_apply_d1m2_to_d2m1(node_list, node_list[i])
+            # dist = jnp.linalg.norm(node_list[c].val - res_elem_tensor)
             data.append(
                 (
                     "pink",
                     f"Node{i}",
                     f"Node{c}",
-                    np.linalg.norm(node_list[i].val - node_list[c].val),
+                    # 0
+                    0
+                    # np.linalg.norm(node_list[i].val - node_list[c].val),
                 )
             )
         # Create a directed graph

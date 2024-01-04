@@ -334,6 +334,7 @@ def load_wrapper(args):
     if args.G:
         build_tree_diagram(node_list, data_list)
     if args.output:
+        param_list = []
         serialize_wrapper(args, node_list, data_list, param_list, tree_params)
 
 

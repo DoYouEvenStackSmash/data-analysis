@@ -177,13 +177,20 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
       // create leaf nodes of the tree
       for (int i = 0; i < medioid_indices.size(); ++i) {
         CTNode* newNode = new CTNode();
-        newNode->_id = node_count;
         
+        
+        /**/
+        newNode->_id = node_count;
         // set the newNode val pointer to the actual medioid object in data_store
         // to avoid excessively duplicating data. In the worst case we double our memory consumption,
         // so this is important.
         newNode->val = &data_store[data_refs[medioid_indices[i]]];
         
+        /*
+        // for serialization purposes it is essential that the index of the medioid object be stored in the 
+        // leaf. we make use of existing newNode->_id and leave newNode->val as null
+        newNode->_id = data_refs[medioid_indices[i]];
+        */
         // set the newNode data pointer to a vector containing the indices in data_store
         // of the node's cluster members.  populate this vector with those indices
         // These will be used to directly access cluster data in node_map

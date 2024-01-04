@@ -120,14 +120,14 @@ def construct_tree(M, k=3, R=30, C=1):
             elif dlen > 1:
                 # for _ in range(k):  # Assuming k is the number of clusters
                 D = jnp.zeros(len(data_ref_arr))
-                
+                medioids = []
                 for i in range(len(data_ref_arr)):
                     for j in range(len(data_ref_arr)):
-                        D[i] += jnp.linalg.norm(data_store[data_ref_arr[i]].m1 - data_store[data_ref_arr[j]].m1)
+                        D.at[i].set(D[i] + jnp.linalg.norm(data_store[data_ref_arr[i]].m1 - data_store[data_ref_arr[j]].m1))
 
                 min_idx = jnp.argmin(D).item()
                 medioids.append(data_store[min_idx])
-                clusters = [[data_store[i] for i in data_refs]]
+                clusters = [[data_store[i] for i in data_ref_arr]]
                 
             elif dlen == 1:
                 medioids = [data[0]]
