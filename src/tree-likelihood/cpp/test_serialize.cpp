@@ -25,23 +25,23 @@
 
 
 int main() {
-  vector<MatrixXd> data_store;
+  vector<MatrixXd> *data_store = new vector<MatrixXd>();
   vector<int> data_refs;
   
-  mock_data_loader(data_store, data_refs);
-  map<int,CTNode*> node_map = construct_tree(data_store.data(), data_refs, 5, 15, 100);
+  mock_data_loader(*data_store, data_refs);
+  map<int,CTNode*> node_map = construct_tree(data_store->data(), data_refs, 5, 15, 100);
 
   // Create a JSON document
   Document document;
   document.SetObject();
 
-  postprocess_node_map(node_map, data_store.data(), document);
-
+  postprocess_node_map(node_map, data_store->data(), document);
+  // postprocess_data_store()
   StringBuffer buffer;
   Writer<StringBuffer> writer(buffer);
   document.Accept(writer);
   std::cout << buffer.GetString() << std::endl;
-  
+  delete data_store;
   for (auto &a : node_map) {
     if (a.first == -1) {
       delete a.second;

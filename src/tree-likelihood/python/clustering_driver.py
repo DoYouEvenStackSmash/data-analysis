@@ -76,7 +76,7 @@ def hierarchify(M, k=3, R=30, C=1):
     tree_build = time.perf_counter()
     print(len(M))
     node_list = construct_tree(M, k, R, C)
-    print(node_list)
+    # print(node_list)
     tree_build = time.perf_counter() - tree_build
 
     # print("building data reference list...")

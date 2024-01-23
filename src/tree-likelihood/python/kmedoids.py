@@ -66,13 +66,13 @@ def preprocess(M, k=3):
     Returns a list of indices referring to M, and a distances matrix
     """
     n = len(M)
-    print(type(M[0].m1))
+    # print(type(M[0].m1))
     # Flatten the 2x2 matrices to 1D arrays for pairwise calculations
     pairwise_distances = None
     
     # M_flat = M.reshape(n, -1)
     M_flat = jnp.stack([m.m1 for m in M])
-    print(type(M_flat))#.shape)
+    # print(type(M_flat))#.shape)
     pairwise_distances = compute_distance_matrix(M_flat)
     # for p in pairwise_distances:
     #     print(p)

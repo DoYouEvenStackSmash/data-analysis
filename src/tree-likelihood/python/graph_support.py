@@ -60,7 +60,7 @@ def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_ds
                         "purple",
                         f"Node{i+1}",
                         f"Data{idx}",
-                        float(custom_distance(node.val,data_list[idx]).numpy()),
+                        float(custom_distance(node.val,data_list[idx])),
                     )
                 )
         else:
@@ -70,7 +70,7 @@ def search_graph_serialize(node_list, data_list, st_idxs, st_dss, ap_idxs, ap_ds
                         "blue",
                         f"Node{i+1}",
                         f"Node{c}",
-                        float(custom_distance(node.val,node_list[c].val).numpy()),
+                        float(custom_distance(node.val,node_list[c].val)),
                     )
                 )
     print([type(i) for i in data[0]])

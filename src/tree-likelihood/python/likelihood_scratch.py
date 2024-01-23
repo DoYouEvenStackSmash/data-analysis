@@ -50,7 +50,58 @@ def likelihood(omega, m, N_pix, noise=1):
     l2 = jnp.exp(-1.0 * (jnp.square(custom_distance(omega,m)) / (2 * lambda_square)))
     return coeff * l2
 
+def search_level_tree(node_list, data_list, T):
+    nearest_level_clusters = level_order_search(node_list,T)
+    return nearest_level_clusters
+    totsum = 0
+    for level in nearest_level_clusters:
+        minsum = 0
+        for cluster_id in level:
+            nn = 0
+            min_dist = float("inf")
+            for i in node_list[cluster_id].data_refs:
+                dist = custom_distance(node_list[i].val,T)
+                if dist < min_dist:
+                    nn = i
+                    min_dist = dist
+            minsum += min_dist
+        totsum += minsum
+    return totsum
 
+def evaluate_tree_level_likelihood(node_list, data_list, input_list,noise=1):
+    n_pix = data_list[0].m1.shape[1] ** 2.0
+
+    approx_scale_constant = len(data_list)
+    weight = 1 / len(data_list)
+    # Likelihood array
+    likelihood_omega_m = [0.0 for _ in range(len(input_list))]
+
+    start_time = time.perf_counter()
+    
+    for input_index, omega in enumerate(input_list):
+        nlc = search_level_tree(node_list, data_list, omega)
+        print(nlc)
+        for level in nlc:
+            for cn_idx in level:
+                cluster_node = node_list[cn_idx]
+                min_dist = float('Inf')
+                om_idx = -1
+                for data_idx in cluster_node.data_refs:
+                    # if custom_distance(data_list[data_idx].val, omega) < min_dist:
+                    #     min_dist = jnp.linalg.norm(data_list[data_idx].val-omega)
+                    #     om_idx = data_idx
+                                
+                        likelihood_omega_m[input_index] += weight * likelihood(
+                            omega, data_list[data_idx], n_pix, noise
+                        )
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
+    
+    end_time = time.perf_counter() - start_time
+    logger.info("{},{}".format(len(input_list), end_time))
+    
+    return likelihood_omega_m
+
+        
 def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1):
     """
     Given a hierarchical clustering of the images_from_structures, and the input images,
@@ -145,7 +196,7 @@ def search_tree_likelihoods(node_list, data_list, input_list, input_noise=None):
     nn_likelihoods = evaluate_tree_neighbor_likelihood(
         node_list, data_list, input_list, input_noise
     )
-    cluster_likelihoods = evaluate_tree_cluster_likelihood(
+    cluster_likelihoods = evaluate_tree_level_likelihood(
         node_list, data_list, input_list, input_noise
     )
     logger.info("lambda: {}".format(input_noise))
@@ -197,7 +248,7 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
     nn_likelihoods = evaluate_tree_neighbor_likelihood(
         node_list, data_list, input_list, input_noise
     )
-    global_likelihoods = evaluate_global_likelihood(data_list, input_list, input_noise)
+    global_likelihoods = evaluate_tree_level_likelihood(node_list, data_list, input_list, input_noise)
 
     return nn_likelihoods, global_likelihoods
 

@@ -71,9 +71,9 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
       
       for (int i = 0; i < R; ++i) {
         vector<MatrixXd> new_centroids;
-        vector<vector<int>> new_ref_clusters(k,{0});
+        vector<vector<int>> new_ref_clusters;
         // partitions data_refs into n<=k groups.
-        int c = kmeans_refs(data_store, data_refs, centroids, bool(i==0), new_centroids, new_ref_clusters);
+        kmeans_refs(data_store, data_refs, centroids, bool(i==0), new_centroids, new_ref_clusters);
         // save new_ref_clusters
         ref_clusters = new_ref_clusters;
         // return node_map;
@@ -81,9 +81,7 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
         // it is possible to drop below the value of k
         // if this happens, we break. It can form an unbalanced tree, but
         // in practice it doesn't matter as long as R is sufficiently large
-        if (c < centroids.size()) {
-          ref_clusters.pop_back();
-          // ref_clusters = &new_ref_clusters;
+        if (new_centroids.size() < centroids.size()) {
           centroids = new_centroids;
           break;
         }

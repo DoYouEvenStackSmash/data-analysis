@@ -2,7 +2,7 @@ from clustering_imports import *
 import time
 
 
-def level_order_search(node_list, T, TAU=1e-8):
+def level_order_search(node_list, T, TAU=7e-1):
     """Level order traversal of the hierarchical clustering for valid clusters for T within 
     distance TAU
 
@@ -117,11 +117,11 @@ def search_tree_associations(node_list, data_list, input_list):
 
     end_time = time.perf_counter()
     time_to_locate = end_time - start_time
+    print(time_to_locate)
     # logger.info("{}".format(time_to_locate))
     # print("Time taken for tree-based search:", time_to_locate)
 
     return di_match_indices, ds_match_distances
-
 
 def all_pairs_associations(data_list, input_list):
     """
