@@ -24,7 +24,7 @@ def construct_data_list(node_list, data_shape=None):
                 for j, img in enumerate(node.data_refs):
                     if jnp.linalg.norm(img.m1 - node.val.m1) == 0.0:
                         node.val_idx = img_count
-                    data_list[img_count] = img.m1#.numpy()
+                    data_list[img_count] = img.m1  # .numpy()
                     # param_list[img_count] = node.param_refs[j]
                     data_idx.append(img_count)
                     # param_idx.append(img_count)
@@ -41,7 +41,7 @@ def construct_tree(M, k=3, R=30, C=1):
     Returns a flat tree as a list of nodes, where node_list[0] is the root.
     """
     data_store = M
-    
+
     node_list = []
     node_queue = deque()
     dref_queue = deque()
@@ -64,22 +64,28 @@ def construct_tree(M, k=3, R=30, C=1):
                 data_ref_clusters, new_centroids = kmeans_refs(
                     data_store, data_ref_arr, centroids, bool(r == 0)
                 )
-                
-                if (
-                    len(new_centroids) != len(centroids) or jnp.allclose(jnp.stack([c.m1 for c in centroids]), jnp.stack([c.m1 for c in new_centroids]))
 
+                if (
+                    len(new_centroids) != len(centroids)
+                    or jnp.allclose(
+                        jnp.stack([c.m1 for c in centroids]),
+                        jnp.stack([c.m1 for c in new_centroids]),
+                    )
                     # len(new_centroids) != len(centroids)
                     # or jnp.linalg.norm(jnp.stack([centroids[i].m1 for i in range(len(centroids))]) - \
                     #     jnp.stack([new_centroids[i].m1 for i in range(len(new_centroids))])) == 0.0
-                    
                 ):
                     centroids = new_centroids
                     break
                 centroids = new_centroids
 
             # create new nodes for centroids, and add each centroid/data pair to queues
-            node.children = [i for i in range(len(node_list), len(node_list) + len(centroids))]
-            node_queue.extend([i for i in range(len(node_list), len(node_list) + len(centroids))])
+            node.children = [
+                i for i in range(len(node_list), len(node_list) + len(centroids))
+            ]
+            node_queue.extend(
+                [i for i in range(len(node_list), len(node_list) + len(centroids))]
+            )
             node_list.extend([ClusterTreeNode(ctr) for ctr in centroids])
             dref_queue.extend(data_ref_clusters)
         # perform k medioids clustering to ensure that the center is within the input data
@@ -95,7 +101,7 @@ def construct_tree(M, k=3, R=30, C=1):
             dlen = len(data_ref_arr)
             if not dlen:
                 continue
-            
+
             data = [data_store[dref] for dref in data_ref_arr]
             if dlen >= k:
                 mlist, distances = preprocess(data, k)
@@ -112,7 +118,6 @@ def construct_tree(M, k=3, R=30, C=1):
 
                 medioids = [data_store[mdref] for mdref in mlist]
 
-
                 clusters = [
                     [data_store[dref] for dref in cluster]
                     for cluster in data_ref_clusters
@@ -124,12 +129,18 @@ def construct_tree(M, k=3, R=30, C=1):
                 medioids = []
                 for i in range(len(data_ref_arr)):
                     for j in range(len(data_ref_arr)):
-                        D.at[i].set(D[i] + jnp.linalg.norm(data_store[data_ref_arr[i]].m1 - data_store[data_ref_arr[j]].m1))
+                        D.at[i].set(
+                            D[i]
+                            + jnp.linalg.norm(
+                                data_store[data_ref_arr[i]].m1
+                                - data_store[data_ref_arr[j]].m1
+                            )
+                        )
 
                 min_idx = jnp.argmin(D).item()
                 medioids.append(data_store[min_idx])
                 clusters = [[data_store[i] for i in data_ref_arr]]
-                
+
             elif dlen == 1:
                 medioids = [data[0]]
                 clusters = [[data[0]]]

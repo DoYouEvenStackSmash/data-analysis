@@ -7,6 +7,7 @@ from clustering_imports import *
 import jax
 import jax.numpy as jnp
 
+
 def initial_centroids(d, k):
     start_center = torch.random.randint(len(d))  # Choose a random starting center index
     centroids = [d[start_center]]  # Initialize centroids list with the starting center
@@ -173,7 +174,7 @@ def kmeanspp_refs(data_store, data_ref_arr, k):
         not_chosen.remove(not_chosen[selected_point])
         if not len(not_chosen):
             break
-    
+
     return centroids
 
 
@@ -204,8 +205,7 @@ def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
                 if jnp.array_equal(data_store[dref].m1, ctr.m1):
                     continue
 
-
-            pdist = custom_distance(data_store[dref],ctr)
+            pdist = custom_distance(data_store[dref], ctr)
             if pdist < min_dist:
                 min_dist = pdist
                 nn = ctx
@@ -221,6 +221,8 @@ def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
             continue
         new_data_ref_clusters.append(data_ref_clusters[i])
         new_centroids.append(DatumT())
-        new_centroids[-1].m1 = jnp.mean(jnp.stack([data_store[i].m1 for i in new_data_ref_clusters[-1]]),axis=0)
-    
+        new_centroids[-1].m1 = jnp.mean(
+            jnp.stack([data_store[i].m1 for i in new_data_ref_clusters[-1]]), axis=0
+        )
+
     return new_data_ref_clusters, new_centroids

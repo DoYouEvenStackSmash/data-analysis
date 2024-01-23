@@ -47,11 +47,12 @@ def likelihood(omega, m, N_pix, noise=1):
     """
     lambda_square = noise**2
     coeff = 1
-    l2 = jnp.exp(-1.0 * (jnp.square(custom_distance(omega,m)) / (2 * lambda_square)))
+    l2 = jnp.exp(-1.0 * (jnp.square(custom_distance(omega, m)) / (2 * lambda_square)))
     return coeff * l2
 
+
 def search_level_tree(node_list, data_list, T):
-    nearest_level_clusters = level_order_search(node_list,T)
+    nearest_level_clusters = level_order_search(node_list, T)
     return nearest_level_clusters
     totsum = 0
     for level in nearest_level_clusters:
@@ -60,7 +61,7 @@ def search_level_tree(node_list, data_list, T):
             nn = 0
             min_dist = float("inf")
             for i in node_list[cluster_id].data_refs:
-                dist = custom_distance(node_list[i].val,T)
+                dist = custom_distance(node_list[i].val, T)
                 if dist < min_dist:
                     nn = i
                     min_dist = dist
@@ -68,40 +69,41 @@ def search_level_tree(node_list, data_list, T):
         totsum += minsum
     return totsum
 
-def evaluate_tree_level_likelihood(node_list, data_list, input_list,noise=1):
+
+def evaluate_tree_level_likelihood(node_list, data_list, input_list, noise=1):
     n_pix = data_list[0].m1.shape[1] ** 2.0
 
     approx_scale_constant = len(data_list)
-    weight = 1 / len(data_list)
+    weight = 1  # / len(data_list)
     # Likelihood array
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
 
     start_time = time.perf_counter()
-    
+
     for input_index, omega in enumerate(input_list):
         nlc = search_level_tree(node_list, data_list, omega)
         print(nlc)
         for level in nlc:
             for cn_idx in level:
                 cluster_node = node_list[cn_idx]
-                min_dist = float('Inf')
+                min_dist = float("Inf")
                 om_idx = -1
                 for data_idx in cluster_node.data_refs:
-                    # if custom_distance(data_list[data_idx].val, omega) < min_dist:
-                    #     min_dist = jnp.linalg.norm(data_list[data_idx].val-omega)
-                    #     om_idx = data_idx
-                                
-                        likelihood_omega_m[input_index] += weight * likelihood(
-                            omega, data_list[data_idx], n_pix, noise
-                        )
+                    if custom_distance(data_list[data_idx], omega) < min_dist:
+                        min_dist = custom_distance(data_list[data_idx], omega)
+                        om_idx = data_idx
+
+                likelihood_omega_m[input_index] += weight * likelihood(
+                    omega, data_list[om_idx], n_pix, noise
+                )
     likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
-    
+
     end_time = time.perf_counter() - start_time
     logger.info("{},{}".format(len(input_list), end_time))
-    
+
     return likelihood_omega_m
 
-        
+
 def evaluate_tree_neighbor_likelihood(node_list, data_list, input_list, noise=1):
     """
     Given a hierarchical clustering of the images_from_structures, and the input images,
@@ -242,13 +244,13 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
     """
     Testbench function for head to head comparison of tree approximation and global search
     """
-    if input_noise is None:
-        input_noise = calculate_noise(input_list)
 
-    nn_likelihoods = evaluate_tree_neighbor_likelihood(
-        node_list, data_list, input_list, input_noise
+    nn_likelihoods = greedy_tree_likelihood(
+        node_list, data_list, input_list
     )
-    global_likelihoods = evaluate_tree_level_likelihood(node_list, data_list, input_list, input_noise)
+    global_likelihoods = bounded_tree_likelihood(
+        node_list, data_list, input_list
+    )
 
     return nn_likelihoods, global_likelihoods
 
@@ -302,3 +304,179 @@ def write_csv(single_point_likelihood, area_likelihood, filename="out.csv"):
     for i, sp in enumerate(single_point_likelihood):
         f.write(f"{sp},{area_likelihood[i]},\n")
     f.close()
+
+
+def bounded_tree_likelihood(node_list, data_list, input_list, TAU=4e-1):
+    n_pix = data_list[0].m1.shape[1] ** 2.0
+
+    approx_scale_constant = len(data_list)
+    weight = 1  # / len(data_list)
+    # Likelihood array
+    likelihood_omega_m = [0.0 for _ in range(len(input_list))]
+    noise = calculate_noise(input_list)
+    lambda_square = noise**2
+    start_time = time.perf_counter()
+
+    LEVEL_FLAG = -1
+    q = []
+    for input_idx, T in enumerate(input_list):
+        q.append(0)
+        reachable_cluster_refs = []
+        # tracks the level in the tree
+        level_counter = 0
+        while len(q):
+            q.append(LEVEL_FLAG)
+            level_counter += 1
+            reachable_cluster_refs.append([])
+
+            while q[0] != LEVEL_FLAG:
+                elem_id = q.pop(0)
+                elem = node_list[elem_id]
+
+                if elem.data_refs != None:
+                    reachable_cluster_refs[-1].append(elem_id)
+                    continue
+
+                for cidx in elem.children:
+                    res_elem_tensor = jax_apply_d1m2_to_d2m1(T, node_list[cidx].val)
+                    dist = jnp.linalg.norm(T.m1 - res_elem_tensor)
+                    if dist > TAU:
+                        continue
+                    q.append(cidx)
+            # track level end for metrics purposes
+            flag = q.pop(0)
+        for level in reachable_cluster_refs:
+            if not len(level):
+                continue
+            for cluster_node_idx in level:
+                min_dist = float("Inf")
+                cluster_node = node_list[cluster_node_idx]
+                for idx in cluster_node.data_refs:
+                    res = jax_apply_d1m2_to_d2m1(data_list[idx], T)
+                    d = DatumT()
+                    d.m1 = res
+                    dist = custom_distance(d, T)
+                    if dist < min_dist:
+                        min_dist = dist
+                likelihood_omega_m[input_idx] = weight * jnp.exp(
+                    -1.0 * (jnp.square(min_dist) / (2 * lambda_square))
+                )
+    end_time = time.perf_counter() - start_time
+    logger.info("{},{}".format(len(input_list), end_time))
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
+    return likelihood_omega_m
+
+
+def greedy_tree_likelihood(node_list, data_list, input_list):
+    """
+    DFS for the cluster containing(ish) T
+    returns an index to a node in node_list
+    """
+    n_pix = data_list[0].m1.shape[1] ** 2.0
+
+    approx_scale_constant = len(data_list)
+    weight = 1  # / len(data_list)
+    # Likelihood array
+    likelihood_omega_m = [0.0 for _ in range(len(input_list))]
+    noise = calculate_noise(input_list)
+    lambda_square = noise**2
+    coeff = 1
+
+    start_time = time.perf_counter()
+
+    for input_idx, T in enumerate(input_list):
+        n_curr = 0
+        # search_list = []
+        # search representative nodes
+        while node_list[n_curr].data_refs is None:
+            min_dist = float("inf")
+            nn = 0
+            for i in node_list[n_curr].children:
+                dist = custom_distance(node_list[i].val, T)
+                if dist < min_dist:
+                    nn = i
+                    min_dist = dist
+            # search_list.append(nn)
+            n_curr = nn
+            # search leaves
+        closest_idx = 0
+        min_dist = float("inf")
+        d = None
+        for idx in node_list[n_curr].data_refs:
+            # print(idx)
+            res = jax_apply_d1m2_to_d2m1(data_list[idx], T)
+            d = DatumT()
+            d.m1 = res
+            dist = custom_distance(d, T)
+            if dist < min_dist:
+                closest_idx = idx
+                min_dist = dist
+        # likelihood
+        likelihood_omega_m[input_idx] = weight * jnp.exp(
+            -1.0 * (jnp.square(min_dist) / (2 * lambda_square))
+        )
+    end_time = time.perf_counter() - start_time
+    logger.info("{},{}".format(len(input_list), end_time))
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
+    return likelihood_omega_m
+
+
+def bounded_tree_likelihood(node_list, data_list, input_list, TAU=4e-1):
+    n_pix = data_list[0].m1.shape[1] ** 2.0
+
+    approx_scale_constant = len(data_list)
+    weight = 1 / len(data_list)
+    # Likelihood array
+    likelihood_omega_m = [0.0 for _ in range(len(input_list))]
+    noise = calculate_noise(input_list)
+    lambda_square = noise**2
+    start_time = time.perf_counter()
+
+    LEVEL_FLAG = -1
+    q = []
+    for input_idx, T in enumerate(input_list):
+        q.append(0)
+        reachable_cluster_refs = []
+        # tracks the level in the tree
+        level_counter = 0
+        while len(q):
+            q.append(LEVEL_FLAG)
+            level_counter += 1
+            reachable_cluster_refs.append([])
+
+            while q[0] != LEVEL_FLAG:
+                elem_id = q.pop(0)
+                elem = node_list[elem_id]
+
+                if elem.data_refs != None:
+                    reachable_cluster_refs[-1].append(elem_id)
+                    continue
+
+                for cidx in elem.children:
+                    res_elem_tensor = jax_apply_d1m2_to_d2m1(T, node_list[cidx].val)
+                    dist = jnp.linalg.norm(T.m1 - res_elem_tensor)
+                    if dist > TAU:
+                        continue
+                    q.append(cidx)
+            # track level end for metrics purposes
+            flag = q.pop(0)
+        for level in reachable_cluster_refs:
+            if not len(level):
+                continue
+            for cluster_node_idx in level:
+                min_dist = float("Inf")
+                cluster_node = node_list[cluster_node_idx]
+                for idx in cluster_node.data_refs:
+                    res = jax_apply_d1m2_to_d2m1(data_list[idx], T)
+                    d = DatumT()
+                    d.m1 = res
+                    dist = custom_distance(d, T)
+                    if dist < min_dist:
+                        min_dist = dist
+                    likelihood_omega_m[input_idx] = weight * jnp.exp(
+                        -1.0 * (jnp.square(dist) / (2 * lambda_square))
+                    )
+    end_time = time.perf_counter() - start_time
+    logger.info("{},{}".format(len(input_list), end_time))
+    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
+    return likelihood_omega_m
