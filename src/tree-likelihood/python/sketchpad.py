@@ -95,7 +95,7 @@ def greedy_tree_likelihood(node_list, data_list, input_list):
     return likelihood_omega_m
 
 
-def bounded_tree_likelihood(node_list, data_list, input_list, TAU=4e-1):
+def bounded_tree_likelihood(node_list, data_list, input_list, TAU=1e-9):
     n_pix = data_list[0].m1.shape[1] ** 2.0
 
     approx_scale_constant = len(data_list)
@@ -104,10 +104,12 @@ def bounded_tree_likelihood(node_list, data_list, input_list, TAU=4e-1):
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
     noise = calculate_noise(input_list)
     lambda_square = noise**2
-
+    print("running")
     LEVEL_FLAG = -1
     q = []
+    reachable_cluster_refs = None
     for input_idx, T in enumerate(input_list):
+        print(f"completed {input_idx}")
         q.append(0)
         reachable_cluster_refs = []
         # tracks the level in the tree
@@ -133,6 +135,7 @@ def bounded_tree_likelihood(node_list, data_list, input_list, TAU=4e-1):
                     q.append(cidx)
             # track level end for metrics purposes
             flag = q.pop(0)
+        # print(reachable_cluster_refs)
         for level in reachable_cluster_refs:
             if not len(level):
                 continue
