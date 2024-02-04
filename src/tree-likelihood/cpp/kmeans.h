@@ -20,7 +20,7 @@ using Eigen::MatrixXd;
 //   - FIRST_FLAG: A boolean flag indicating whether it's the first iteration.
 //   - new_centroids: Reference to a vector to store the newly computed centroids.
 //   - new_ref_clusters: Reference to a vector of vectors to store data point assignments to clusters.
-void kmeans_refs(MatrixXd *data_store,
+int kmeans_refs(MatrixXd *data_store,
                  vector<int> &data_refs,
                  vector<MatrixXd> &centroids,
                  bool FIRST_FLAG,

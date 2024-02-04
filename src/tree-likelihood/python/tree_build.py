@@ -4,8 +4,11 @@
 from kmedoids import *
 from kmeans import *
 from clustering_driver import *
+from sklearn.cluster import KMeans
 
-
+# import logging
+# sklearn_logger = logging.getLogger('sklearnex')
+# sklearn_logger.setLevel(logging.ERROR)
 def construct_data_list(node_list, data_shape=None):
     """
     Wrapper function for constructing a new data array by replacing data references to their indices
@@ -24,7 +27,7 @@ def construct_data_list(node_list, data_shape=None):
                 for j, img in enumerate(node.data_refs):
                     if jnp.linalg.norm(img.m1 - node.val.m1) == 0.0:
                         node.val_idx = img_count
-                    data_list[img_count] = img.m1#.numpy()
+                    data_list[img_count] = img.m1  # .numpy()
                     # param_list[img_count] = node.param_refs[j]
                     data_idx.append(img_count)
                     # param_idx.append(img_count)
@@ -41,7 +44,7 @@ def construct_tree(M, k=3, R=30, C=1):
     Returns a flat tree as a list of nodes, where node_list[0] is the root.
     """
     data_store = M
-    
+
     node_list = []
     node_queue = deque()
     dref_queue = deque()
@@ -49,39 +52,61 @@ def construct_tree(M, k=3, R=30, C=1):
     node_list.append(ClusterTreeNode(0))
     node_queue.append(0)
     dref_queue.append([i for i in range(len(M))])
-    
+    # distances = []
     while len(node_queue):
         node = node_list[node_queue.popleft()]
         data_ref_arr = dref_queue.popleft()
 
         node.children = []
 
-        if len(data_ref_arr) > C:
-            data_ref_clusters = None
-            centroids = kmeanspp_refs(data_store, data_ref_arr, k)
-            for r in range(R):
-                data_ref_clusters, new_centroids = kmeans_refs(
-                    data_store, data_ref_arr, centroids, bool(r == 0)
-                )
-                
-                if (
-                    len(new_centroids) != len(centroids)
-                    or jnp.linalg.norm(jnp.stack([centroids[i].m1 for i in range(len(centroids))]) - \
-                        jnp.stack([new_centroids[i].m1 for i in range(len(new_centroids))])) == 0.0
-                ):
-                    centroids = new_centroids
-                    break
-                centroids = new_centroids
-            # print(f"shorted: {len(centroids)}")
-            # create new nodes for centroids, and add each centroid/data pair to queues
-            for i, ctr in enumerate(centroids):
-                idx = len(node_list)
-                print(idx)
-                node.children.append(idx)
-                node_list.append(ClusterTreeNode(ctr))
-                node_queue.append(idx)
-                dref_queue.append(data_ref_clusters[i])
+        if len(data_ref_arr) > C and len(data_ref_arr) > k:
+            kmeans = KMeans(n_clusters=k,init='k-means++')
+            # dst = 
+            kmeans.fit([data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr])
+            centroids = kmeans.cluster_centers_
+            labels = kmeans.labels_
+            data_ref_clusters = [[] for _ in range(k)]
+            ctx = [DatumT() for c in centroids]
+            for i,c in enumerate(ctx):
+                ctx[i].m1 = centroids[i].reshape((128,128))
+            centroids = ctx
+            for i,j in enumerate(labels):
+                # print(i,j)
+                data_ref_clusters[j].append(data_ref_arr[i])
+                # data_ref_clusters[j].append(data_ref_arr[i])
+            
+            # data_ref_clusters = None
+            # centroids = kmeanspp_refs(data_store, data_ref_arr, k)
+            # new_centroids = None
+            
+            # for r in range(R):
+            #     data_ref_clusters, new_centroids = kmeans_refs(
+            #         data_store, data_ref_arr, centroids, bool(r == 0)
+            #     )
 
+            #     if (
+            #         len(new_centroids) != len(centroids)
+            #         or jnp.allclose(
+            #             jnp.stack([c.m1 for c in centroids]),
+            #             jnp.stack([c.m1 for c in new_centroids]),
+            #         )
+            #         # len(new_centroids) != len(centroids)
+            #         # or jnp.linalg.norm(jnp.stack([centroids[i].m1 for i in range(len(centroids))]) - \
+            #         #     jnp.stack([new_centroids[i].m1 for i in range(len(new_centroids))])) == 0.0
+            #     ):
+            #         centroids = new_centroids
+            #         break
+            #     centroids = new_centroids
+
+            # create new nodes for centroids, and add each centroid/data pair to queues
+            node.children = [
+                i for i in range(len(node_list), len(node_list) + len(centroids))
+            ]
+            node_queue.extend(
+                [i for i in range(len(node_list), len(node_list) + len(centroids))]
+            )
+            node_list.extend([ClusterTreeNode(ctr) for ctr in centroids])
+            dref_queue.extend(data_ref_clusters)
         # perform k medioids clustering to ensure that the center is within the input data
         else:
             param_clusters, medioids, clusters, params, mlist = (
@@ -100,7 +125,8 @@ def construct_tree(M, k=3, R=30, C=1):
             if dlen >= k:
                 mlist, distances = preprocess(data, k)
                 total_sum = float("inf")
-
+                data_ref_clusters = None
+                new_sum = None
                 for _ in range(R):
                     data_ref_clusters = assign_clusters(dlen, mlist, distances)
                     mlist = update_medioids(data_ref_clusters, mlist, distances)
@@ -111,7 +137,6 @@ def construct_tree(M, k=3, R=30, C=1):
 
                 medioids = [data_store[mdref] for mdref in mlist]
 
-
                 clusters = [
                     [data_store[dref] for dref in cluster]
                     for cluster in data_ref_clusters
@@ -119,16 +144,22 @@ def construct_tree(M, k=3, R=30, C=1):
 
             elif dlen > 1:
                 # for _ in range(k):  # Assuming k is the number of clusters
-                D = torch.zeros(len(data_ref_arr))
-                
+                D = jnp.zeros(len(data_ref_arr))
+                medioids = []
                 for i in range(len(data_ref_arr)):
                     for j in range(len(data_ref_arr)):
-                        D[i] += torch.linalg.norm(data_store[data_ref_arr[i]].m1 - data_store[data_ref_arr[j]].m1)
+                        D.at[i].set(
+                            D[i]
+                            + jnp.linalg.norm(
+                                data_store[data_ref_arr[i]].m1
+                                - data_store[data_ref_arr[j]].m1
+                            )
+                        )
 
-                min_idx = torch.argmin(D).item()
+                min_idx = jnp.argmin(D).item()
                 medioids.append(data_store[min_idx])
-                clusters = [[data_store[i] for i in data_refs]]
-                
+                clusters = [[data_store[i] for i in data_ref_arr]]
+
             elif dlen == 1:
                 medioids = [data[0]]
                 clusters = [[data[0]]]

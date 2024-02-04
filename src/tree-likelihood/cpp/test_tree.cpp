@@ -19,14 +19,14 @@ int main() {
     const int numRows = 1;
     const int numCols = 2;
 
-    vector<MatrixXd> data_store;
+    vector<MatrixXd> *data_store = new vector<MatrixXd>();
     vector<int> data_refs;
     
-    mock_data_loader(data_store, data_refs);
+    mock_data_loader(*data_store, data_refs);
     // return 0;
     // int C = data_refs.size();
     auto start = std::chrono::steady_clock::now();
-    map<int,CTNode*> node_map = construct_tree(data_store.data(), data_refs, 8, 10, 100);
+    map<int,CTNode*> node_map = construct_tree(data_store->data(), data_refs, 6, 35, 30);
     cout <<"done";
     auto end = std::chrono::steady_clock::now();
     auto time_diff = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -34,16 +34,17 @@ int main() {
 
     std::string mid_split = ",";//" -> ";
     
-    for (auto &a : node_map) {
-      if (a.first != -1 && a.second->data != nullptr) {
-        for (auto &b : (*a.second->data))
-          cout << "N"<< a.first << "" << mid_split << "D" << b << "\n";
-      }else {
-        for (auto &b : a.second->children) {
-          cout << "N"<< a.first << ""<< mid_split <<"N" << b << "\n";
-        }
-      }
-    }
+    // for (auto &a : node_map) {
+    //   if (a.first != -1 && a.second->data != nullptr) {
+    //     for (auto &b : (*a.second->data))
+    //       cout << "N"<< a.first << "" << mid_split << "D" << b << "\n";
+    //   }else {
+    //     for (auto &b : a.second->children) {
+    //       cout << "N"<< a.first << ""<< mid_split <<"N" << b << "\n";
+    //     }
+    //   }
+    // }
+    delete data_store;
     for (auto &a : node_map) {
       if (a.first == -1) {
         delete a.second;

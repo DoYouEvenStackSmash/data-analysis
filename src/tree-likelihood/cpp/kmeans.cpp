@@ -10,13 +10,16 @@ using Eigen::MatrixXd;
 // This function performs the K-means clustering algorithm to assign data points
 // to centroids. It calculates the distance between each data point and each
 // centroid, assigning data points to the nearest centroid.
-void kmeans_refs(MatrixXd *data_store, vector<int> &data_refs,
+int kmeans_refs(MatrixXd *data_store, vector<int> &data_refs,
                  vector<MatrixXd> &centroids, bool FIRST_FLAG,
                  vector<MatrixXd> &new_centroids,
                  vector<vector<int>> &new_ref_clusters) {
   // Create a vector to store clusters of data point indices for each centroid.
-  vector<vector<int>> ref_clusters(centroids.size());
-
+  vector<vector<int>> ref_clusters;//(centroids.size());
+  int counters[10];
+  for (int i = 0; i < 10; ++i) {
+    counters[i] = 0;
+  }
   double min_dist;
   int nearest_neighbor;
   double pdist;
@@ -51,24 +54,37 @@ void kmeans_refs(MatrixXd *data_store, vector<int> &data_refs,
     // If a nearest neighbor was found, assign the data point to the
     // corresponding cluster.
     if (nearest_neighbor != -1) {
-      ref_clusters[nearest_neighbor].push_back(data_refs[didx]);
+      // if (!new_ref_clusters[nearest_neighbor].size())
+      new_ref_clusters[nearest_neighbor][counters[nearest_neighbor]] = data_refs[didx];
+      counters[nearest_neighbor]++;
+      if (new_ref_clusters[nearest_neighbor].size() <= counters[nearest_neighbor])
+        new_ref_clusters[nearest_neighbor].resize(new_ref_clusters[nearest_neighbor].size() * 2);
     }
   }
 
   // postprocessing for return
-  for (vector<int> a : ref_clusters) {
-    if (a.size()) {
-      new_ref_clusters.push_back(a);
+  // new_ref_clusters = ref_clusters;
+  int counter = 0;
+  for (int j = 0; j < new_ref_clusters.size(); ++j) {
+    
+    if (counters[j] > 0) {
+      new_ref_clusters[j].resize(counters[j]);
+      // new_ref_clusters.push_back(a);
       // Calculate the average of data points in the cluster to get the new
       // centroid.
       MatrixXd mean_mat(data_store[0].rows(), data_store[0].cols());
       mean_mat.setZero();
-      for (int i = 0; i < a.size(); ++i)
-        mean_mat = mean_mat + data_store[a[i]];
-      mean_mat /= a.size();
+      for (int i = 0; i < counters[j]; ++i)
+        mean_mat = mean_mat + data_store[new_ref_clusters[j][i]];
+      mean_mat /= counters[j];
       new_centroids.push_back(mean_mat);
+      counter++;
+    }else {
+      vector<int> a;
+      new_ref_clusters[j] = a;
     }
   }
+  return counter;
 }
 
 // This function performs the K-means++ initialization for centroids.

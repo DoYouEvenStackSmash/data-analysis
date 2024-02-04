@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from scipy.cluster.hierarchy import dendrogram, linkage
 import time
+
 colors = list(set(mcolors.CSS4_COLORS))
 from render_support import *
 
@@ -33,11 +34,15 @@ from transform_generator import *
 from ctf_generator import *
 from image_generator import *
 from dataloader import Dataloader as dl
+
 # import matplotlib.pyplot as plt
 import jax
 import jax.numpy as jnp
 from datum_helpers import *
-
+import sklearn
+import logging
+sklearn_logger = logging.getLogger('sklearnex')
+sklearn_logger.setLevel(logging.INFO)
 def custom_distance(k, m):
     return jnp.linalg.norm(k.m1 - m.m1)
 

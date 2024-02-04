@@ -71,9 +71,9 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
       
       for (int i = 0; i < R; ++i) {
         vector<MatrixXd> new_centroids;
-        vector<vector<int>> new_ref_clusters;
+        vector<vector<int>> new_ref_clusters(k,{0});
         // partitions data_refs into n<=k groups.
-        kmeans_refs(data_store, data_refs, centroids, bool(i==0), new_centroids, new_ref_clusters);
+        int c = kmeans_refs(data_store, data_refs, centroids, bool(i==0), new_centroids, new_ref_clusters);
         // save new_ref_clusters
         ref_clusters = new_ref_clusters;
         // return node_map;
@@ -81,7 +81,9 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
         // it is possible to drop below the value of k
         // if this happens, we break. It can form an unbalanced tree, but
         // in practice it doesn't matter as long as R is sufficiently large
-        if (new_centroids.size() < centroids.size()) {
+        if (c < centroids.size()) {
+          ref_clusters.pop_back();
+          // ref_clusters = &new_ref_clusters;
           centroids = new_centroids;
           break;
         }
@@ -177,13 +179,20 @@ std::map<int, CTNode*> construct_tree(MatrixXd *data_store, vector<int> &init_da
       // create leaf nodes of the tree
       for (int i = 0; i < medioid_indices.size(); ++i) {
         CTNode* newNode = new CTNode();
-        newNode->_id = node_count;
         
+        
+        /**/
+        newNode->_id = node_count;
         // set the newNode val pointer to the actual medioid object in data_store
         // to avoid excessively duplicating data. In the worst case we double our memory consumption,
         // so this is important.
         newNode->val = &data_store[data_refs[medioid_indices[i]]];
         
+        /*
+        // for serialization purposes it is essential that the index of the medioid object be stored in the 
+        // leaf. we make use of existing newNode->_id and leave newNode->val as null
+        newNode->_id = data_refs[medioid_indices[i]];
+        */
         // set the newNode data pointer to a vector containing the indices in data_store
         // of the node's cluster members.  populate this vector with those indices
         // These will be used to directly access cluster data in node_map

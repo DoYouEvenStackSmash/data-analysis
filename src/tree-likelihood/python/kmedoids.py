@@ -3,6 +3,8 @@ from clustering_imports import *
 
 import jax
 import jax.numpy as jnp
+
+
 def assign_clusters(dlen, mlist, distances):
     """
     Implicitly assigns elements to clusters using the distances matrix
@@ -34,8 +36,7 @@ def update_medioids(clusters, mlist, distances):
     Returns an array of np arrays
     """
     new_mlist = []
-    
-    
+
     for midx in mlist:
         cluster = jnp.array(clusters[mlist.index(midx)])
         cluster_distances = jnp.sum(distances[cluster][:, cluster], axis=1)
@@ -54,7 +55,9 @@ def compute_distance_matrix(M_flat):
     M_flat_reshaped = M_flat.reshape((num_tensors, -1))
 
     # Compute pairwise distances
-    pairwise_distances = jnp.linalg.norm(M_flat_reshaped[:, None] - M_flat_reshaped, axis=2)
+    pairwise_distances = jnp.linalg.norm(
+        M_flat_reshaped[:, None] - M_flat_reshaped, axis=2
+    )
 
     return pairwise_distances
 
@@ -66,13 +69,13 @@ def preprocess(M, k=3):
     Returns a list of indices referring to M, and a distances matrix
     """
     n = len(M)
-
+    # print(type(M[0].m1))
     # Flatten the 2x2 matrices to 1D arrays for pairwise calculations
     pairwise_distances = None
 
     # M_flat = M.reshape(n, -1)
     M_flat = jnp.stack([m.m1 for m in M])
-    #print(M_flat.shape)
+    # print(type(M_flat))#.shape)
     pairwise_distances = compute_distance_matrix(M_flat)
     # for p in pairwise_distances:
     #     print(p)
@@ -102,10 +105,9 @@ def preprocess(M, k=3):
     medioid_indices = [d[0] for d in sorted_data[:k]]
 
     # Convert pairwise_distances to NumPy array if needed
-    pairwise_distances_np = pairwise_distances#.numpy()
+    pairwise_distances_np = pairwise_distances  # .numpy()
 
     return medioid_indices, pairwise_distances_np
-
 
 
 def postprocess(M, clusters, mlist):
