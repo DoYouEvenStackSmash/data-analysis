@@ -197,9 +197,12 @@ def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
     nn = None
     pdist = None
     min_dist = float("inf")
+
+    
     for dref_idx, dref in enumerate(data_ref_arr):
         min_dist = float("inf")
         nn = None
+        
         for ctx, ctr in enumerate(centroids):
             if FIRST_FLAG:
                 if jnp.array_equal(data_store[dref].m1, ctr.m1):
@@ -214,15 +217,26 @@ def kmeans_refs(data_store, data_ref_arr, centroids, FIRST_FLAG=False):
         else:
             print("no parent?")
 
-    new_data_ref_clusters = []
-    new_centroids = []
-    for i in range(len(data_ref_clusters)):
-        if not len(data_ref_clusters[i]):
-            continue
-        new_data_ref_clusters.append(data_ref_clusters[i])
-        new_centroids.append(DatumT())
-        new_centroids[-1].m1 = jnp.mean(
-            jnp.stack([data_store[i].m1 for i in new_data_ref_clusters[-1]]), axis=0
-        )
+    # new_data_ref_clusters = []
+    # new_centroids = []
+    
+    # for i in range(len(data_ref_clusters)):
+    #     if not len(data_ref_clusters[i]):
+    #         continue
+    #     new_data_ref_clusters.append(data_ref_clusters[i])
+    #     new_centroids.append(DatumT())
+    #     new_centroids[-1].m1 = jnp.mean(
+    #         jnp.stack([data_store[i].m1 for i in new_data_ref_clusters[-1]]), axis=0
+    #     )
+    new_data_ref_clusters = [
+    cluster for cluster in data_ref_clusters if len(cluster) > 0
+    ]
+
+    new_centroids = [DatumT()
+        for cluster in new_data_ref_clusters
+    ]
+    means = [jnp.mean(jnp.stack([data_store[i].m1 for i in cluster]), axis=0) for cluster in new_data_ref_clusters]
+    for i,j in enumerate(new_centroids):
+        j.m1 = means[i]
 
     return new_data_ref_clusters, new_centroids

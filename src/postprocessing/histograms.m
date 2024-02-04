@@ -1,19 +1,20 @@
 % Load data from CSV files
-path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\tree-likelihood\python\testlikeli_likelihoods.csv'
-% path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\tree-likelihood\python\all_pairs_likelihoods.csv'
+% path = '\\wsl.localhost\ubuntu\home\aroot\data\testify_likelihoods.csv'
+path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\tree-likelihood\python\None_likelihoods.csv'
 % files = []
 % search_tree_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\search_tree_likelihoods.csv');
 % global_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\all_pairs_likelihoods.csv');
 likelihoods = readtable(path);
 
 % Extract single point likelihood and area likelihood data
-single_point_likelihoods = likelihoods.single_point_likelihood;
-area_likelihoods = likelihoods.area_likelihood;
+single_point_likelihoods = likelihoods.single_point_likelihood;% - mean(likelihoods.single_point_likelihood);
+single_point_likelihoods(isinf(single_point_likelihoods))=0;
+area_likelihoods = likelihoods.area_likelihood ;
+area_likelihoods(isinf(area_likelihoods))=0;
 
-% Calculate the average of single point likelihoods and area likelihoods
 spl_average = mean(single_point_likelihoods);
 al_average = mean(area_likelihoods);
-
+    
 % Calculate the standard deviation of single point likelihoods and area likelihoods
 spl_std_dev = std(single_point_likelihoods);
 al_std_dev = std(area_likelihoods);
@@ -51,10 +52,11 @@ error_hist = histc(error, error_bins);
 p3 = nexttile;
 hold on;
 grid on;
-plot(p3, t, single_point_likelihoods, 'LineWidth', 2);
-plot(p3, t, area_likelihoods, 'LineWidth', 1.2);
+plot(p3, t, single_point_likelihoods,'b', 'LineWidth', 1);
+plot(p3, t, area_likelihoods, 'LineWidth', 0.2);
+% plot(p3, t, single_point_likelihoods,'b', 'LineWidth', 2);
 title(p3, 'Image Log-Likelihoods');
-legend("Tree Approximation", "True Likelihood");
+legend("Greedy likelihood", "Bounded likelihood");
 xlim([0 length(single_point_likelihoods) - 1]);
 xlabel(p3, 'Image Index');
 ylabel(p3, 'Log-Likelihood')

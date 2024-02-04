@@ -39,8 +39,10 @@ from dataloader import Dataloader as dl
 import jax
 import jax.numpy as jnp
 from datum_helpers import *
-
-
+import sklearn
+import logging
+sklearn_logger = logging.getLogger('sklearnex')
+sklearn_logger.setLevel(logging.INFO)
 def custom_distance(k, m):
     return jnp.linalg.norm(k.m1 - m.m1)
 
