@@ -362,11 +362,16 @@ def greedy_tree_likelihood(node_list, data_list, input_list):
     likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
     return likelihood_omega_m
     
-def bounded_tree_likelihood(node_list, data_list, input_list, TAU=0.7):
+def bounded_tree_likelihood(node_list, data_list, input_list, TAU=0.32):
+    
+    in_bound = [lambda d,n: d < n.cluster_radius, lambda d,n: d < TAU]
+    radius = 0
+    tau = 1
     n_pix = data_list[0].m1.shape[1] ** 2.0
 
     approx_scale_constant = len(data_list)
-    weight = 1#/(len(input_list) + len(data_list))
+    weight = 1 #/(len(input_list) + len(data_list))
+    
     # Likelihood array
     likelihood_omega_m = [0.0 for _ in range(len(input_list))]
     noise = calculate_noise(input_list)
@@ -391,17 +396,17 @@ def bounded_tree_likelihood(node_list, data_list, input_list, TAU=0.7):
                 elem_id = q.pop(0)
                 elem = node_list[elem_id]
 
-                if elem.data_refs != None:
+                if elem.data_refs != None:           
                     reachable_cluster_refs[-1].append(elem_id)
                     continue
 
                 for cidx in elem.children:
                     res_elem_tensor = jax_apply_d1m2_to_d2m1(T, node_list[cidx].val)
-                    diff = (T.m1 - res_elem_tensor) / noise
+                    diff = (T.m1 - res_elem_tensor)
                     diff = jnp.sqrt(jnp.sum(diff**2))
-                    # print(diff)
-                    if diff > TAU:
+                    if not in_bound[radius](diff, node_list[cidx]) and node_list[cidx].cluster_radius != 0:
                         continue
+                        
                     q.append(cidx)
             # track level end for metrics purposes
             flag = q.pop(0)
@@ -410,18 +415,27 @@ def bounded_tree_likelihood(node_list, data_list, input_list, TAU=0.7):
         for level in reachable_cluster_refs:
             if not len(level):
                 continue
-            # data = jnp.array([data_list[idx].m1 for idx,j in enumerate([node_list[cluster_node_idx].data_refs for cluster_node_idx in level])])
-            # likelihood_omega_m[input_idx] += weight * jnp.exp(-1.0 * (jnp.sum(jnp.square(T.m1 - data[:])) / (2 * lambda_square)))
+            # min_dist = 0
+
             for cluster_node_idx in level:
+                min_dist = float('Inf')
+
                 cluster_node = node_list[cluster_node_idx]
                 for idx in cluster_node.data_refs:
                     
-                    res = jax_apply_d1m2_to_d2m1(T,data_list[idx])
+                    res = jax_apply_d1m2_to_d2m1(T, data_list[idx])
                     d = DatumT()
                     d.m1 = res
-                    # print(res)
-                    likelihood_omega_m[input_idx] += weight * jnp.exp(
-                        -1.0 * ((jnp.sum(((T.m1 - d.m1)/noise)**2)) / (2 * lambda_square)))
+                    diff = jnp.sqrt(jnp.sum((((T.m1 - d.m1)/noise)**2)))
+
+                    min_dist = min(min_dist,diff)
+                
+                totsum += min_dist * 1/len(data_list)
+
+        # print(totsum)
+        if totsum != 0:
+            likelihood_omega_m[input_idx] += weight * jnp.exp(
+                -1.0 * (((totsum) ** 2) / (2 * lambda_square)))
                     # likelihood_omega_m[input_idx] += likelihood(T.m1, d.m1, 1, noise)
                     
         # likelihood_omega_m[input_idx] *= 1/max(totsum,1)

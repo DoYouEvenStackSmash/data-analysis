@@ -48,8 +48,10 @@ def construct_tree(M, k=3, R=30, C=1):
     node_list = []
     node_queue = deque()
     dref_queue = deque()
-
-    node_list.append(ClusterTreeNode(0))
+    rootd = DatumT()
+    rootd.m1 = np.zeros((128,128))
+    
+    node_list.append(ClusterTreeNode(rootd))
     node_queue.append(0)
     dref_queue.append([i for i in range(len(M))])
     # distances = []
@@ -59,13 +61,16 @@ def construct_tree(M, k=3, R=30, C=1):
 
         node.children = []
 
-        if len(data_ref_arr) > C and len(data_ref_arr) > k:
-            kmeans = KMeans(n_clusters=k,init='k-means++')
-            # dst = 
-            kmeans.fit([data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr])
+        if len(data_ref_arr) > C:# and len(data_ref_arr) > k:
+            
+            kmeans = KMeans(n_clusters=min(k, len(data_ref_arr)),init='k-means++')
+            dst = np.array([data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr])
+            node.cluster_radius = float(jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst)**2)).astype(jnp.float32))
+            # print(node.cluster_radius)
+            kmeans.fit(dst)
             centroids = kmeans.cluster_centers_
             labels = kmeans.labels_
-            data_ref_clusters = [[] for _ in range(k)]
+            data_ref_clusters = [[] for _ in range(min(k, len(data_ref_arr)))]
             ctx = [DatumT() for c in centroids]
             for i,c in enumerate(ctx):
                 ctx[i].m1 = centroids[i].reshape((128,128))
@@ -102,10 +107,13 @@ def construct_tree(M, k=3, R=30, C=1):
             node.children = [
                 i for i in range(len(node_list), len(node_list) + len(centroids))
             ]
+            
             node_queue.extend(
                 [i for i in range(len(node_list), len(node_list) + len(centroids))]
             )
             node_list.extend([ClusterTreeNode(ctr) for ctr in centroids])
+            # for c, ctr in enumerate(centroids):
+            # node_list[-1].cluster_radius = jnp.max([jnp.sqrt(jnp.sum((node_list[-1].val - data__ref)**2))])
             dref_queue.extend(data_ref_clusters)
         # perform k medioids clustering to ensure that the center is within the input data
         else:
@@ -118,9 +126,11 @@ def construct_tree(M, k=3, R=30, C=1):
             )
 
             dlen = len(data_ref_arr)
+            # node.cluster_radius = 0
             if not dlen:
                 continue
-
+            dst = np.array([data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr])
+            node.cluster_radius = float(jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst)**2)).astype(jnp.float32))
             data = [data_store[dref] for dref in data_ref_arr]
             if dlen >= k:
                 mlist, distances = preprocess(data, k)
@@ -164,12 +174,12 @@ def construct_tree(M, k=3, R=30, C=1):
                 medioids = [data[0]]
                 clusters = [[data[0]]]
                 # param_clusters = [[param_store[data_ref_arr[0]]]]
-
             for i, med in enumerate(medioids):
                 idx = len(node_list)
                 node.children.append(idx)
                 node_list.append(ClusterTreeNode(med))
                 node_list[idx].data_refs = clusters[i]
+                node_list[idx].cluster_radius = 0
                 # node_list[idx].param_refs = param_clusters[i]
-
+    node_list[0].cluster_radius = float(node_list[0].cluster_radius)
     return node_list
