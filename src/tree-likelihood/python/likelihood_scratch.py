@@ -77,8 +77,8 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
 
     nn_likelihoods = greedy_tree_likelihood(node_list, data_list, input_list)
     global_likelihoods = patient_tree_likelihood(node_list, data_list, input_list)
-    naive_likelihoods = alt_naive_likelihood(node_list, data_list, input_list)
-    np.save("naive_likelihoods.npy", naive_likelihoods)
+    # naive_likelihoods = alt_naive_likelihood(node_list, data_list, input_list)
+    # np.save("naive_likelihoods.npy", naive_likelihoods)
     # sys.exit()
     return nn_likelihoods, global_likelihoods
 
@@ -94,6 +94,13 @@ def write_csv(single_point_likelihood, area_likelihood, filename="out.csv"):
 
 
 def greedy_tree_likelihood(node_list, data_list, input_list):
+    likelihood_prime, likelihood_idx = _greedy_tree_traversal(
+        node_list, data_list, input_list
+    )
+    return likelihood_prime
+
+
+def _greedy_tree_traversal(node_list, data_list, input_list):
     """
     DFS for the cluster containing(ish) T
     returns an index to a node in node_list
@@ -103,7 +110,8 @@ def greedy_tree_likelihood(node_list, data_list, input_list):
     approx_scale_constant = len(data_list)
     weight = 1  # / len(data_list)
     # Likelihood array
-    likelihood_omega_m = [0.0 for _ in range(len(input_list))]
+    likelihood_prime = [0.0 for _ in range(len(input_list))]
+    likelihood_idx = [0 for _ in range(len(input_list))]
     noise = calculate_noise(input_list)
     lambda_square = noise**2
     coeff = 1
@@ -141,29 +149,20 @@ def greedy_tree_likelihood(node_list, data_list, input_list):
                 closest_idx = idx
                 min_dist = dist
         # likelihood
-        likelihood_omega_m[input_idx] = weight * jnp.exp(
+        likelihood_prime[input_idx] = weight * jnp.exp(
             -1.0 * (jnp.square(min_dist) / (2 * lambda_square))
         )
+        likelihood_idx[input_idx] = closest_idx
     end_time = time.perf_counter() - start_time
     LOGGER.info("{},{}".format(len(input_list), end_time))
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
-    return likelihood_omega_m
-
-
-def bounded_tree_likelihood(node_list, data_list, input_list):
-    # likelihood_mat =
-    # print(likelihood_mat)
-    bounded_likelihood_mat = [
-        a[0][0] for a in _bounded_tree_likelihood(node_list, data_list, input_list)
-    ]
-    return bounded_likelihood_mat
-    # compare_tree_likelihoods(node_list, data_list, input_list)
-    # sys.exit()
+    likelihood_prime = postprocessing_adjust(likelihood_prime, noise, 1)
+    # likelihood_omega_m = np.array([np.array([a, b]) for a, b in zip(likelihood_prime, likelihood_idx)])
+    return likelihood_prime, likelihood_idx
 
 
 def compare_tree_likelihoods(node_list, data_list, input_list):
     bounded_likelihood_mat = np.array(
-        _bounded_tree_likelihood(node_list, data_list, input_list)
+        _unbounded_tree_likelihood(node_list, data_list, input_list)
     )
     dist_mat = np.zeros(
         (bounded_likelihood_mat.shape[0], bounded_likelihood_mat.shape[1])
@@ -176,37 +175,44 @@ def compare_tree_likelihoods(node_list, data_list, input_list):
     np.save("naive_likelihoods.npy", naive_likelihood_mat)
     sys.exit()
 
+
 def difference(m1, m2, noise=1):
     return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))
 
 
+searchcount = 0
+exclude_count = {}
+
+
 def search_leaf(T, idx, data_list, dbest, nearest_neighbor, noise=1):
+    global searchcount
+    searchcount += 1
     dist = difference(T.m1, data_list[idx].m1, noise)
     if dist < dbest[0]:
         dbest[0] = dist
         nearest_neighbor[0] = idx
 
 
-def search_node(T, n_idx, node_list, data_list, dbox, dbest, nearest_neighbor, noise=1):
+def search_node(
+    T, n_idx, node_list, data_list, dbox, dbest, nearest_neighbor, noise=1, depth=0
+):
+    global exclude_count
     if node_list[n_idx].data_refs != None:
         for idx in node_list[n_idx].data_refs:
             search_leaf(T, idx, data_list, dbest, nearest_neighbor, noise)
-
-    if node_list[n_idx].cluster_radius != 0 and dbox < dbest[0]:
-        dn = [float("Inf") for _ in node_list[n_idx].children]
+        # return
+    if node_list[n_idx].data_refs == None and dbox < dbest[0]:
+        # dn = [float("Inf") for _ in node_list[n_idx].children]
         cdist = [
             (
-                abs(
-                    node_list[n_idx].cluster_radius
-                    - np.sqrt(np.sum((T.m1 - node_list[idx].val.m1) / noise) ** 2)
-                ),
+                node_list[n_idx].cluster_radius
+                - difference(T.m1, node_list[idx].val.m1, noise),
                 idx,
             )
             for i, idx in enumerate(node_list[n_idx].children)
         ]
-        sortkey = lambda x: x[0]
+        sortkey = lambda x: -x[0]
         cdist = sorted(cdist, key=sortkey)
-
         for idx, c in enumerate(cdist):
             search_node(
                 T,
@@ -217,60 +223,91 @@ def search_node(T, n_idx, node_list, data_list, dbox, dbest, nearest_neighbor, n
                 dbest,
                 nearest_neighbor,
                 noise,
+                depth + 1,
             )
-            for jdx, d in enumerate(cdist):
-                if jdx == idx:
-                    continue
+            jdx = [rdx for rdx in range(len(cdist)) if rdx != idx]
+            for j in jdx:
                 search_node(
                     T,
-                    cdist[jdx][1],
+                    cdist[j][1],
                     node_list,
                     data_list,
                     dbox
                     - cdist[idx][0]
-                    + sum([cdist[rdx][0] for rdx in range(len(cdist)) if rdx != idx]),
+                    + sum([cdist[jrx][0] for jrx in jdx if jrx != j]),
                     dbest,
                     nearest_neighbor,
                     noise,
+                    depth + 1,
                 )
+    elif dbox > dbest[0]:
+        if depth not in exclude_count:
+            exclude_count[depth] = 0
+        exclude_count[depth] += 1
+
 
 def patient_tree_likelihood(node_list, data_list, input_list, TAU=0.4):
+    likelihood_prime, likelihood_idx = _patient_tree_traversal(
+        node_list, data_list, input_list, TAU
+    )
+    return likelihood_prime
+
+
+def _patient_tree_traversal(node_list, data_list, input_list, TAU=0.4):
     nns = []
     noise = calculate_noise(input_list)
     lambda_square = noise**2
-    likelihood_omega_m = [0.0 for _ in range(len(input_list))]
+    # likelihood_omega_m =
+    likelihood_prime = [0.0 for _ in range(len(input_list))]
+    likelihood_idx = [0 for _ in range(len(input_list))]
     sortkey = lambda x: x[0]
     start_time = time.perf_counter()
-
-    for T in input_list:
+    global searchcount
+    global exclude_count
+    for i, T in enumerate(input_list):
         nnl = []
         dbests = []
         for c in node_list[0].children:
             dbest = [float("Inf")]
             nn = [None]
             init_d = abs(
-                node_list[c].cluster_radius - np.sqrt((np.sum(T.m1 - node_list[c].val.m1) / noise) ** 2)
+                node_list[c].cluster_radius
+                - np.sqrt((np.sum(T.m1 - node_list[c].val.m1) / noise) ** 2)
             )
-            # print(init_d)
-            search_node(T, c, node_list, data_list, init_d, dbest, nn, noise)
+
+            search_node(T, c, node_list, data_list, init_d, dbest, nn, noise, depth=1)
             nnl.append(nn[0])
             dbests.append(dbest[0])
 
-        nns.append(sorted([(b, a) for a, b in zip(nnl, dbests)], key=sortkey)[0][0])
-
-
-    for input_idx in range(len(input_list)):
-        likelihood_omega_m[input_idx] = jnp.exp(
-            -1.0 * (jnp.square(nns[input_idx]) / (2 * lambda_square))
+        nns.append(
+            sorted([(dist, idx) for idx, dist in zip(nnl, dbests)], key=sortkey)[0]
         )
-    likelihood_omega_m = postprocessing_adjust(likelihood_omega_m, noise, 1)
+        likelihood_prime[i] = jnp.exp(
+            -1.0 * (jnp.square(nns[-1][0]) / (2 * lambda_square))
+        )
+        likelihood_idx[i] = nns[-1][1]
+        print(searchcount)
+
+    likelihood_prime = postprocessing_adjust(likelihood_prime, noise, 1)
     end_time = time.perf_counter() - start_time
     LOGGER.info("{},{}".format(len(input_list) ** 2, end_time))
 
-    return likelihood_omega_m
-    
+    return likelihood_prime, likelihood_idx
 
-def _bounded_tree_likelihood(node_list, data_list, input_list, TAU=0.4):
+
+def bounded_tree_likelihood(node_list, data_list, input_list):
+    # (input_list, data_list, 2) where the 2 are (likelihood, index)
+    bounded_likelihood_mat = _unbounded_tree_traversal(node_list, data_list, input_list)
+
+    # bounded_likelihood_mat = [
+    #     a[0][0] for a in _unbounded_tree_likelihood(node_list, data_list, input_list)
+    # ]
+    return bounded_likelihood_mat
+    # compare_tree_likelihoods(node_list, data_list, input_list)
+    # sys.exit()
+
+
+def _unbounded_tree_traversal(node_list, data_list, input_list, TAU=0.4):
     likelihood_omega_m = [
         [] for _ in range(len(input_list))
     ]  # initialize likelihood for each input image
@@ -309,18 +346,24 @@ def _bounded_tree_likelihood(node_list, data_list, input_list, TAU=0.4):
             )
             for rs in reachable_structures
         ]
-        selector = lambda val: val if val < TAU else 0
+        # selector = lambda val: val if val < TAU else 0
 
-        likelihood_prime = [selector(rs) for rs in likelihood_prime]
+        # likelihood_prime = [selector(rs) for rs in likelihood_prime]
 
         # we then add the offset factor because we're in logspace
         likelihood_prime = postprocessing_adjust(
-            likelihood_prime, noise
+            likelihood_prime, noise, 1
         )  # apply postprocessing factor
 
+        # (input_list, data_list, 2) where the 2 are (likelihood, index)
+
         likelihood_omega_m[input_index] = np.array(
-            [np.array([a, b]) for a, b in zip(likelihood_prime, reachable_idx)]
+            [
+                np.array([like, idx])
+                for like, idx in zip(likelihood_prime, reachable_idx)
+            ]
         )
+
         # for this contrived example it is assumed to be all
     return likelihood_omega_m
 
