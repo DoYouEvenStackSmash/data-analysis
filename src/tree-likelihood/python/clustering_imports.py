@@ -41,10 +41,32 @@ import jax.numpy as jnp
 from datum_helpers import *
 import sklearn
 import logging
-sklearn_logger = logging.getLogger('sklearnex')
+
+sklearn_logger = logging.getLogger("sklearnex")
 sklearn_logger.setLevel(logging.INFO)
+
+
 def custom_distance(k, m):
     return jnp.linalg.norm(k.m1 - m.m1)
+
+
+def calculate_noise(input_list):
+    """
+    Calculate the noise as the standard deviation
+    """
+    input_arr = np.array([input_list[i].m1 for i in range(len(input_list))])
+    avg = jnp.mean(input_arr)
+    noise = jnp.sqrt(
+        jnp.divide(
+            jnp.sum(jnp.array([jnp.square(x - avg) for x in input_arr])),
+            input_arr.shape[0] - 1,
+        )
+    )
+    return noise
+
+
+def difference_calculation(m1, m2, noise=1):
+    return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))
 
 
 def dataloader(filename):

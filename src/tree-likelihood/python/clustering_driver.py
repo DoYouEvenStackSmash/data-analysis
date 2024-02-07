@@ -106,7 +106,7 @@ def data_loading_wrapper(filename):
     Returns:
         M (list(DatumT)): A list of DatumT objects
     """
-    
+
     M = None
     if filename.split(".")[-1] == "fbs":
         exp_fb = dl.load_flatbuffer(filename)
@@ -187,7 +187,7 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
                         didx for didx in node.data_refs
                     ],  # array of references to elements of data_list
                     # "param_refs": [pidx for pidx in node.param_refs],
-                    "cluster_radius" : node.cluster_radius,
+                    "cluster_radius": node.cluster_radius,
                 }
             )
             # special handling of node's value
@@ -221,7 +221,10 @@ def serialize_wrapper(args, node_list, data_list, param_list, tree_params=None):
     f.write(json.dumps(tree_dict, indent=2))
     f.close()
     # print(tree_node_vals)
-    np.save(f"{output_prefix}_tree_node_vals.npy", np.stack([np.array(i) for i in tree_node_vals]))
+    np.save(
+        f"{output_prefix}_tree_node_vals.npy",
+        np.stack([np.array(i) for i in tree_node_vals]),
+    )
     np.save(
         f"{output_prefix}_tree_data_list.npy",
         np.stack([data_list[i] for i in range(len(data_list))]),

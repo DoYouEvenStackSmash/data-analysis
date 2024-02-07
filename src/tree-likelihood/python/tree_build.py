@@ -6,6 +6,7 @@ from kmeans import *
 from clustering_driver import *
 from sklearn.cluster import KMeans
 
+
 # import logging
 # sklearn_logger = logging.getLogger('sklearnex')
 # sklearn_logger.setLevel(logging.ERROR)
@@ -38,6 +39,10 @@ def construct_data_list(node_list, data_shape=None):
     return data_list, param_list
 
 
+CONST_X = 4
+CONST_Y = 4
+
+
 def construct_tree(M, k=3, R=30, C=1):
     """
     Builds a hierarchical clustering on the input data M
@@ -49,8 +54,8 @@ def construct_tree(M, k=3, R=30, C=1):
     node_queue = deque()
     dref_queue = deque()
     rootd = DatumT()
-    rootd.m1 = np.zeros((128,128))
-    
+    rootd.m1 = np.zeros((CONST_X, CONST_Y))
+
     node_list.append(ClusterTreeNode(rootd))
     node_queue.append(0)
     dref_queue.append([i for i in range(len(M))])
@@ -61,29 +66,34 @@ def construct_tree(M, k=3, R=30, C=1):
 
         node.children = []
 
-        if len(data_ref_arr) > C:# and len(data_ref_arr) > k:
-            
-            kmeans = KMeans(n_clusters=min(k, len(data_ref_arr)),init='k-means++')
-            dst = np.array([data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr])
-            node.cluster_radius = float(jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst)**2)).astype(jnp.float32))
+        if len(data_ref_arr) > C:  # and len(data_ref_arr) > k:
+            kmeans = KMeans(n_clusters=min(k, len(data_ref_arr)), init="k-means++")
+            dst = np.array(
+                [data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr]
+            )
+            node.cluster_radius = float(
+                jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst) ** 2)).astype(
+                    jnp.float32
+                )
+            )
             # print(node.cluster_radius)
             kmeans.fit(dst)
             centroids = kmeans.cluster_centers_
             labels = kmeans.labels_
             data_ref_clusters = [[] for _ in range(min(k, len(data_ref_arr)))]
             ctx = [DatumT() for c in centroids]
-            for i,c in enumerate(ctx):
-                ctx[i].m1 = centroids[i].reshape((128,128))
+            for i, c in enumerate(ctx):
+                ctx[i].m1 = centroids[i].reshape((CONST_X, CONST_Y))
             centroids = ctx
-            for i,j in enumerate(labels):
+            for i, j in enumerate(labels):
                 # print(i,j)
                 data_ref_clusters[j].append(data_ref_arr[i])
                 # data_ref_clusters[j].append(data_ref_arr[i])
-            
+
             # data_ref_clusters = None
             # centroids = kmeanspp_refs(data_store, data_ref_arr, k)
             # new_centroids = None
-            
+
             # for r in range(R):
             #     data_ref_clusters, new_centroids = kmeans_refs(
             #         data_store, data_ref_arr, centroids, bool(r == 0)
@@ -107,7 +117,7 @@ def construct_tree(M, k=3, R=30, C=1):
             node.children = [
                 i for i in range(len(node_list), len(node_list) + len(centroids))
             ]
-            
+
             node_queue.extend(
                 [i for i in range(len(node_list), len(node_list) + len(centroids))]
             )
@@ -129,8 +139,14 @@ def construct_tree(M, k=3, R=30, C=1):
             # node.cluster_radius = 0
             if not dlen:
                 continue
-            dst = np.array([data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr])
-            node.cluster_radius = float(jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst)**2)).astype(jnp.float32))
+            dst = np.array(
+                [data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr]
+            )
+            node.cluster_radius = float(
+                jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst) ** 2)).astype(
+                    jnp.float32
+                )
+            )
             data = [data_store[dref] for dref in data_ref_arr]
             if dlen >= k:
                 mlist, distances = preprocess(data, k)
