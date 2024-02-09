@@ -6,7 +6,7 @@ from likelihood_helpers import *
 
 
 def difference(m1, m2, noise=1):
-    return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))
+    return jnp.sqrt(jnp.sum(((m1 - m2) / noise)**2))
 
 
 searchcount = 0
@@ -33,21 +33,30 @@ def search_node(
     noise=1,
     depth=0,
 ):
-    global exclude_count
-    if node_list[node_index].data_refs != None:  # isLeaf = True
+
+
+    global exclude_count    
+    if (
+        node_list[node_index].data_refs != None
+        # node_list[node_index].cluster_radius == 0
+    ):  # isLeaf = True
+        # print(node_list[node_index].children,end=",")
+        # print(node_list[node_index].data_refs)
         for index in node_list[node_index].data_refs:
             search_leaf(T, index, data_list, dbest, nearest_neighbor, noise)
-        # return
+        return
+    if inherited_radius <= 0:
+        return
     if (
         node_list[node_index].data_refs == None and inherited_radius < dbest[0]
     ):  # isLeaf = false and distance to boundary of cluster is less than the best distance so far
         distances_to_cluster_boundary = (
             [  # calculate the next cluster boundary distances
-                (
+             (
                     node_list[node_index].cluster_radius
                     - difference(T.m1, node_list[index].val.m1, noise),
                     index,
-                )
+             )  
                 for i, index in enumerate(node_list[node_index].children)
             ]
         )
@@ -60,6 +69,7 @@ def search_node(
         for prime_index, c in enumerate(
             distances_to_cluster_boundary
         ):  # for each child of the current cluster, search for target with inherited_radius= distance between child and current cluster boundary
+
             search_node(
                 T,
                 distances_to_cluster_boundary[prime_index][1],
@@ -76,40 +86,35 @@ def search_node(
                 for rdx in range(len(distances_to_cluster_boundary))
                 if rdx != prime_index
             ]  # collect indices for other children where the boundary distance is less current child distance + sum of all other child distances
-            for sub_index in sub_indices:
+            for z, sub_index in enumerate(sub_indices):
+                # nr = 
                 search_node(
                     T,
                     distances_to_cluster_boundary[sub_index][1],
                     node_list,
                     data_list,
-                    inherited_radius
-                    - distances_to_cluster_boundary[prime_index][0]
-                    + sum(
-                        [
-                            distances_to_cluster_boundary[other_sub_index][0]
-                            for other_sub_index in sub_indices
-                            if other_sub_index != sub_index
-                        ]
-                    ),
+                    inherited_radius - distances_to_cluster_boundary[prime_index][0] + sum([distances_to_cluster_boundary[other_sub_index][0] for other_sub_index in sub_indices]),
                     dbest,
                     nearest_neighbor,
                     noise,
                     depth + 1,
                 )
     elif inherited_radius > dbest[0]:
-        if depth not in exclude_count:
-            exclude_count[depth] = 0
-        exclude_count[depth] += 1
+        pass
+        # if depth not in exclude_count:
+        #     exclude_count[depth] = 0
+        # exclude_count[depth] += 1
 
 
 def patient_tree_likelihood(node_list, data_list, input_list, TAU=0.4):
     likelihood_prime, likelihood_idx = _patient_tree_traversal(
         node_list, data_list, input_list, TAU
     )
-    return likelihood_prime
+    return likelihood_prime, likelihood_idx
 
 
 def patient_search_tree(node_list, data_list, T, noise, TAU=0.4):
+    return
     # noise = 1#calculate_noise([T])
     # lambda_square = noise**2
     nnl = []
@@ -117,20 +122,19 @@ def patient_search_tree(node_list, data_list, T, noise, TAU=0.4):
     for c in node_list[0].children:
         dbest = [float("Inf")]
         nn = [None]
-        init_d = abs(
-            node_list[c].cluster_radius
-            - np.sqrt((np.sum(T.m1 - node_list[c].val.m1) / noise) ** 2)
-        )
+        init_d = node_list[c].cluster_radius - np.sqrt((np.sum(T.m1 - node_list[c].val.m1) / noise) ** 2)
+        
         search_node(T, c, node_list, data_list, init_d, dbest, nn, noise, depth=1)
         nnl.append(nn[0])
         dbests.append(dbest[0])
     sortkey = lambda x: x[0]
     md = sorted([(dist, idx) for idx, dist in zip(nnl, dbests)], key=sortkey)
     # md = abc
-    
+
     min_idx = md[0][1]
     min_dist = np.real(md[0][0])
     return min_idx, min_dist
+
 
 def _patient_tree_traversal(node_list, data_list, input_list, TAU=0.4):
     nns = []
@@ -143,29 +147,27 @@ def _patient_tree_traversal(node_list, data_list, input_list, TAU=0.4):
     start_time = time.perf_counter()
     global searchcount
     global exclude_count
+    val = None
     for i, T in enumerate(input_list):
         nnl = []
         dbests = []
+
         for c in node_list[0].children:
             dbest = [float("Inf")]
             nn = [None]
-            init_d = abs(
-                node_list[c].cluster_radius
-                - np.sqrt((np.sum(T.m1 - node_list[c].val.m1) / noise) ** 2)
-            )
+            init_d = node_list[0].cluster_radius - np.sqrt(np.sum(((T.m1 - node_list[c].val.m1)/noise) ** 2))
 
             search_node(T, c, node_list, data_list, init_d, dbest, nn, noise, depth=1)
             nnl.append(nn[0])
             dbests.append(dbest[0])
-
-        nns.append(
-            sorted([(dist, idx) for idx, dist in zip(nnl, dbests)], key=sortkey)[0]
-        )
-        likelihood_prime[i] = jnp.exp(
-            -1.0 * (jnp.square(nns[-1][0]) / (2 * lambda_square))
-        )
-        likelihood_idx[i] = nns[-1][1]
-        print(searchcount)
+        val = sorted([(dist, idx) for idx, dist in zip(nnl, dbests)], key=sortkey)[0]
+        # nns.append(
+        #     sorted([(dist, idx) for idx, dist in zip(nnl, dbests)], key=sortkey)[0]
+        # )
+        likelihood_prime[i] = jnp.exp(-1.0 * (jnp.square(val[0]) / (2 * lambda_square)))
+        likelihood_idx[i] = val[1]
+        # print(searchcount)
+        print(i)
 
     likelihood_prime = postprocessing_adjust(likelihood_prime, noise, 1)
     end_time = time.perf_counter() - start_time

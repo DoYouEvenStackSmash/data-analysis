@@ -39,8 +39,8 @@ def construct_data_list(node_list, data_shape=None):
     return data_list, param_list
 
 
-CONST_X = 4
-CONST_Y = 4
+CONST_X = 128
+CONST_Y = 128
 
 
 def construct_tree(M, k=3, R=30, C=1):
@@ -55,7 +55,10 @@ def construct_tree(M, k=3, R=30, C=1):
     dref_queue = deque()
     rootd = DatumT()
     rootd.m1 = np.zeros((CONST_X, CONST_Y))
-
+    # dst = np.array(
+    #     [data_store[i].m1.astype(jnp.float32).ravel() for i in range(len(data_store))]
+    # )
+    # rootd.m1 = np.mean(dst)
     node_list.append(ClusterTreeNode(rootd))
     node_queue.append(0)
     dref_queue.append([i for i in range(len(M))])
@@ -71,11 +74,11 @@ def construct_tree(M, k=3, R=30, C=1):
             dst = np.array(
                 [data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr]
             )
-            node.cluster_radius = float(
-                jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst) ** 2)).astype(
-                    jnp.float32
-                )
-            )
+            # node.cluster_radius = float(
+            #     jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst) ** 2)).astype(
+            #         jnp.float32
+            #     )
+            # )
             # print(node.cluster_radius)
             kmeans.fit(dst)
             centroids = kmeans.cluster_centers_
@@ -117,11 +120,23 @@ def construct_tree(M, k=3, R=30, C=1):
             node.children = [
                 i for i in range(len(node_list), len(node_list) + len(centroids))
             ]
+            
 
             node_queue.extend(
                 [i for i in range(len(node_list), len(node_list) + len(centroids))]
             )
             node_list.extend([ClusterTreeNode(ctr) for ctr in centroids])
+            
+            for x,i in enumerate(node.children):
+                dst = np.array(
+                    [data_store[j].m1.astype(jnp.float32).ravel() for j in data_ref_clusters[x]]
+                )
+                node_list[i].cluster_radius = float(
+                    jnp.sqrt(jnp.sum((node_list[i].val.m1.flatten() - dst) ** 2)).astype(
+                        jnp.float32
+                    )
+                )
+            
             # for c, ctr in enumerate(centroids):
             # node_list[-1].cluster_radius = jnp.max([jnp.sqrt(jnp.sum((node_list[-1].val - data__ref)**2))])
             dref_queue.extend(data_ref_clusters)
@@ -139,14 +154,8 @@ def construct_tree(M, k=3, R=30, C=1):
             # node.cluster_radius = 0
             if not dlen:
                 continue
-            dst = np.array(
-                [data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr]
-            )
-            node.cluster_radius = float(
-                jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst) ** 2)).astype(
-                    jnp.float32
-                )
-            )
+            # if dlen > 1:
+
             data = [data_store[dref] for dref in data_ref_arr]
             if dlen >= k:
                 mlist, distances = preprocess(data, k)
@@ -189,13 +198,27 @@ def construct_tree(M, k=3, R=30, C=1):
             elif dlen == 1:
                 medioids = [data[0]]
                 clusters = [[data[0]]]
-                # param_clusters = [[param_store[data_ref_arr[0]]]]
+            
             for i, med in enumerate(medioids):
                 idx = len(node_list)
                 node.children.append(idx)
                 node_list.append(ClusterTreeNode(med))
-                node_list[idx].data_refs = clusters[i]
                 node_list[idx].cluster_radius = 0
+                if len(clusters[i]) > 1:
+                    dst = np.array(
+                        [j.m1.astype(jnp.float32).ravel() for j in clusters[i] if j != med]
+                    )
+                    node_list[idx].cluster_radius = float(
+                        jnp.sqrt(jnp.sum((node_list[idx].val.m1.flatten() - dst) ** 2)).astype(
+                            jnp.float32
+                        )
+                    )
+                node_list[idx].data_refs = clusters[i]
+                node_list[idx].children = None
+
+                # node_list[idx].cluster_radius = 0
+                # print(node_list[idx].cluster_radius)
+                
                 # node_list[idx].param_refs = param_clusters[i]
-    node_list[0].cluster_radius = float(node_list[0].cluster_radius)
+    node_list[0].cluster_radius = sum([float(node_list[i].cluster_radius) for i in node_list[0].children])
     return node_list
