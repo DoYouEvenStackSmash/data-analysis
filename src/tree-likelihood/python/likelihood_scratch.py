@@ -65,7 +65,7 @@ def compare_tree_likelihoods(node_list, data_list, input_list):
 
 
 def alt_naive_likelihood(node_list, data_list, input_list):
-    dist_mat = np.zeros((len(input_list), len(data_list)))
+    dist_mat = []
 
     # minst = np.zeros((len(input_list)), dtype=np.float32)
     # ld = len(data_list)
@@ -75,8 +75,8 @@ def alt_naive_likelihood(node_list, data_list, input_list):
     start_time = time.perf_counter()
     for i, T in enumerate(input_list):
         min_dist = float("Inf")
-        dist_mat[i] = [
-            np.exp(
+        dist_mat.append([
+            jnp.exp(
                 -1.0
                 * (
                     (difference_calculation(T.m1, data_list[j].m1, noise) ** 2)
@@ -84,7 +84,7 @@ def alt_naive_likelihood(node_list, data_list, input_list):
                 )
             )
             for j in range(len(data_list))
-        ]
+        ])
         # for j, d in enumerate(data_list):
         # dist_mat[i,j] = original_likelihood(T.m1,d.m1, 1, noise )
 
