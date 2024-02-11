@@ -50,24 +50,25 @@ def search_node(
     if (
         node_list[node_index].data_refs == None and inherited_radius < dbest[0]
     ):  # isLeaf = false and distance to boundary of cluster is less than the best distance so far
+
         distances_to_cluster_boundary = (
             [  # calculate the next cluster boundary distances
              (
-                    node_list[node_index].cluster_radius/noise
-                    - difference(T.m1, node_list[index].val.m1, noise),
+                    (node_list[node_index].cluster_radius/noise
+                    - difference(T.m1, node_list[index].val.m1, noise)),
                     index,
              )  
                 for i, index in enumerate(node_list[node_index].children)
             ]
         )
-
         sortkey = lambda x: -x[0]
         distances_to_cluster_boundary = sorted(
             distances_to_cluster_boundary, key=sortkey
         )  # sort the cluster boundary distances in decreasing order to account for unbalanced tree
         # given that we have sorted in descendign order, we know that the
+        # distances_to_cluster_boundary = [c for c in distances_to_cluster_boundary if c[0] > 0]
         for prime_index, c in enumerate(
-            distances_to_cluster_boundary
+            distances_to_cluster_boundary 
         ):  # for each child of the current cluster, search for target with inherited_radius= distance between child and current cluster boundary
 
             search_node(
@@ -85,6 +86,7 @@ def search_node(
                 rdx
                 for rdx in range(len(distances_to_cluster_boundary)-1, prime_index,-1) if distances_to_cluster_boundary[rdx][0] > 0
             ]  # collect indices for other children where the boundary distance is less current child distance + sum of all other child distances
+            reversed(sub_indices)
             for z, sub_index in enumerate(sub_indices):
                 # nr = 
                 search_node(
@@ -92,7 +94,7 @@ def search_node(
                     distances_to_cluster_boundary[sub_index][1],
                     node_list,
                     data_list,
-                    inherited_radius - distances_to_cluster_boundary[prime_index][0] + sum([distances_to_cluster_boundary[other_sub_index][0] for other_sub_index in sub_indices if other_sub_index != sub_index]),
+                    inherited_radius - distances_to_cluster_boundary[prime_index][0] + distances_to_cluster_boundary[sub_index][0],#+ sum([distances_to_cluster_boundary[other_sub_index][0] for other_sub_index in sub_indices]),
                     dbest,
                     nearest_neighbor,
                     noise,
@@ -121,7 +123,7 @@ def patient_search_tree(node_list, data_list, T, noise, TAU=0.4):
     for c in node_list[0].children:
         dbest = [float("Inf")]
         nn = [None]
-        init_d = node_list[0].cluster_radius/noise - np.sqrt((np.sum(T.m1 - node_list[c].val.m1) / noise) ** 2)
+        init_d = node_list[c].cluster_radius/noise - np.sqrt((np.sum(T.m1 - node_list[c].val.m1) / noise) ** 2)
         
         search_node(T, c, node_list, data_list, init_d, dbest, nn, noise, depth=1)
         nnl.append(nn[0])
@@ -154,7 +156,7 @@ def _patient_tree_traversal(node_list, data_list, input_list, TAU=0.4):
         for c in node_list[0].children:
             dbest = [float("Inf")]
             nn = [None]
-            init_d = node_list[0].cluster_radius - np.sqrt(np.sum(((T.m1 - node_list[c].val.m1)/noise) ** 2))
+            init_d = node_list[0].cluster_radius/noise - np.sqrt(np.sum(((T.m1 - node_list[c].val.m1)/noise) ** 2))
 
             search_node(T, c, node_list, data_list, init_d, dbest, nn, noise, depth=1)
             nnl.append(nn[0])

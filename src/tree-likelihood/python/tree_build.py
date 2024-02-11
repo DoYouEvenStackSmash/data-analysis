@@ -157,7 +157,7 @@ def construct_tree(M, k=3, R=30, C=1):
             # if dlen > 1:
 
             data = [data_store[dref] for dref in data_ref_arr]
-            if dlen >= k:
+            if dlen > k:
                 mlist, distances = preprocess(data, k)
                 total_sum = float("inf")
                 data_ref_clusters = None
@@ -176,7 +176,9 @@ def construct_tree(M, k=3, R=30, C=1):
                     [data_store[dref] for dref in cluster]
                     for cluster in data_ref_clusters
                 ]
-
+            # elif dlen == k:
+            #     medioids = [data[i] for i in range(len(data))]
+            #     clusters = [[data[i]] for i in range(len(data))]
             elif dlen > 1:
                 # for _ in range(k):  # Assuming k is the number of clusters
                 D = jnp.zeros(len(data_ref_arr))
@@ -198,6 +200,7 @@ def construct_tree(M, k=3, R=30, C=1):
             elif dlen == 1:
                 medioids = [data[0]]
                 clusters = [[data[0]]]
+
             
             for i, med in enumerate(medioids):
                 idx = len(node_list)
@@ -213,6 +216,7 @@ def construct_tree(M, k=3, R=30, C=1):
                             jnp.float32
                         )
                     )
+                    # node_list.cluster_radius = 
                 node_list[idx].data_refs = clusters[i]
                 node_list[idx].children = None
 
