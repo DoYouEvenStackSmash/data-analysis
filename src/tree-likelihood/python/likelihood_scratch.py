@@ -7,6 +7,8 @@ from decimal import Decimal
 from patient_traversal import *
 from bounded_traversal import *
 from likelihood_helpers import *
+from level_patient_search import *
+from impatient_traversal import *
 import scipy.io
 
 
@@ -24,14 +26,16 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
     # print(dist_mat.shape)
     # np.save("naive_distances.npy", dist_mat)
     # np.save("patient_distances.npy", pdmat)
-    greedy_likelihoods, gidx = greedy_tree_likelihood(node_list, data_list, input_list)
-    patient_likelihoods, pidx = patient_tree_likelihood(
+    # greedy_likelihoods, gidx = level_patient_search(node_list, data_list, input_list)
+    greedy_likelihoods, gidx = patient_tree_likelihood(node_list, data_list, input_list)
+    patient_likelihoods, pidx = level_patient_search(
         node_list, data_list, input_list
     )
+    
     # scipy.io.savemat("traversal_data.mat", {"greedy_likelihoods": np.real(greedy_likelihoods), "greedy_idx": gidx, "patient_likelihoods":np.real(patient_likelihoods), "patient_idx":pidx})
     # # print("naive")
-    naive_likelihoods = alt_naive_likelihood(node_list, data_list, input_list)
-    np.save("naive_likelihoods.npy", naive_likelihoods)
+    # naive_likelihoods = alt_naive_likelihood(node_list, data_list, input_list)
+    # np.save("naive_likelihoods.npy", naive_likelihoods)
     # print("bounded")
     # bounded_tree_likelihood(node_list, data_list, input_list)
     # sys.exit()
@@ -75,16 +79,18 @@ def alt_naive_likelihood(node_list, data_list, input_list):
     start_time = time.perf_counter()
     for i, T in enumerate(input_list):
         min_dist = float("Inf")
-        dist_mat.append([
-            jnp.exp(
-                -1.0
-                * (
-                    (difference_calculation(T.m1, data_list[j].m1, noise) ** 2)
-                    / (2 * lambda_square)
+        dist_mat.append(
+            [
+                jnp.exp(
+                    -1.0
+                    * (
+                        (difference_calculation(T.m1, data_list[j].m1, noise) ** 2)
+                        / (2 * lambda_square)
+                    )
                 )
-            )
-            for j in range(len(data_list))
-        ])
+                for j in range(len(data_list))
+            ]
+        )
         # for j, d in enumerate(data_list):
         # dist_mat[i,j] = original_likelihood(T.m1,d.m1, 1, noise )
 
