@@ -47,8 +47,11 @@ sklearn_logger.setLevel(logging.INFO)
 
 
 def custom_distance(k, m):
-    return jnp.linalg.norm(k.m1 - m.m1)
-
+    return jnp.sqrt(jnp.sum(((k - m)) ** 2))
+    # return jnp.linalg.norm(k.m1 - m.m1)
+    
+def difference(m1, m2, noise=1):
+  return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))
 
 def calculate_noise(input_list):
     """

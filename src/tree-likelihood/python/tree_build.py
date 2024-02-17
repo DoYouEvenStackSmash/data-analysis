@@ -6,7 +6,7 @@ from kmeans import *
 from clustering_driver import *
 from sklearn.cluster import KMeans
 
-
+SKLEARN_KMEANS = True
 # import logging
 # sklearn_logger = logging.getLogger('sklearnex')
 # sklearn_logger.setLevel(logging.ERROR)
@@ -70,64 +70,54 @@ def construct_tree(M, k=3, R=30, C=1):
         node.children = []
 
         if len(data_ref_arr) >= C:  # and len(data_ref_arr) > k:
-            kmeans = KMeans(n_clusters=min(k, len(data_ref_arr)), init="k-means++")
-            dst = np.array(
-                [data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr]
-            )
-            # node.cluster_radius = float(
-            #     jnp.sqrt(jnp.sum((node.val.m1.flatten() - dst) ** 2)).astype(
-            #         jnp.float32
-            #     )
-            # )
-            # print(node.cluster_radius)
-            kmeans.fit(dst)
-            centroids = kmeans.cluster_centers_
-            labels = kmeans.labels_
-            data_ref_clusters = [[] for _ in range(min(k, len(data_ref_arr)))]
-            ctx = [DatumT() for c in centroids]
-            for i, c in enumerate(ctx):
-                ctx[i].m1 = centroids[i].reshape((CONST_X, CONST_Y))
-            centroids = ctx
-            for i, j in enumerate(labels):
-                # print(i,j)
-                
-                data_ref_clusters[j].append(data_ref_arr[i])
-                # data_ref_clusters[j].append(data_ref_arr[i])
+            centroids = None
+            data_ref_clusters = None
+            if SKLEARN_KMEANS:
+                kmeans = KMeans(n_clusters=min(k, len(data_ref_arr)), init="k-means++")
+                dst = np.array(
+                    [data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr]
+                )
 
-            # data_ref_clusters = None
-            # centroids = kmeanspp_refs(data_store, data_ref_arr, k)
-            # new_centroids = None
+                kmeans.fit(dst)
+                centroids = kmeans.cluster_centers_
+                labels = kmeans.labels_
+                data_ref_clusters = [[] for _ in range(min(k, len(data_ref_arr)))]
+                ctx = [DatumT() for c in centroids]
+                for i, c in enumerate(ctx):
+                    ctx[i].m1 = centroids[i].reshape((CONST_X, CONST_Y))
+                centroids = ctx
+                for i, j in enumerate(labels):
+                    
+                    data_ref_clusters[j].append(data_ref_arr[i])
+            #     # data_ref_clusters[j].append(data_ref_arr[i])
+            else:
+                data_ref_clusters = None
+                centroids = kmeanspp_refs(data_store, data_ref_arr, k)
+                new_centroids = None
 
-            # for r in range(R):
-            #     data_ref_clusters, new_centroids = kmeans_refs(
-            #         data_store, data_ref_arr, centroids, bool(r == 0)
-            #     )
+                for r in range(R):
+                    data_ref_clusters, new_centroids = kmeans_refs(
+                        data_store, data_ref_arr, centroids, bool(r == 0)
+                    )
 
-            #     if (
-            #         len(new_centroids) != len(centroids)
-            #         or jnp.allclose(
-            #             jnp.stack([c.m1 for c in centroids]),
-            #             jnp.stack([c.m1 for c in new_centroids]),
-            #         )
-            #         # len(new_centroids) != len(centroids)
-            #         # or jnp.linalg.norm(jnp.stack([centroids[i].m1 for i in range(len(centroids))]) - \
-            #         #     jnp.stack([new_centroids[i].m1 for i in range(len(new_centroids))])) == 0.0
-            #     ):
-            #         centroids = new_centroids
-            #         break
-            #     centroids = new_centroids
+                    if (
+                        len(new_centroids) != len(centroids)
+                        or jnp.allclose(
+                            jnp.stack([c.m1 for c in centroids]),
+                            jnp.stack([c.m1 for c in new_centroids]),
+                        )
+                        # len(new_centroids) != len(centroids)
+                        # or jnp.linalg.norm(jnp.stack([centroids[i].m1 for i in range(len(centroids))]) - \
+                        #     jnp.stack([new_centroids[i].m1 for i in range(len(new_centroids))])) == 0.0
+                    ):
+                        centroids = new_centroids
+                        break
+                    centroids = new_centroids
 
             # create new nodes for centroids, and add each centroid/data pair to queues
             node.children = [
                 i for i in range(len(node_list), len(node_list) + len(centroids))
             ]
-            # nid = [i for i in range(len(node_list), len(node_list) + len(centroids))]
-            # node_queue.extend(
-            #     nid
-            # )
-            # nl = [ClusterTreeNode(ctr) for ctr in centroids]
-            # node_list.extend(nl)
-            # dref_queue.extend(data_ref_clusters)
 
             nl = [ClusterTreeNode(ctr) for ctr in centroids]
 
@@ -153,22 +143,6 @@ def construct_tree(M, k=3, R=30, C=1):
                             jnp.sum((node_list[i].val.m1.flatten() - dst) ** 2)
                         ).astype(jnp.float32)
                     )
-
-            # for x, i in enumerate(node.children):
-            #     dst = np.array(
-            #         [
-            #             data_store[j].m1.astype(jnp.float32).ravel()
-            #             for j in data_ref_clusters[x]
-            #         ]
-            #     )
-            #     node_list[i].cluster_radius = float(
-            #         jnp.sqrt(
-            #             jnp.sum((node_list[i].val.m1.flatten() - dst) ** 2)
-            #         ).astype(jnp.float32)
-            #     )
-
-            # for c, ctr in enumerate(centroids):
-            # node_list[-1].cluster_radius = jnp.max([jnp.sqrt(jnp.sum((node_list[-1].val - data__ref)**2))])
         # perform k medioids clustering to ensure that the center is within the input data
         else:
             param_clusters, medioids, clusters, params, mlist = (

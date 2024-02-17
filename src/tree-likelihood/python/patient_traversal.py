@@ -26,10 +26,10 @@ def search_leaf(T, idx, data_list, dbest, nearest_neighbor, noise,nndist,mdist,m
         metrics["change_count"]+=1
         nearest_neighbor[0] = idx
         mdist[0] = nndist
-        f.write(str(float(nndist)))
-        f.write(",")
-        f.write(str(np.real(dist)))
-        f.write(",\n")
+        # f.write(str(float(nndist)))
+        # f.write(",")
+        # f.write(str(np.real(dist)))
+        # f.write(",\n")
         # print(mdist[0],end=",")
 
 
@@ -59,7 +59,7 @@ def search_node(
         # print(node_list[node_index].children,end=",")
         # print(node_list[node_index].data_refs)
         for index in node_list[node_index].data_refs:
-            search_leaf(T, index, data_list, dbest, nearest_neighbor, noise, abs(inherited_radius), mdist,metrics,TAU)
+            search_leaf(T, index, data_list, dbest, nearest_neighbor, noise,inherited_radius, mdist,metrics,TAU)
         return
         # return
     if inherited_radius < 0:
@@ -71,7 +71,7 @@ def search_node(
         return
     k = len(node_list[node_index].children)
     if (
-        node_list[node_index].data_refs == None and inherited_radius < dbest[0]
+        node_list[node_index].data_refs == None and inherited_radius < mdist[0]
     ):  # isLeaf = false and distance to boundary of cluster is less than the best distance so far
         # nr = [node_list[index].cluster_radius / noise for index in node_list[node_index].children]
         # maxnr = max(nr)
@@ -83,15 +83,15 @@ def search_node(
             [  # calculate the next cluster boundary distances
                 (
                     (
-                         ((node_list[node_index].cluster_radius/noise)-
-                        difference(T.m1, node_list[index].val.m1, noise))
+                        # (node_list[index].cluster_radius/noise)-
+                        difference(T.m1, node_list[index].val.m1, noise)
                     ),
                     index,
                 )
                 for i, index in enumerate(node_list[node_index].children)
             ]
         )
-        sortkey = lambda x: -x[0]
+        sortkey = lambda x: x[0]
         distances_to_cluster_boundary = sorted(
             distances_to_cluster_boundary, key=sortkey
         )  # sort the cluster boundary distances in decreasing order to account for unbalanced tree
@@ -111,7 +111,7 @@ def search_node(
             distances_to_cluster_boundary[prime_index][1],
             node_list,
             data_list,
-            node_list[distances_to_cluster_boundary[prime_index][1]].cluster_radius,
+            distances_to_cluster_boundary[prime_index][0],
             # - sum(
             #     [
             #         node_list[
@@ -137,7 +137,7 @@ def search_node(
         #                 for other_sub_index in sub_indices
         #             ])
         # reversed(sub_indices)
-        while z < len(sub_indices):# and inherited_radius < dbest[0]:
+        while z < len(sub_indices):
             # print("call")
             # for z, sub_index in enumerate(sub_indices):
             sub_index = sub_indices[z]
@@ -149,7 +149,7 @@ def search_node(
                 distances_to_cluster_boundary[sub_index][1],
                 node_list,
                 data_list,
-                node_list[distances_to_cluster_boundary[sub_index][1]].cluster_radius,
+                distances_to_cluster_boundary[sub_index][0],
                 # + distances_to_cluster_boundary[prime_index][1]
                 # + node_list[distances_to_cluster_boundary[sub_index][1]].cluster_radius/noise
                 # - sub_index_sum,

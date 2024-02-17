@@ -9,8 +9,10 @@ def greedy_tree_likelihood(node_list, data_list, input_list):
     likelihood_prime, likelihood_idx = _greedy_tree_traversal(
         node_list, data_list, input_list
     )
-    return likelihood_prime
+    return likelihood_prime, likelihood_idx
 
+def difference(m1, m2, noise=1):
+    return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))
 
 def _greedy_tree_traversal(node_list, data_list, input_list):
     """
@@ -38,7 +40,7 @@ def _greedy_tree_traversal(node_list, data_list, input_list):
             min_dist = float("inf")
             nn = 0
             for i in node_list[n_curr].children:
-                dist = difference_calculation(node_list[i].val.m1, T.m1, noise)
+                dist = difference(node_list[i].val.m1, T.m1, noise)
                 # dist = custom_distance(node_list[i].val, T)
                 if dist < min_dist:
                     nn = i
@@ -55,7 +57,7 @@ def _greedy_tree_traversal(node_list, data_list, input_list):
             d = DatumT()
             d.m1 = res
             # dist = custom_distance(d, T)
-            dist = difference_calculation(T.m1, res, noise)
+            dist = difference(T.m1, res, noise)
 
             if dist < min_dist:
                 closest_idx = idx

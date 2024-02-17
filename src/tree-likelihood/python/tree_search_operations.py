@@ -113,7 +113,9 @@ def search_tree_associations(node_list, data_list, input_list):
     # For each input point in the input list
     for input_index, input_point in enumerate(input_list):
         # Search the tree to find nearest neighbor and distance
-        nearest_index, nearest_distance = patient_search_tree(node_list, data_list, input_point,noise)
+        nearest_index, nearest_distance = patient_search_tree(
+            node_list, data_list, input_point, noise
+        )
 
         di_match_indices.append(nearest_index)
         ds_match_distances.append(nearest_distance)
@@ -152,7 +154,9 @@ def all_pairs_associations(data_list, input_list):
 
         # Compare the input point with all data points
         for data_index, data_point in enumerate(data_list):
-            distance = np.real(difference_calculation(input_point.m1, data_point.m1, noise))
+            distance = np.real(
+                difference_calculation(input_point.m1, data_point.m1, noise)
+            )
 
             # Update nearest neighbor if a closer one is found
             if distance < min_distance:
