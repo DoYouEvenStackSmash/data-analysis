@@ -27,11 +27,13 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
     # np.save("naive_distances.npy", dist_mat)
     # np.save("patient_distances.npy", pdmat)
     greedy_likelihoods, gidx = greedy_tree_likelihood(node_list, data_list, input_list)
-    patient_likelihoods, pidx = patient_tree_likelihood(node_list, data_list, input_list)
+    patient_likelihoods, pidx = patient_tree_likelihood(
+        node_list, data_list, input_list
+    )
     # patient_likelihoods, pidx = level_patient_search(
     #     node_list, data_list, input_list
     # )
-    
+
     # scipy.io.savemat("traversal_data.mat", {"greedy_likelihoods": np.real(greedy_likelihoods), "greedy_idx": gidx, "patient_likelihoods":np.real(patient_likelihoods), "patient_idx":pidx})
     # # print("naive")
     # naive_likelihoods = alt_naive_likelihood(node_list, data_list, input_list)

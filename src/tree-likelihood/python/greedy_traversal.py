@@ -11,8 +11,10 @@ def greedy_tree_likelihood(node_list, data_list, input_list):
     )
     return likelihood_prime, likelihood_idx
 
+
 def difference(m1, m2, noise=1):
     return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))
+
 
 def _greedy_tree_traversal(node_list, data_list, input_list):
     """

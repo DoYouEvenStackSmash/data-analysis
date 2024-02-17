@@ -7,6 +7,8 @@ from clustering_driver import *
 from sklearn.cluster import KMeans
 
 SKLEARN_KMEANS = True
+
+
 # import logging
 # sklearn_logger = logging.getLogger('sklearnex')
 # sklearn_logger.setLevel(logging.ERROR)
@@ -87,7 +89,6 @@ def construct_tree(M, k=3, R=30, C=1):
                     ctx[i].m1 = centroids[i].reshape((CONST_X, CONST_Y))
                 centroids = ctx
                 for i, j in enumerate(labels):
-                    
                     data_ref_clusters[j].append(data_ref_arr[i])
             #     # data_ref_clusters[j].append(data_ref_arr[i])
             else:
@@ -121,7 +122,7 @@ def construct_tree(M, k=3, R=30, C=1):
 
             nl = [ClusterTreeNode(ctr) for ctr in centroids]
 
-            for i,d in enumerate(data_ref_clusters):
+            for i, d in enumerate(data_ref_clusters):
                 if len(data_ref_clusters[i]) <= C:
                     # create new node
                     nl[i].data_refs = [data_store[x] for x in data_ref_clusters[i]]
@@ -129,7 +130,7 @@ def construct_tree(M, k=3, R=30, C=1):
                     node_queue.append(node.children[i])
                     dref_queue.append(data_ref_clusters[i])
             node_list.extend(nl)
-                
+
             for x, i in enumerate(node.children):
                 if len(data_ref_clusters[x]) > 1:
                     dst = np.array(
@@ -214,12 +215,8 @@ def construct_tree(M, k=3, R=30, C=1):
                 node.children.append(idx)
                 node_list.append(ClusterTreeNode(med))
                 node_list[idx].cluster_radius = 0
-                dstr.extend([
-                        j.m1.astype(jnp.float32).ravel()
-                        for j in clusters[i]
-                    ])
+                dstr.extend([j.m1.astype(jnp.float32).ravel() for j in clusters[i]])
                 if len(clusters[i]) > 1:
-
                     dst = np.array(
                         [
                             j.m1.astype(jnp.float32).ravel()
@@ -240,10 +237,10 @@ def construct_tree(M, k=3, R=30, C=1):
             #                 jnp.sum((node.val.m1.flatten() - dstr) ** 2)
             #             ).astype(jnp.float32)
             #         ))
-                # node_list[idx].cluster_radius = 0
-                # print(node_list[idx].cluster_radius)
+            # node_list[idx].cluster_radius = 0
+            # print(node_list[idx].cluster_radius)
 
-                # node_list[idx].param_refs = param_clusters[i]
+            # node_list[idx].param_refs = param_clusters[i]
     node_list[0].cluster_radius = sum(
         [float(node_list[i].cluster_radius) for i in node_list[0].children]
     )
