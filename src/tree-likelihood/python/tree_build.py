@@ -5,7 +5,6 @@ from kmedoids import *
 from kmeans import *
 from clustering_driver import *
 from sklearn.cluster import KMeans
-
 SKLEARN_KMEANS = True
 
 
@@ -50,6 +49,8 @@ def construct_tree(M, k=3, R=30, C=1):
     Builds a hierarchical clustering on the input data M
     Returns a flat tree as a list of nodes, where node_list[0] is the root.
     """
+    # if k == 2:
+    #     return balltree_wrapper(M, C)
     data_store = M
 
     node_list = []
@@ -80,9 +81,9 @@ def construct_tree(M, k=3, R=30, C=1):
                     [data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr]
                 )
 
-                kmeans.fit(dst)
+                labels = kmeans.fit_predict(dst)
                 centroids = kmeans.cluster_centers_
-                labels = kmeans.labels_
+                # labels = kmeans.labels_
                 data_ref_clusters = [[] for _ in range(min(k, len(data_ref_arr)))]
                 ctx = [DatumT() for c in centroids]
                 for i, c in enumerate(ctx):
@@ -232,15 +233,7 @@ def construct_tree(M, k=3, R=30, C=1):
                     # node_list.cluster_radius =
                 node_list[idx].data_refs = clusters[i]
                 node_list[idx].children = None
-            # node.cluster_radius = min(node.cluster_radius, float(
-            #             jnp.sqrt(
-            #                 jnp.sum((node.val.m1.flatten() - dstr) ** 2)
-            #             ).astype(jnp.float32)
-            #         ))
-            # node_list[idx].cluster_radius = 0
-            # print(node_list[idx].cluster_radius)
 
-            # node_list[idx].param_refs = param_clusters[i]
     node_list[0].cluster_radius = sum(
         [float(node_list[i].cluster_radius) for i in node_list[0].children]
     )

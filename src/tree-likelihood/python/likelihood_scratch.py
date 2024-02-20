@@ -31,7 +31,7 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
         node_list, data_list, input_list
     )
     # patient_likelihoods, pidx = level_patient_search(
-    #     node_list, data_list, input_list
+    #     node_list, data_list, input_list, 0.1, gidx
     # )
 
     # scipy.io.savemat("traversal_data.mat", {"greedy_likelihoods": np.real(greedy_likelihoods), "greedy_idx": gidx, "patient_likelihoods":np.real(patient_likelihoods), "patient_idx":pidx})
@@ -45,6 +45,13 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
 
 
 def write_csv(single_point_likelihood, area_likelihood, filename="out.csv"):
+    """Writes single point and area likelihoods (naming for historical reasons) to csv
+
+    Args:
+        single_point_likelihood ([float]): Array of likelihoods
+        area_likelihood ([float]): Array of likelihoods
+        filename (str, optional): Filename. Defaults to "out.csv".
+    """
     f = open(filename, "w")
 
     head = f"single_point_likelihood,area_likelihood,\n"
@@ -71,6 +78,16 @@ def compare_tree_likelihoods(node_list, data_list, input_list):
 
 
 def alt_naive_likelihood(node_list, data_list, input_list):
+    """Function which calculates the likelihood naively for all pairs
+
+    Args:
+        node_list ([ClusterTreeNode]): List of cluster tree nodes
+        data_list ([DatumT]): List of DatumT objects
+        input_list ([DatumT]): List of DatumT input objects
+
+    Returns:
+        matrix : Matrix of likelihoods
+    """
     dist_mat = []
 
     # minst = np.zeros((len(input_list)), dtype=np.float32)
@@ -81,12 +98,13 @@ def alt_naive_likelihood(node_list, data_list, input_list):
     start_time = time.perf_counter()
     for i, T in enumerate(input_list):
         min_dist = float("Inf")
+
         dist_mat.append(
             [
                 jnp.exp(
                     -1.0
                     * (
-                        (difference_calculation(T.m1, data_list[j].m1, noise) ** 2)
+                        (difference_calculation(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[j]), noise) ** 2)
                         / (2 * lambda_square)
                     )
                 )
@@ -100,6 +118,8 @@ def alt_naive_likelihood(node_list, data_list, input_list):
 
         # print(f.shape)
         dist_mat[i] = postprocessing_adjust(dist_mat[i], noise, 1)
+        if not i % 20:
+            print(i)
         # print(i)
 
     end_time = time.perf_counter() - start_time

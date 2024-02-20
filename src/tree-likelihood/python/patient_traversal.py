@@ -77,23 +77,25 @@ def search_node(
         return
     k = len(node_list[node_index].children)
     if (
-        node_list[node_index].data_refs == None and inherited_radius < mdist[0]
+        node_list[node_index].data_refs == None and inherited_radius < dbest[0]
     ):  # isLeaf = false and distance to boundary of cluster is less than the best distance so far
 
         distances_to_cluster_boundary = [  # calculate the next cluster boundary distances
             (
                 (
-                    (node_list[index].cluster_radius/noise)-
-                    difference(T.m1, node_list[index].val.m1, noise)
+                    # (node_list[index].cluster_radius/noise)-
+                    difference(T.m1, node_list[index].val.m1, noise)# - difference(node_list[node_index].val.m1, node_list[index].val.m1, noise)
                 ),
                 index,
             )
-            for i, index in enumerate(node_list[node_index].children)
+            for i, index in enumerate(node_list[node_index].children) if abs(difference(T.m1, node_list[node_index].val.m1, noise) - difference(node_list[node_index].val.m1, node_list[index].val.m1, noise)) < node_list[index].cluster_radius*1.2
         ]
-        sortkey = lambda x: x[0]
+        sortkey = lambda x: -x[0]
         distances_to_cluster_boundary = sorted(
             distances_to_cluster_boundary, key=sortkey
         )  # sort the cluster boundary distances in decreasing order to account for unbalanced tree
+        if not len(distances_to_cluster_boundary):
+            return 
         prime_index = 0
         sub_indices = [
             rdx

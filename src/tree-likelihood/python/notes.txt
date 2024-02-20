@@ -1,0 +1,25 @@
+R = C + (R - C)
+
+bounding radius = R - C
+
+T is within R if C/R < 1
+if C/R < 1, subsequent candidates must have radius R2 within R - C of T
+
+if C / R > 1: nonmemer
+
+if C/R < 1:
+new_bound = R - C
+
+if center not within new_bound + R2: 
+  discard
+
+  can be within at most R - C of T
+
+
+while q:
+  n = q.popleft()
+    for c in node_list[node_index].children:
+      s.push(c)
+while s:
+  # do calculations
+  q.append(s)
