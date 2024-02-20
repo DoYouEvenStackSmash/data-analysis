@@ -6,7 +6,7 @@ col1 = data.level+1;
 col2 = data.width;
 
 % Fit a polynomial of degree N to the data
-degree = 8; % Adjust the degree as needed
+degree = 6; % Adjust the degree as needed
 coefficients = polyfit(col1, col2, degree);
 
 % Create a polynomial function using the coefficients
