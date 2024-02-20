@@ -75,7 +75,6 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
         
         if tauprops != None:
             TAU = difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[tauprops[i]]),noise)
-            # TAU = node_list[tauprops[i]].cluster_radius
         taow = [TAU]
         # rq
         dbests = []
@@ -108,40 +107,40 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                     while cq[0][0] != None:
                         pref_index = node_index
                         node_index, Rprev = cq.popleft()
-
+                        # 
                         for c in node_list[node_index].children:
+                            # if data_refs is none, this is a leaf node
                             if node_list[c].data_refs != None:                               
-                                
                                 for index in node_list[c].data_refs:
                                     psearch_leaf(T, index, data_list, dbest, nn, noise, taow,nnq)
                                     taow[0] = min(taow[0], dbest[0])
-                                    
                                 continue
+                            # An additional check for simple paths.
+                            # If cluster radius is zero, this is a leaf node. 
                             elif node_list[c].cluster_radius == 0:
-
                                 for index in node_list[c].children[0].data_refs:
                                     psearch_leaf(T, index, data_list, dbest, nn, noise, taow,nnq)
                                     taow[0] = min(taow[0], dbest[0])
-
                                 continue
 
-                            R = node_list[node_index].cluster_radius# / noise
-                            res = jax_apply_d1m2_to_d2m1(T, node_list[node_index].val)
+                            # geometry things
+                            R = node_list[node_index].cluster_radius
+                            res = jax_apply_d1m2_to_d2m1(T, node_list[node_index].val) # multiply by CTF
                             C = difference(T.m1, res, noise)
                             C2 = difference(node_list[node_index].val.m1, node_list[c].val.m1,noise)
-
+                            # triangle inequality with tolerance
                             if abs(C - C2) <= max(node_list[c].cluster_radius + depth_counter * 0.02, taow[0]):# + R/k:
-                                res2 = jax_apply_d1m2_to_d2m1(T, node_list[c].val)
+                                res2 = jax_apply_d1m2_to_d2m1(T, node_list[c].val) # multiply by CTF
                                 C3 = difference(T.m1, res2, noise)
                                 if C3 < max(node_list[c].cluster_radius + depth_counter * 0.02, taow[0]):
                                     cq.append((c, -C3))
 
-
+                    # pop the none off of the queue to signify end of level
                     cq.popleft()
                     if len(cq):
+                        
                         depth_counter+=1
-                        # if dbest[0] == float('inf'):
-                        if depth_counter > 2:
+                        if depth_counter > 2: # if depth exceeds 2, start doing lexBFS
                             dq.extend([depth_counter for _ in range(len(cq))])
                             sq.extend(sorted(cq, key=sortkey))#[0:max(k,k**(depth_counter-1))])
                             cq = deque()
@@ -150,6 +149,7 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                             depth_counter += 1
                             cq.append((None, None))
                 
+                # lexicographical bfs
                 while len(sq):
                     depth_counter = dq.pop()
                     # sn_index, Rprev = sq.pop()
