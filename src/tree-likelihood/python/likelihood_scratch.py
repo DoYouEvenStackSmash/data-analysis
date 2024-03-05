@@ -17,24 +17,24 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
     Testbench function for head to head comparison of tree approximation and global search
     """
     # dist_mat = naive_distance_matrix(node_list, data_list, input_list)
-    # pdmat = np.zeros((len(input_list),2))
-    # noise = calculate_noise(input_list)
-    # lambda_square = noise**2
-    # for i,T in enumerate(input_list):
-    #     print(i)
-    #     pdmat[i,0],pdmat[i,1] = patient_search_tree(node_list, data_list, T,noise)
-    # print(dist_mat.shape)
+    # # pdmat = np.zeros((len(input_list),2))
+    # # noise = calculate_noise(input_list)
+    # # lambda_square = noise**2
+    # # for i,T in enumerate(input_list):
+    # #     print(i)
+    # #     pdmat[i,0],pdmat[i,1] = patient_search_tree(node_list, data_list, T,noise)
+    # # print(dist_mat.shape)
     # np.save("naive_distances.npy", dist_mat)
     # np.save("patient_distances.npy", pdmat)
     greedy_likelihoods, gidx = greedy_tree_likelihood(node_list, data_list, input_list)
     patient_likelihoods, pidx = patient_tree_likelihood(
         node_list, data_list, input_list
     )
-    # patient_likelihoods, pidx = level_patient_search(
-    #     node_list, data_list, input_list, 0.1, gidx
-    # )
+    patient_likelihoods, pidx = level_patient_search(
+        node_list, data_list, input_list, 0.1, pidx
+    )
 
-    # scipy.io.savemat("traversal_data.mat", {"greedy_likelihoods": np.real(greedy_likelihoods), "greedy_idx": gidx, "patient_likelihoods":np.real(patient_likelihoods), "patient_idx":pidx})
+    # scipy.io.savemat("traversal_data.mat", {"greedy_likelihoods": greedy_likelihoods, "greedy_idx": gidx, "patient_likelihoods":patient_likelihoods, "patient_idx":pidx})
     # # print("naive")
     # naive_likelihoods = alt_naive_likelihood(node_list, data_list, input_list)
     # np.save("naive_likelihoods.npy", naive_likelihoods)
@@ -76,6 +76,8 @@ def compare_tree_likelihoods(node_list, data_list, input_list):
     np.save("naive_likelihoods.npy", naive_likelihood_mat)
     sys.exit()
 
+# def difference(m1, m2, noise=1):
+#     return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))
 
 def alt_naive_likelihood(node_list, data_list, input_list):
     """Function which calculates the likelihood naively for all pairs
@@ -95,8 +97,10 @@ def alt_naive_likelihood(node_list, data_list, input_list):
     noise = calculate_noise(input_list)
     # print(noise)
     lambda_square = noise**2
+    print(lambda_square)
     start_time = time.perf_counter()
     for i, T in enumerate(input_list):
+        # print(T.m2)
         min_dist = float("Inf")
 
         dist_mat.append(
@@ -104,7 +108,7 @@ def alt_naive_likelihood(node_list, data_list, input_list):
                 jnp.exp(
                     -1.0
                     * (
-                        (difference_calculation(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[j]), noise) ** 2)
+                        (complex_distance(difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[j]), noise) ** 2))
                         / (2 * lambda_square)
                     )
                 )
@@ -115,7 +119,7 @@ def alt_naive_likelihood(node_list, data_list, input_list):
         # dist_mat[i,j] = original_likelihood(T.m1,d.m1, 1, noise )
 
         #
-
+        # print(dist_mat[i])
         # print(f.shape)
         dist_mat[i] = postprocessing_adjust(dist_mat[i], noise, 1)
         if not i % 20:
@@ -161,7 +165,7 @@ def naive_distance_matrix(node_list, data_list, input_list):
     for i, T in enumerate(input_list):
         min_dist = float("Inf")
         dist_mat[i] = [
-            np.real(difference_calculation(T.m1, data_list[j].m1, noise))
+            jnp.real(difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[j]), noise))
             for j in range(len(data_list))
         ]
         # dist_mat[i,:] = difference_calculation(T.m1,np.array([d.m1 for d in data_list]),noise)
@@ -174,7 +178,8 @@ def naive_distance_matrix(node_list, data_list, input_list):
         #     dist_mat[i, j] = difference_calculation(T.m1, d.m1, noise)
         #     # print(f.shape)
         # dist_mat[i,:] = postprocessing_adjust(dist_mat[i,:], noise, 1)
-        print(i)
+        if not i % 20:
+            print(i)
 
     end_time = time.perf_counter() - start_time
 
