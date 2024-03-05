@@ -1,5 +1,6 @@
 from clustering_imports import *
 import time
+from patient_traversal import *
 
 
 def level_order_search(node_list, T, TAU=4e-1):
@@ -107,11 +108,14 @@ def search_tree_associations(node_list, data_list, input_list):
     ds_match_distances = []
 
     start_time = time.perf_counter()
-
+    noise = calculate_noise(input_list)
+    lambda_square = noise**2
     # For each input point in the input list
     for input_index, input_point in enumerate(input_list):
         # Search the tree to find nearest neighbor and distance
-        nearest_index, nearest_distance = search_tree(node_list, data_list, input_point)
+        nearest_index, nearest_distance = patient_search_tree(
+            node_list, data_list, input_point, noise
+        )
 
         di_match_indices.append(nearest_index)
         ds_match_distances.append(nearest_distance)
@@ -139,7 +143,8 @@ def all_pairs_associations(data_list, input_list):
     """
     mi_match_indices = []
     ms_match_distances = []
-
+    noise = calculate_noise(input_list)
+    lambda_square = noise**2
     start_time = time.perf_counter()
 
     # For each input point in the input list
@@ -149,7 +154,9 @@ def all_pairs_associations(data_list, input_list):
 
         # Compare the input point with all data points
         for data_index, data_point in enumerate(data_list):
-            distance = custom_distance(input_point, data_point)
+            distance = np.real(
+                difference_calculation(input_point.m1, data_point.m1, noise)
+            )
 
             # Update nearest neighbor if a closer one is found
             if distance < min_distance:

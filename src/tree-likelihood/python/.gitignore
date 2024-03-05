@@ -5,3 +5,5 @@
 *.png
 *.log
 *.jpg
+*.mat
+*.fbs
