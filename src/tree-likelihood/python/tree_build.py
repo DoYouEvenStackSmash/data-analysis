@@ -52,12 +52,13 @@ def construct_tree(M, k=3, R=30, C=1):
     # if k == 2:
     #     return balltree_wrapper(M, C)
     data_store = M
-
+    max_filter = M[0].m2
     node_list = []
     node_queue = deque()
     dref_queue = deque()
     rootd = DatumT()
     rootd.m1 = np.zeros((CONST_X, CONST_Y))
+    rootd.m2 = M[0].m2
     # dst = np.array(
     #     [data_store[i].m1.astype(jnp.float32).ravel() for i in range(len(data_store))]
     # )
@@ -78,7 +79,7 @@ def construct_tree(M, k=3, R=30, C=1):
             if SKLEARN_KMEANS:
                 kmeans = KMeans(n_clusters=min(k, len(data_ref_arr)), init="k-means++")
                 dst = np.array(
-                    [data_store[i].m1.astype(jnp.float32).ravel() for i in data_ref_arr]
+                    [jax_apply_d1m2_to_d2m1(data_store[i], data_store[i]).astype(jnp.float32).ravel() for i in data_ref_arr]
                 )
 
                 labels = kmeans.fit_predict(dst)
@@ -88,6 +89,7 @@ def construct_tree(M, k=3, R=30, C=1):
                 ctx = [DatumT() for c in centroids]
                 for i, c in enumerate(ctx):
                     ctx[i].m1 = centroids[i].reshape((CONST_X, CONST_Y))
+                    ctx[i].m2 = max_filter
                 centroids = ctx
                 for i, j in enumerate(labels):
                     data_ref_clusters[j].append(data_ref_arr[i])
@@ -136,13 +138,13 @@ def construct_tree(M, k=3, R=30, C=1):
                 if len(data_ref_clusters[x]) > 1:
                     dst = np.array(
                         [
-                            data_store[j].m1.astype(jnp.float32).ravel()
+                            jax_apply_d1m2_to_d2m1(data_store[j], data_store[j]).astype(jnp.float32).ravel()
                             for j in data_ref_clusters[x]
                         ]
                     )
                     node_list[i].cluster_radius = float(
                         jnp.sqrt(
-                            jnp.sum((node_list[i].val.m1.flatten() - dst) ** 2)
+                            jnp.sum((jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val).flatten() - dst) ** 2)
                         ).astype(jnp.float32)
                     )
         # perform k medioids clustering to ensure that the center is within the input data

@@ -31,8 +31,8 @@ def psearch_leaf(T, idx, data_list, dbest, nearest_neighbor, noise, taow=None,nn
     """
     res = jax_apply_d1m2_to_d2m1(T, data_list[idx])
     dist = difference(T.m1, res, noise)
-    if dist < taow[0]:
-        nnq.append((idx,dist))
+    # if dist < taow[0]:
+    #     nnq.append((idx,dist))
     if dist < dbest[0]:
         dbest[0] = dist
         nearest_neighbor[0] = idx
@@ -103,7 +103,7 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
             mdist = [float("Inf")]
             dbest = [float("Inf")]
             # dbest[0] = TAU
-            nn[0] = tauprops[i]
+            # nn[0] = tauprops[i]
             FIRED = False
             while len(cq) or len(sq):
                 while len(cq):
@@ -139,15 +139,24 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                         
                             # geometry things
                             R = node_list[node_index].cluster_radius
-                            res = jax_apply_d1m2_to_d2m1(T, node_list[node_index].val) # multiply by CTF
-                            C = difference(T.m1, res, noise)
-                            C2 = difference(node_list[node_index].val.m1, node_list[c].val.m1,noise)
+                            res = jax_apply_d1m2_to_d2m1(node_list[node_index].val,T) # multiply by CTF
+                            res_max =jax_apply_d1m2_to_d2m1(node_list[node_index].val, node_list[node_index].val) # multiply by CTF
+                            res1 = jax_apply_d1m2_to_d2m1(node_list[node_index].val,T)
+                            C1 = difference(T.m1,  res_max)
+                            C2 = difference(res1, res_max)
+                            # C2 = difference(jax_apply_d1m2_to_d2m1(node_list[node_index].val, node_list[c].val),C3,noise)
                             # triangle inequality with tolerance
-                            if abs(C - C2) <= node_list[c].cluster_radius + taow[0]:# + R/k:
-                                res2 = jax_apply_d1m2_to_d2m1(T, node_list[c].val) # multiply by CTF
-                                C3 = difference(T.m1, res2, noise)
-                                if C3 < node_list[c].cluster_radius + taow[0]:
-                                    cq.append((c, C3))
+                            if C2 - C1 <= node_list[node_index].cluster_radius:# + R/k:
+                                # cq.append((c, abs(C2 - C1)))
+                                res2 = jax_apply_d1m2_to_d2m1(node_list[c].val, T) # multiply by CTF
+                                res3 = jax_apply_d1m2_to_d2m1(node_list[c].val, node_list[c].val)
+                                
+                                C3 = difference(T.m1, res3)
+                                # print(C3 - node_list[c].cluster_radius)
+                                if C3 < node_list[c].cluster_radius:
+                                    cq.append((c,  C3))
+                                # if C3 < node_list[c].cluster_radius + taow[0]:
+                                #     cq.append((c, C3))
                     
                     if not FIRST and not FIRED:
                         FIRED = True
