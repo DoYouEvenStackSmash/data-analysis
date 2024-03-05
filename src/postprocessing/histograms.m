@@ -8,7 +8,7 @@ likelihoods = readtable(path);
 
 % Extract single point likelihood and area likelihood data
 single_point_likelihoods = likelihoods.single_point_likelihood;% - mean(likelihoods.single_point_likelihood);
-% single_point_likelihoods(isinf(single_point_likelihoods))=0;
+single_point_likelihoods(isinf(single_point_likelihoods))=0;
 
 area_likelihoods = likelihoods.area_likelihood;
 area_likelihoods(isinf(area_likelihoods))=0;
