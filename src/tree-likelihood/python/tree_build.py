@@ -143,26 +143,27 @@ def construct_tree(M, k=3, R=30, C=1):
 
             for x, i in enumerate(node.children):
                 if len(data_ref_clusters[x]) > 1:
-                    # dst = np.array(
-                    #     [
-                    #         jax_apply_d1m2_to_d2m1(data_store[j], data_store[j]).astype(jnp.float32).ravel()
-                    #         for j in data_ref_clusters[x]
-                    #     ]
-                    # )
-                    dst = [
-                        jax_apply_d1m2_to_d2m1(data_store[j], data_store[j])
-                        for j in data_ref_clusters[x]
-                    ]
+                    dst = np.array(
+                        [
+                            jax_apply_d1m2_to_d2m1(data_store[j], data_store[j]).astype(jnp.float32).ravel()
+                            for j in data_ref_clusters[x]
+                        ]
+                    )
+                    # dst = [
+                    #     jax_apply_d1m2_to_d2m1(data_store[j], data_store[j])
+                    #     for j in data_ref_clusters[x]
+                    # ]
                     # node_list[i].cluster_radius = float(
                     #     jnp.sqrt(
                     #         jnp.sum((jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val).flatten() - dst) ** 2)
                     #     ).astype(jnp.float32)
                     # )
-                    center = jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val)
+                    
+                    center = jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val).flatten()
                     for a, d in enumerate(dst):
                         node_list[i].cluster_radius = float(
                             max(
-                                jnp.linalg.norm(center - d), node_list[i].cluster_radius
+                                jnp.linalg.norm(center - d)**2, node_list[i].cluster_radius
                             )
                         )
 

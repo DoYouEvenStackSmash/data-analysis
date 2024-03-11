@@ -47,6 +47,7 @@ def qsearch_leaf(T, idx, data_list, dbest, nearest_neighbor, noise, TAU=1, nnq=N
 def check_ctf_bound(omega, mulk, yi,noise=1,tau=1e-6):
     # R = centroid.cluster_radius
     # -2 * noise*log(tau)
+    # print(difference(omega.val.m1, yi.m1) - difference(yi.m1, jax_apply_d1m2_to_d2m1(yi,mulk.val)))
     if difference(omega.val.m1, yi.m1) > difference(yi.m1, jax_apply_d1m2_to_d2m1(yi,mulk.val)) - mulk.cluster_radius:
         return True
     return False
@@ -154,18 +155,19 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                             if check_ctf_bound(node_list[c],node_list[node_index], T, noise):
                                 cq.append((c,1))                                  
                             else:
-                                print("fire")
+                                # print("fire")
+                                pass
 
                     
                     if not FIRST and not FIRED:
                         FIRED = True
                         while cq[0][0] != None:
-                            print("fire")
+                            print("fir2e")
                             sq,append(cq.popleft())
                             dq.append(depth_counter)
                         # reversed(sq)
                         # reversed(dq)
-                        break
+                        # break
                     # pop the none off of the queue to signify end of level
                     cq.popleft()
                     if len(cq):
@@ -173,10 +175,10 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                         # depth_counter
                         if depth_counter > 2: # if depth exceeds 2, start doing lexBFS
                             val = len(sq)
+                            # print(cq)
                             sq.extend(sorted(cq, key=sortkey)[0:max(k,int(len(cq)/3))])
                             dq.extend([depth_counter for _ in range(len(sq) - val)])
                             cq = deque()
-                            break
                         else:
                             cq = deque(sorted(cq, key=sortkey))
                             depth_counter += 1
@@ -184,11 +186,14 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                 
                 # lexicographical bfs
                 while len(sq):
+                    # print(sq)
                     # print(dq)
                     if sq[0][0] == None:
-                        print("fire")
+                        # print("fire")
                         dq.pop()
                         cq.append(sq.pop())
+                        cq.append((None, None))
+
                         break
                         
                     # print(len(sq))
