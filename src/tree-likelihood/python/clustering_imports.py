@@ -45,12 +45,15 @@ import logging
 sklearn_logger = logging.getLogger("sklearnex")
 sklearn_logger.setLevel(logging.INFO)
 
+
 def complex_distance(m1):
     return jnp.sqrt(jnp.real(m1) ** 2 + jnp.imag(m1) ** 2)
+
 
 def custom_distance(k, m):
     return jnp.sqrt(jnp.sum(((k - m)) ** 2))
     # return jnp.linalg.norm(k.m1 - m.m1)
+
 
 def difference(m1, m2, noise=1):
     return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))

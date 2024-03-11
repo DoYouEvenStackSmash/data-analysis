@@ -59,15 +59,17 @@ def _greedy_tree_traversal(node_list, data_list, input_list):
             d = DatumT()
             d.m1 = res
             # dist = custom_distance(d, T)
-            dist = complex_distance(difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[idx]), noise))
+            dist = complex_distance(
+                difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[idx]), noise)
+            )
             # print(T.m2)
-            
+
             if dist < min_dist:
                 closest_idx = idx
                 min_dist = dist
         # likelihood
         likelihood_prime[input_idx] = weight * jnp.exp(
-            -1.0 * ((min_dist ** 2) / (2 * lambda_square))
+            -1.0 * ((min_dist**2) / (2 * lambda_square))
         )
         likelihood_idx[input_idx] = closest_idx
     end_time = time.perf_counter() - start_time

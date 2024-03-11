@@ -5,6 +5,7 @@ from kmedoids import *
 from kmeans import *
 from clustering_driver import *
 from sklearn.cluster import KMeans
+
 SKLEARN_KMEANS = True
 
 
@@ -79,7 +80,12 @@ def construct_tree(M, k=3, R=30, C=1):
             if SKLEARN_KMEANS:
                 kmeans = KMeans(n_clusters=min(k, len(data_ref_arr)), init="k-means++")
                 dst = np.array(
-                    [jax_apply_d1m2_to_d2m1(data_store[i], data_store[i]).astype(jnp.float32).ravel() for i in data_ref_arr]
+                    [
+                        jax_apply_d1m2_to_d2m1(data_store[i], data_store[i])
+                        .astype(jnp.float64)
+                        .ravel()
+                        for i in data_ref_arr
+                    ]
                 )
 
                 labels = kmeans.fit_predict(dst)
@@ -126,9 +132,10 @@ def construct_tree(M, k=3, R=30, C=1):
             nl = [ClusterTreeNode(ctr) for ctr in centroids]
 
             for i, d in enumerate(data_ref_clusters):
-                if len(data_ref_clusters[i]) <= C:
+                if len(data_ref_clusters[i]) < C:
                     # create new node
                     nl[i].data_refs = [data_store[x] for x in data_ref_clusters[i]]
+                    nl[i].children = None
                 else:
                     node_queue.append(node.children[i])
                     dref_queue.append(data_ref_clusters[i])
@@ -136,17 +143,29 @@ def construct_tree(M, k=3, R=30, C=1):
 
             for x, i in enumerate(node.children):
                 if len(data_ref_clusters[x]) > 1:
-                    dst = np.array(
-                        [
-                            jax_apply_d1m2_to_d2m1(data_store[j], data_store[j]).astype(jnp.float32).ravel()
-                            for j in data_ref_clusters[x]
-                        ]
-                    )
-                    node_list[i].cluster_radius = float(
-                        jnp.sqrt(
-                            jnp.sum((jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val).flatten() - dst) ** 2)
-                        ).astype(jnp.float32)
-                    )
+                    # dst = np.array(
+                    #     [
+                    #         jax_apply_d1m2_to_d2m1(data_store[j], data_store[j]).astype(jnp.float32).ravel()
+                    #         for j in data_ref_clusters[x]
+                    #     ]
+                    # )
+                    dst = [
+                        jax_apply_d1m2_to_d2m1(data_store[j], data_store[j])
+                        for j in data_ref_clusters[x]
+                    ]
+                    # node_list[i].cluster_radius = float(
+                    #     jnp.sqrt(
+                    #         jnp.sum((jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val).flatten() - dst) ** 2)
+                    #     ).astype(jnp.float32)
+                    # )
+                    center = jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val)
+                    for a, d in enumerate(dst):
+                        node_list[i].cluster_radius = float(
+                            max(
+                                jnp.linalg.norm(center - d), node_list[i].cluster_radius
+                            )
+                        )
+
         # perform k medioids clustering to ensure that the center is within the input data
         else:
             param_clusters, medioids, clusters, params, mlist = (

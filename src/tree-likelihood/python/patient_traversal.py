@@ -22,7 +22,7 @@ def search_leaf(
     global searchcount
     searchcount += 1
     global f
-    dist = difference(T.m1,  jax_apply_d1m2_to_d2m1(T, data_list[idx]), noise)
+    dist = difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[idx]), 1)
     if dist < dbest[0]:
         dbest[0] = dist
         metrics["change_count"] += 1
@@ -79,31 +79,53 @@ def search_node(
     if (
         node_list[node_index].data_refs == None and inherited_radius < dbest[0]
     ):  # isLeaf = false and distance to boundary of cluster is less than the best distance so far
-
-        distances_to_cluster_boundary = [  # calculate the next cluster boundary distances
-            (
+        r1 = jax_apply_d1m2_to_d2m1(
+            node_list[node_index].val, node_list[node_index].val
+        )
+        r2 = jax_apply_d1m2_to_d2m1(node_list[node_index].val, T)
+        res_max = jax_apply_d1m2_to_d2m1(
+            node_list[node_index].val, node_list[node_index].val
+        )  # multiply by CTF
+        res1 = jax_apply_d1m2_to_d2m1(node_list[node_index].val, T)
+        d1 = difference(T.m1, res_max)
+        d2 = difference(res1, res_max)
+        if not (d2 < node_list[node_index].cluster_radius + d1):
+            return
+        # res2 = jax_apply_d1m2_to_d2m1(node_list[index].val, T) # multiply by CTF
+        # res3 = jax_apply_d1m2_to_d2m1(node_list[index].val, node_list[index].val)
+        # C3 = difference(jax_apply_d1m2_to_d2m1(node_list[index].val, T), jax_apply_d1m2_to_d2m1(node_list[index].val, node_list[index].val))
+        distances_to_cluster_boundary = (
+            [  # calculate the next cluster boundary distances
                 (
-                    
-                    node_list[node_index].cluster_radius/noise -
-                    difference(T.m1,  jax_apply_d1m2_to_d2m1(T, node_list[index].val), noise)
-                ),
-                index,
-            )
-            for i, index in enumerate(node_list[node_index].children)
-        ]
-        sortkey = lambda x: -x[0]
+                    (
+                        node_list[index].cluster_radius
+                        - difference(
+                            jax_apply_d1m2_to_d2m1(node_list[index].val, T),
+                            jax_apply_d1m2_to_d2m1(
+                                node_list[index].val, node_list[index].val
+                            ),
+                        )
+                    ),
+                    index,
+                )
+                for i, index in enumerate(node_list[node_index].children)
+            ]
+        )
+        sortkey = lambda x: x[0]
         distances_to_cluster_boundary = sorted(
             distances_to_cluster_boundary, key=sortkey
         )  # sort the cluster boundary distances in decreasing order to account for unbalanced tree
         if not len(distances_to_cluster_boundary):
-            return 
+            return
         prime_index = 0
         sub_indices = [
             rdx
             for rdx in range(1, len(distances_to_cluster_boundary))
             if distances_to_cluster_boundary[rdx][0] >= 0
         ]  # collect indices for other children where the boundary distance is less current child distance + sum of all other child distances
-        rad_s = lambda idx, pix: node_list[pix].cluster_radius/noise
+        rad_s = lambda idx, pix: node_list[
+            distances_to_cluster_boundary[pix][1]
+        ].cluster_radius
         search_node(
             T,
             distances_to_cluster_boundary[prime_index][1],
@@ -121,7 +143,7 @@ def search_node(
         )
 
         z = 0
-        while z < len(sub_indices):# and inherited_radius < mdist[0]/noise:
+        while z < len(sub_indices) and inherited_radius < dbest[0]:
             sub_index = sub_indices[z]
             z += 1
             search_node(
@@ -201,9 +223,7 @@ def _patient_tree_traversal(node_list, data_list, input_list, TAU=0.4):
             dbest = [float("Inf")]
             nn = [None]
             mdist = [float("Inf")]
-            init_d = k * jnp.log(node_list[0].cluster_radius / noise) - np.sqrt(
-                np.sum(((T.m1 - node_list[c].val.m1) / noise) ** 2)
-            )
+            init_d = 1
 
             search_node(
                 T,
@@ -225,7 +245,12 @@ def _patient_tree_traversal(node_list, data_list, input_list, TAU=0.4):
         if val[1] != None:
             likelihood_prime[i] = jnp.exp(
                 -1.0
-                * (difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[val[1]]), noise) ** 2)
+                * (
+                    difference(
+                        T.m1, jax_apply_d1m2_to_d2m1(T, data_list[val[1]]), noise
+                    )
+                    ** 2
+                )
                 / (2 * lambda_square)
             )
             likelihood_idx[i] = val[1]

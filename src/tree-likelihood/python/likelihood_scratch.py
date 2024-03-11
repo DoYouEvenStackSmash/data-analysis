@@ -36,8 +36,8 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
 
     # scipy.io.savemat("traversal_data.mat", {"greedy_likelihoods": greedy_likelihoods, "greedy_idx": gidx, "patient_likelihoods":patient_likelihoods, "patient_idx":pidx})
     # # print("naive")
-    # naive_likelihoods = alt_naive_likelihood(node_list, data_list, input_list)
-    # np.save("naive_likelihoods.npy", naive_likelihoods)
+    naive_likelihoods = alt_naive_likelihood(node_list, data_list, input_list)
+    np.save("naive_likelihoods.npy", naive_likelihoods)
     # print("bounded")
     # bounded_tree_likelihood(node_list, data_list, input_list)
     # sys.exit()
@@ -76,8 +76,10 @@ def compare_tree_likelihoods(node_list, data_list, input_list):
     np.save("naive_likelihoods.npy", naive_likelihood_mat)
     sys.exit()
 
+
 # def difference(m1, m2, noise=1):
 #     return jnp.sqrt(jnp.sum(((m1 - m2) / noise) ** 2))
+
 
 def alt_naive_likelihood(node_list, data_list, input_list):
     """Function which calculates the likelihood naively for all pairs
@@ -108,7 +110,14 @@ def alt_naive_likelihood(node_list, data_list, input_list):
                 jnp.exp(
                     -1.0
                     * (
-                        (complex_distance(difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[j]), noise) ** 2))
+                        (
+                            complex_distance(
+                                difference(
+                                    T.m1, jax_apply_d1m2_to_d2m1(T, data_list[j]), noise
+                                )
+                                ** 2
+                            )
+                        )
                         / (2 * lambda_square)
                     )
                 )

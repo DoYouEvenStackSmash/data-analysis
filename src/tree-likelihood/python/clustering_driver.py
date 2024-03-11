@@ -18,16 +18,18 @@ from tree_build import *
 import jax
 import jax.numpy as jnp
 
+
 def max_matrix(arr):
-    magnitudes = np.sqrt(np.real(arr)**2 + np.imag(arr)**2)
+    magnitudes = np.sqrt(np.real(arr) ** 2 + np.imag(arr) ** 2)
     max_magnitude = np.max(magnitudes, axis=0)
     return max_magnitude
+
 
 def param_loader(filename, count=1):
     return [{"id": i, "weight": 1} for i in range(count)]
 
 
-def hierarchify_wrapper(filename, k=3, R=30, C=1, param_file=None,ctf_file=None):
+def hierarchify_wrapper(filename, k=3, R=30, C=1, param_file=None, ctf_file=None):
     """Wrapper function for building a hierarchical clustering
 
     Args:
@@ -46,16 +48,18 @@ def hierarchify_wrapper(filename, k=3, R=30, C=1, param_file=None,ctf_file=None)
     M = data_loading_wrapper(filename)
     if ctf_file != None:
         ml = ctf_wrapper(ctf_file)[0]
-        for i,m in enumerate(M):
+        for i, m in enumerate(M):
             M[i].m2 = ml
     # print(type(M[0].m1))
     node_list, data_list, param_list = hierarchify(M, k, R, C)
     return node_list, data_list, param_list
 
+
 def ctf_wrapper(ctf_file):
     ctf_list = np.load(ctf_file)
     ctf_list = [max_matrix(ctf_list)]
     return ctf_list
+
 
 def param_wrapper(param_file):
     """Loads a list of parameters from a file. Unused
