@@ -17,7 +17,9 @@ def diff(m1, m2, noise):
     )
 
 
-def psearch_leaf(T, idx, data_list, dbest, nearest_neighbor, noise, taow=None,nnq=None):
+def psearch_leaf(
+    T, idx, data_list, dbest, nearest_neighbor, noise, taow=None, nnq=None
+):
     """Leaf search function for level patient search
 
     Args:
@@ -37,6 +39,7 @@ def psearch_leaf(T, idx, data_list, dbest, nearest_neighbor, noise, taow=None,nn
         dbest[0] = dist
         nearest_neighbor[0] = idx
 
+
 def qsearch_leaf(T, idx, data_list, dbest, nearest_neighbor, noise, TAU=1, nnq=None):
     if nnq == None:
         return
@@ -44,20 +47,25 @@ def qsearch_leaf(T, idx, data_list, dbest, nearest_neighbor, noise, TAU=1, nnq=N
     dist = diff(T.m1, res, noise)
     nnq.append((idx, dist))
 
-def check_ctf_bound(omega, mulk, yi,noise=1,tau=1e-6):
+
+def check_ctf_bound(omega, mulk, yi, noise=1, tau=1e-6):
     # R = centroid.cluster_radius
     # -2 * noise*log(tau)
     # print(difference(omega.val.m1, yi.m1) - difference(yi.m1, jax_apply_d1m2_to_d2m1(yi,mulk.val)))
-    if difference(omega.val.m1, yi.m1) > difference(yi.m1, jax_apply_d1m2_to_d2m1(yi,mulk.val)) - mulk.cluster_radius:
+    if (
+        difference(omega.val.m1, yi.m1)
+        > difference(yi.m1, jax_apply_d1m2_to_d2m1(yi, mulk.val)) - mulk.cluster_radius
+    ):
         return True
     return False
-    #(||yi - center|| - bound) ** 2 >=  -2 * noise*log(tau)
+    # (||yi - center|| - bound) ** 2 >=  -2 * noise*log(tau)
     # Cm = jax_apply_d1m2_to_d2m1(centroid.val, centroid.val)
     # max_filter_yi = jax_apply_d1m2_to_d2m1(centroid.val, T)
     # ||F(yi) - F(omega)|| >= ||F(yi) - Cphi*F(mulk)|| - max||Cmax*F(omega_j_in_cluster) - Cmax*F(mulk)||
     # || yi - xi|| >= ||yi - Cp * mulk|| - max_over_j||Cmax*F(omega_j_in_cluster) - Cmax*mulk||
     # || yi - xi|| >= difference(T.m1, jax_apply_d1m2_to_d2m1(T,mulk.val)) - mulk.cluster_radius
-  
+
+
 def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=None):
     """Calculates likelihood using a lexicographial breadth first traversal with a bound tau
 
@@ -82,14 +90,15 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
     k = len(node_list[0].children)
     tau_fac = 0.05
     # TAU = tau
-    
+
     for i, T in enumerate(input_list):
         TAU = 85
-        
+
         if tauprops != None:
             if tauprops[i] > 0:
-                    
-                TAU = difference(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[tauprops[i]]),noise).real
+                TAU = difference(
+                    T.m1, jax_apply_d1m2_to_d2m1(T, data_list[tauprops[i]]), noise
+                ).real
                 # print(TAU)
         taow = [TAU]
         # rq
@@ -104,7 +113,7 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
         nnq = []
         for c in node_list[0].children:
             cq.append((c, -node_list[c].cluster_radius))
-            
+
             sq.extend(sorted(cq, key=sortkey))
             cq = deque()
             dq = deque()
@@ -128,10 +137,12 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                             print(node_list[node_index].data_refs)
                         for c in node_list[node_index].children:
                             # if data_refs is none, this is a leaf node
-                            
-                            if node_list[c].data_refs != None:                               
+
+                            if node_list[c].data_refs != None:
                                 for index in node_list[c].data_refs:
-                                    psearch_leaf(T, index, data_list, dbest, nn, noise, taow,nnq)
+                                    psearch_leaf(
+                                        T, index, data_list, dbest, nn, noise, taow, nnq
+                                    )
                                     taow[0] = min(taow[0], dbest[0])
                                 if FIRST:
                                     # reversed(sq)
@@ -139,31 +150,33 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                                     # break
                                 continue
                             # An additional check for simple paths.
-                            # If cluster radius is zero, this is a leaf node. 
+                            # If cluster radius is zero, this is a leaf node.
                             elif node_list[c].cluster_radius == 0:
-                                
                                 for index in node_list[c].children[0].data_refs:
-                                    psearch_leaf(T, index, data_list, dbest, nn, noise, taow,nnq)
+                                    psearch_leaf(
+                                        T, index, data_list, dbest, nn, noise, taow, nnq
+                                    )
                                     taow[0] = min(taow[0], dbest[0])
                                 if FIRST:
                                     # reversed(sq)
                                     FIRST = False
                                     # break
-                                continue                  
-                        
+                                continue
+
                             # geometry things
-                            if check_ctf_bound(node_list[c],node_list[node_index], T, noise):
-                                cq.append((c,1))                                  
+                            if check_ctf_bound(
+                                node_list[c], node_list[node_index], T, noise
+                            ):
+                                cq.append((c, 1))
                             else:
                                 # print("fire")
                                 pass
 
-                    
                     if not FIRST and not FIRED:
                         FIRED = True
                         while cq[0][0] != None:
                             print("fir2e")
-                            sq,append(cq.popleft())
+                            sq, append(cq.popleft())
                             dq.append(depth_counter)
                         # reversed(sq)
                         # reversed(dq)
@@ -171,19 +184,20 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                     # pop the none off of the queue to signify end of level
                     cq.popleft()
                     if len(cq):
-                        
                         # depth_counter
-                        if depth_counter > 2: # if depth exceeds 2, start doing lexBFS
+                        if depth_counter > 2:  # if depth exceeds 2, start doing lexBFS
                             val = len(sq)
                             # print(cq)
-                            sq.extend(sorted(cq, key=sortkey)[0:max(k,int(len(cq)/3))])
+                            sq.extend(
+                                sorted(cq, key=sortkey)[0 : max(k, int(len(cq) / 3))]
+                            )
                             dq.extend([depth_counter for _ in range(len(sq) - val)])
                             cq = deque()
                         else:
                             cq = deque(sorted(cq, key=sortkey))
                             depth_counter += 1
                             cq.append((None, None))
-                
+
                 # lexicographical bfs
                 while len(sq):
                     # print(sq)
@@ -195,7 +209,7 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                         cq.append((None, None))
 
                         break
-                        
+
                     # print(len(sq))
 
                     # print(depth_counter)
@@ -205,12 +219,11 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                         while len(dq) > 1 and depth_counter == dq[-1]:
                             depth_counter = dq.pop()
                             cq.append(sq.pop())
-                            counter +=1
+                            counter += 1
                     else:
                         depth_counter = dq.pop()
                         cq.append(sq.pop())
 
-                    
                     # if not len(dq) and len(sq)
                     # sn_index, Rprev = sq.pop()
                     # cq.append(sq.pop())
@@ -218,8 +231,7 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
                     #     print(counter)
                     cq.append((None, None))
                     break
-                    
-                    
+
             dbests.append((nn[0], dbest[0]))
         sortkey2 = lambda x: x[1]
         dbests = sorted(dbests, key=sortkey2)
@@ -231,7 +243,12 @@ def level_patient_search(node_list, data_list, input_list, tau=0.4, tauprops=Non
             continue
         likelihood_prime[i] = jnp.exp(
             -1.0
-            * (difference_calculation(T.m1, jax_apply_d1m2_to_d2m1(T, data_list[nns[0]]), noise) ** 2)
+            * (
+                difference_calculation(
+                    T.m1, jax_apply_d1m2_to_d2m1(T, data_list[nns[0]]), noise
+                )
+                ** 2
+            )
             / (2 * lambda_square)
         )
         likelihood_idx[i] = nns[0]

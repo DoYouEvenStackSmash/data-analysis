@@ -145,7 +145,9 @@ def construct_tree(M, k=3, R=30, C=1):
                 if len(data_ref_clusters[x]) > 1:
                     dst = np.array(
                         [
-                            jax_apply_d1m2_to_d2m1(data_store[j], data_store[j]).astype(jnp.float32).ravel()
+                            jax_apply_d1m2_to_d2m1(data_store[j], data_store[j])
+                            .astype(jnp.float32)
+                            .ravel()
                             for j in data_ref_clusters[x]
                         ]
                     )
@@ -153,19 +155,22 @@ def construct_tree(M, k=3, R=30, C=1):
                     #     jax_apply_d1m2_to_d2m1(data_store[j], data_store[j])
                     #     for j in data_ref_clusters[x]
                     # ]
-                    # node_list[i].cluster_radius = float(
-                    #     jnp.sqrt(
-                    #         jnp.sum((jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val).flatten() - dst) ** 2)
-                    #     ).astype(jnp.float32)
-                    # )
-                    
-                    center = jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val).flatten()
-                    for a, d in enumerate(dst):
-                        node_list[i].cluster_radius = float(
-                            max(
-                                jnp.linalg.norm(center - d)**2, node_list[i].cluster_radius
-                            )
-                        )
+                    node_list[i].cluster_radius = float(
+                        jnp.sqrt(
+                            jnp.sum((jax_apply_d1m2_to_d2m1(node_list[i].val, node_list[i].val).flatten() - dst) ** 2)
+                        ).astype(jnp.float32)
+                    )
+
+                    # center = jax_apply_d1m2_to_d2m1(
+                    #     node_list[i].val, node_list[i].val
+                    # ).flatten()
+                    # for a, d in enumerate(dst):
+                    #     node_list[i].cluster_radius = float(
+                    #         max(
+                    #             jnp.linalg.norm(center - d) ** 2,
+                    #             node_list[i].cluster_radius,
+                    #         )
+                    #     )
 
         # perform k medioids clustering to ensure that the center is within the input data
         else:
