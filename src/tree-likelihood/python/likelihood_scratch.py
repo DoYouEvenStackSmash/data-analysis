@@ -9,6 +9,7 @@ from bounded_traversal import *
 from likelihood_helpers import *
 from level_patient_search import *
 from impatient_traversal import *
+from level_patient_likelihood import *
 import scipy.io
 
 
@@ -30,8 +31,8 @@ def testbench_likelihood(node_list, data_list, input_list, input_noise=None):
     # patient_likelihoods, pidx = patient_tree_likelihood(
     #     node_list, data_list, input_list
     # )
-    patient_likelihoods, pidx = level_patient_search(
-        node_list, data_list, input_list, 0.1
+    patient_likelihoods, pidx = level_patient_likelihood(
+        node_list, data_list, input_list
     )
 
     # scipy.io.savemat("traversal_data.mat", {"greedy_likelihoods": greedy_likelihoods, "greedy_idx": gidx, "patient_likelihoods":patient_likelihoods, "patient_idx":pidx})
@@ -97,6 +98,7 @@ def alt_naive_likelihood(node_list, data_list, input_list):
     # minst = np.zeros((len(input_list)), dtype=np.float32)
     # ld = len(data_list)
     noise = calculate_noise(input_list)
+    # noise = 0.2597561
     # print(noise)
     lambda_square = noise**2
     print(lambda_square)
@@ -113,9 +115,11 @@ def alt_naive_likelihood(node_list, data_list, input_list):
                         (
                             complex_distance(
                                 difference(
-                                    T.m1, jax_apply_d1m2_to_d2m1(T, data_list[j]), noise
+                                    T.m1,
+                                    conv_jax_apply_d1m2_to_d2m1(T, data_list[j]),
+                                    noise,
                                 )
-                                ** 2
+                            
                             )
                         )
                         / (2 * lambda_square)
