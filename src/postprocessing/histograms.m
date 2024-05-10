@@ -3,7 +3,8 @@
 path = '\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\tree-likelihood\python\None_likelihoods.csv'
 % files = []
 % search_tree_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\search_tree_likelihoods.csv');
-% global_likelihoods = readtable('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\all_pairs_likelihoods.csv');
+% global_likelihoods = readtab
+% le('\\wsl.localhost\ubuntu\home\aroot\stuff\data-analysis\src\python-processing\all_pairs_likelihoods.csv');
 likelihoods = readtable(path);
 
 % Extract single point likelihood and area likelihood data
@@ -107,7 +108,7 @@ centers = linspace(h.BinLimits(1)+gap,h.BinLimits(2)-gap,length(h.Values));
 % centers = E(1:end-1) + diff(E)/2;
 
 % Perform polynomial fit
-degree = 9; % Choose the degree of the polynomial
+degree = 7; % Choose the degree of the polynomial
 p = polyfit(centers, counts, degree); % Fit polynomial
 x_fit = linspace(min(centers), max(centers), 150); % Points for fitting line
 y_fit = polyval(p, x_fit); % Evaluate polynomial at x_fit
