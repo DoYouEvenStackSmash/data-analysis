@@ -20,8 +20,8 @@ print(padded_data)
 idx = lambda kt,level,k,local_addr: kt[level] + k**level * (local_addr)
 print(terms)
 local_idx_q = deque([0,1,2,None])
-base_q = deque([1,1,1,None])
-curr_depth = 1
+base_q = deque([0,0,0,None])
+# curr_depth = 1
 
 # print(len(padded_data))
 k=3
@@ -30,9 +30,9 @@ while len(local_idx_q):
     local_addr = local_idx_q.popleft()
     parent_idx = base_q.popleft()
     # print(local_addr, parent_addr)
-    base_addr = terms[curr_depth]
+    base_addr = terms[parent_idx]
     # offt = int((terms[curr_depth-1] - 1) / k)
-    curr_addr = base_addr + (local_addr) * k
+    curr_addr = base_addr + (local_addr)*k
 
     
     win_start = curr_addr
@@ -47,11 +47,12 @@ while len(local_idx_q):
       if elem == None:
         continue
       # print(win_start,win_end)
-      padded_data[win_start+i] =i
+      padded_data[win_start+i] =curr_addr+i if padded_data[win_start+i] == 0 else -1
       # print()
-      local_idx_q.extend([curr_addr+i+1])
-      base_q.extend([i])
-  curr_depth += 1
+      val = (i%k + i)*k
+      local_idx_q.extend([i+base_addr*parent_idx])
+      base_q.extend([(parent_idx+1)])
+  # curr_depth += 1
 
   
   local_idx_q.popleft()
