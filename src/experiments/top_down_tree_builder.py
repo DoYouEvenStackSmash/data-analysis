@@ -188,10 +188,44 @@ def check_count(arr):
     count += 1
   return count
 
+def level_order_traversal(tree_dictionary, tree_idx, global_data,N,k):
+  gd = np.array(global_data)
+  tl = tree_dictionary
+  print(gd)
+  node_q = deque([N+i for i in range(k)])
+  node_q.append(None)
+  lc = 0
+  while len(node_q):
+    lvals = []
+    while node_q[0] != None:
+      if node_q[0] in tree_dictionary:
+        v = node_q.popleft()
+        if len(tree_dictionary[v]) == 1 and tree_dictionary[v][0] < N:
+          v = tree_dictionary[v][0]
+        lvals.extend([v])
+      else:
+        print("???\n\n\n")
+        print(node_q.popleft())
+        
+
+    lc += 1
+    print(f'{lc}-{lvals}')
+    images = []    
+    if len(lvals):
+      images.extend(gd[np.array(lvals)])
+    print(images)
+    for i in lvals:
+      if i in tree_dictionary:
+        node_q.extend(tree_dictionary[i])
+    node_q.popleft()
+    if len(node_q):
+      node_q.append(None)
+  
+
 def main():
-    N = 5000
-    data = np.random.randn(N, 16384)
-    k=10
+    N = 20
+    data = np.random.randn(N, 20)
+    k=3
     tree_idx, global_data, kt, row_lens = scatter_tree_build(data,k)
     tree_dictionary = gather_tree_dictionary(tree_idx, global_data, N, k, kt, row_lens)
     print(f'Valid_CHECK: {sum(tree_idx[0:N])}')
@@ -201,7 +235,14 @@ def main():
     print(f'TREE NODES: {treesum}')
     print(f'TREE REF ARRAY: {d1}/{len(tree_idx[N:])}  @ {d1/len(tree_idx[N:])} density')
     print(f'TREE DATA ARRAY:{d2}/{len(global_data[N:])} @ {d2/len(global_data[N:])} density')
-    
+    print(f'+{"="*50}')
+    for i,e in enumerate(global_data):
+      if i == N:
+        print(f'+{"="*50}')
+
+      print(f'| {i}:\t{tree_idx[i]}\t{global_data[i]}')
+    print(tree_dictionary)
+    level_order_traversal(tree_dictionary, tree_idx,global_data, N,k)
 
 
 if __name__ == "__main__":
