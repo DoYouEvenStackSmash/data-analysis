@@ -25,7 +25,7 @@ from collections import deque
 
 def tree_build(N ,k=2):
 
-  data = np.random.randn(N,256)
+  data = np.random.randn(N,2)*100
   data = np.array([i.ravel() for i in data])
   print(len(data))
   o_data_indices = [i for i in range(N)]
@@ -57,7 +57,7 @@ def tree_build(N ,k=2):
   print(sum(row_lens[0:1]))
   print(kt)
   global_data = [None]* (len(data) + (kt[-1]))# - len(data)))
-  tree_idx = [None] * ((kt[-1]))# - len(data)))
+  tree_idx = [None] * (len(data) + (kt[-1]))# - len(data)))
   for i,d in enumerate(data):
     global_data[i] = data[i]
   # print(len(global_data))
@@ -95,7 +95,7 @@ def tree_build(N ,k=2):
       kmeans = KMeans(n_clusters=k,init='k-means++')
       labels = kmeans.fit_predict(data[data_indices])
       # centroids = kmeans.cluster_centers_
-      tree_start = wstart - base_offt
+      tree_start = wstart
       # labels = kmeans.fit_predict(data[data_indices])
       if wstart+len(kmeans.cluster_centers_) >= len(global_data):
         global_data.extend([None] * (wstart + len(kmeans.cluster_centers_) - len(global_data) + k))
@@ -110,7 +110,7 @@ def tree_build(N ,k=2):
           
           if len(elem) <= k:
             # tree_idx[tree_start + i] = i
-            _base_addr = sum(row_lens[0:curr_level+1])
+            _base_addr = sum(row_lens[0:curr_level+1]) + base_offt
             _wbin = (wbin+i) * k
             _wstart = _base_addr + _wbin
             if _wstart > 3000:
@@ -144,13 +144,13 @@ def tree_build(N ,k=2):
 def level_order_traversal(tree_idx,global_data, base_offt,k,kt,row_lens):
 
   
-  new_data_q = deque([i for i in range(1)])
+  new_data_q = deque([i for i in range(2)])
   new_data_q.append(None)
-  base_q = deque([0 for _ in range(1)])
+  base_q = deque([0 for _ in range(2)])
   base_q.append(None)
   depth = 1
-
-  
+  tree_dict = {}
+  next_addr = lambda curr_level, wbin,i: sum(row_lens[0])
   # print(base_str)
   while len(new_data_q):
     while new_data_q[0] != None:
@@ -162,21 +162,28 @@ def level_order_traversal(tree_idx,global_data, base_offt,k,kt,row_lens):
       curr_level = base_q.popleft()
       
       wbin = (parent_idx) * k
-      base_addr = sum(row_lens[0:curr_level])
+      base_addr = sum(row_lens[0:curr_level]) + base_offt
       wstart = base_addr + wbin
       wend = wstart + k
-      
+
       # win_end = min(len(glowstart + k
       # print(wstart)
       for i,e in enumerate(tree_idx[wstart:wend]):
+        child_idx = []
         if e == None:
           continue
         if e < 0:
+          child_idx.append(-1*(e+1))
+          
           # print("DATA" + f'{wstart+i}')
           # tree_idx[wstart+i] = 
           print(f'{wstart+i}->DATA{-1*(e+1)};')
           # tree_idx[-1 * (e + 1)] = 1 if tree_idx[-1 * (e + 1)] == None else tree_idx[-1 * (e + 1)] + 1
         else:
+          for x in range(k):
+            addr = sum(row_lens[0:curr_level+1]) + base_offt + (wbin+i) * k + x
+            if tree_idx[addr] != None:
+              child_idx.append(sum(row_lens[0:curr_level+1]) + base_offt + (wbin+i) * k + x)
         #   # new_data_q.extend([i])
         #   # base_q.extend([next_base])
         # else:
@@ -194,20 +201,32 @@ def level_order_traversal(tree_idx,global_data, base_offt,k,kt,row_lens):
           
           new_data_q.extend([wbin+i])
           base_q.extend([curr_level+1])
+        if len(child_idx) and wstart+i not in tree_dict:
+          tree_dict[wstart+i] = []
+          tree_dict[wstart+i].extend(child_idx)
     # depth+=1
     new_data_q.popleft()
     base_q.popleft()
     if len(new_data_q):
       new_data_q.append(None)
       base_q.append(None)
+  return tree_dict
     
 def main():
-  tb,gd,kt,rl = tree_build(3000,3)
+  tb,gd,kt,rl = tree_build(9,2)
   print(len(tb))
   # print(terms)
-  level_order_traversal(tb, gd,3000, 3,kt,rl)
+  td = level_order_traversal(tb, gd,9, 2,kt,rl)
+  print(td)
   # print(tb)
   # print(global_data)
+  print(f'+{"="*50}')
+  for i,e in enumerate(gd):
+    if i == 9:
+      print(f'+{"="*50}')
+      
+    print(f'| {i}:\t{tb[i]}\t{gd[i]}')
+    
   print(len(tb))
 if __name__ == '__main__':
   main()
