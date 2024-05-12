@@ -36,7 +36,7 @@ while len(parent_idx_q):
   while parent_idx_q[0] != None:
     parent_idx = parent_idx_q.popleft()
     curr_level = parent_level_q.popleft()
-    wbin = (parent_idx) * k + 1
+    wbin = (parent_idx) * k+ 1
     base_addr = row_lens[curr_level]
     wstart = base_addr + wbin
     print(wstart,end=',')
