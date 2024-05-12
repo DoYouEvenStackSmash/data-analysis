@@ -223,9 +223,9 @@ def level_order_traversal(tree_dictionary, tree_idx, global_data,N,k):
   
 
 def main():
-    N = 20
-    data = np.random.randn(N, 20)
-    k=3
+    N = 200000
+    data = np.random.randn(N, 2)
+    k=4
     tree_idx, global_data, kt, row_lens = scatter_tree_build(data,k)
     tree_dictionary = gather_tree_dictionary(tree_idx, global_data, N, k, kt, row_lens)
     print(f'Valid_CHECK: {sum(tree_idx[0:N])}')
@@ -235,14 +235,14 @@ def main():
     print(f'TREE NODES: {treesum}')
     print(f'TREE REF ARRAY: {d1}/{len(tree_idx[N:])}  @ {d1/len(tree_idx[N:])} density')
     print(f'TREE DATA ARRAY:{d2}/{len(global_data[N:])} @ {d2/len(global_data[N:])} density')
-    print(f'+{"="*50}')
-    for i,e in enumerate(global_data):
-      if i == N:
-        print(f'+{"="*50}')
+    # print(f'+{"="*50}')
+    # for i,e in enumerate(global_data):
+    #   if i == N:
+    #     print(f'+{"="*50}')
 
-      print(f'| {i}:\t{tree_idx[i]}\t{global_data[i]}')
-    print(tree_dictionary)
-    level_order_traversal(tree_dictionary, tree_idx,global_data, N,k)
+    #   print(f'| {i}:\t{tree_idx[i]}\t{global_data[i]}')
+    # print(tree_dictionary)
+    # level_order_traversal(tree_dictionary, tree_idx,global_data, N,k)
 
 
 if __name__ == "__main__":
