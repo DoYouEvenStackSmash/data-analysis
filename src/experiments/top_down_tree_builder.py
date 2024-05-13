@@ -2,14 +2,18 @@ from sklearn.cluster import KMeans
 import numpy as np
 from collections import deque
 
-def get_data_terms(data, k=2):
-    kterms = np.arange(15)
+
+def get_data_terms(data, k=2,max_t = 15):
+    # initialize kvalues
+    kterms = np.arange(max_t)
     terms = []
     i = 0
     a = 1
+    # populate terms with geometric series
     while i == 0 or terms[-1] <= len(data):
         terms.extend([np.sum(a * k ** kterms[0 : i + 1])])
         i += 1
+    # add one extra to prevent corruption
     terms.extend([np.sum(a * k ** kterms[0 : i + 1])])
     return terms
 
@@ -89,7 +93,7 @@ def scatter_tree_build(data, k=2):
                     # we may need to realloc.
                     # TODO: this can introduce bad behaviors, should be looked at carefully
                     if _wstart + len(elem) >= len(tree_idx):
-                        tree_idx.extend([None] * (_wstart+len(elem) - len(tree_idx)))
+                        tree_idx.extend([None] * (_wstart + len(elem) - len(tree_idx)))
                         global_data.extend([None] * (len(tree_idx) - len(global_data)))
                     # assign leaf indices as negative numbers to indicate special status
                     for j, e in enumerate(elem):
@@ -180,67 +184,134 @@ def gather_tree_dictionary(tree_idx, global_data, base_offt, k, kt, row_lens):
             base_addr_q.append(None)
     return tree_dict
 
+
 def check_count(arr):
-  count = 0
-  for i in range(len(arr)):
-    if type(arr[i]) == type(None):
-      continue
-    count += 1
-  return count
+    count = 0
+    for i in range(len(arr)):
+        if type(arr[i]) == type(None):
+            continue
+        count += 1
+    return count
 
-def level_order_traversal(tree_dictionary, tree_idx, global_data,N,k):
-  gd = np.array(global_data)
-  tl = tree_dictionary
-  print(gd)
-  node_q = deque([N+i for i in range(k)])
-  node_q.append(None)
-  lc = 0
-  while len(node_q):
-    lvals = []
-    while node_q[0] != None:
-      if node_q[0] in tree_dictionary:
-        v = node_q.popleft()
-        if len(tree_dictionary[v]) == 1 and tree_dictionary[v][0] < N:
-          v = tree_dictionary[v][0]
-        lvals.extend([v])
-      else:
-        print("???\n\n\n")
-        print(node_q.popleft())
-        
 
-    lc += 1
-    print(f'{lc}-{lvals}')
-    images = []    
-    if len(lvals):
-      images.extend(gd[np.array(lvals)])
-    print(images)
-    for i in lvals:
-      if i in tree_dictionary:
-        node_q.extend(tree_dictionary[i])
-    node_q.popleft()
-    if len(node_q):
-      node_q.append(None)
-  
+def calculate_distance(T, S, noise):
+    return np.sqrt(np.sum((T - S) ** 2))
+
+
+def level_order_traversal(tree_dictionary, tree_idx, global_data, N, k):
+    # create numpy array for indexing
+    gd = np.array(global_data)
+    # initialize node queue with initial indices
+    node_q = deque([N + i for i in range(k)])
+    node_q.append(None)
+    # level counter
+    lc = 0
+    # perform level order traversal
+    while len(node_q):
+        # storage array for level values
+        # NOTE: NOT storage for images. not immediately.
+        level_vals = []
+        while node_q[0] != None:
+            # make sure node is actually a real node
+            if node_q[0] in tree_dictionary:
+                val = node_q.popleft()
+                # if node is a direct path to a leaf, go to the leaf
+                if len(tree_dictionary[v]) == 1 and tree_dictionary[v][0] < N:
+                    v = tree_dictionary[v][0]
+                level_vals.extend([v])
+            else:
+                # bypass any weird phantom nodes
+                pass
+                # print("???\n\n\n")
+                # print(node_q.popleft())
+        lc += 1
+        # print(f"{lc}-{level_vals}")
+        # init storage array for images
+        images = []
+        # populate image array with actual images(centroids and leaves)
+        # if len(level_vals):
+        #     images.extend(gd[np.array(level_vals)])
+        # print(images)
+        # add new references to node q if they are not phantom nodes
+        for i in level_vals:
+            if i in tree_dictionary:
+                node_q.extend(tree_dictionary[i])
+        # handle end of level
+        node_q.popleft()
+        if len(node_q):
+            node_q.append(None)
+
+def gather_clustered_data(tree_dictionary, global_data, N, k):
+    #puts all members of a cluster into the same array
+    # initialize global data as numpy array for indexing
+    gd = np.array([i for i in global_data], dtype=object)
+    # this will hold the clusters
+    clusters = []
+
+    # each element in the tree dictionary is (arguably) a cluster
+    for elem in list(tree_dictionary):
+        point_array = []
+        # if elem is a leaf, pass it through
+        if elem in tree_dictionary and len(tree_dictionary[elem]) == 1:
+            elem = tree_dictionary[elem][0]
+        if elem < N: # if elem < N, it's a leaf
+            point_array.append(elem)
+            clusters.append(gd[np.array(point_array)])
+            continue
+        # normal level order traversal
+        node_q = deque([elem, None])
+        while len(node_q):
+            while node_q[0] != None:
+                if node_q[0] in tree_dictionary:
+                    v = node_q.popleft()
+                    if len(tree_dictionary[v]) == 1 and tree_dictionary[v][0] < N:
+                        v = tree_dictionary[v][0]
+                    point_array.append(v)
+                    if v >= N:
+                        node_q.extend(tree_dictionary[v])
+                else:
+                    print("???\n\n\n")
+                    print(node_q.popleft())
+
+            node_q.popleft()
+            if len(node_q):
+                node_q.append(None)
+        # gather cluster values
+        clusters.append(gd[np.array(point_array)])
+    return clusters
+
+from debugging import *
 
 def main():
-    N = 200000
+    N = 20
     data = np.random.randn(N, 2)
-    k=4
-    tree_idx, global_data, kt, row_lens = scatter_tree_build(data,k)
+    k = 4
+    tree_idx, global_data, kt, row_lens = scatter_tree_build(data, k)
     tree_dictionary = gather_tree_dictionary(tree_idx, global_data, N, k, kt, row_lens)
-    print(f'Valid_CHECK: {sum(tree_idx[0:N])}')
+    print(f"Valid_CHECK: {sum(tree_idx[0:N])}")
     d1 = check_count(tree_idx[N:])
     d2 = check_count(global_data[N:])
-    treesum = len(tree_dictionary) + sum([len([i for i in v if i > N]) for k,v in tree_dictionary.items()])
-    print(f'TREE NODES: {treesum}')
-    print(f'TREE REF ARRAY: {d1}/{len(tree_idx[N:])}  @ {d1/len(tree_idx[N:])} density')
-    print(f'TREE DATA ARRAY:{d2}/{len(global_data[N:])} @ {d2/len(global_data[N:])} density')
-    # print(f'+{"="*50}')
-    # for i,e in enumerate(global_data):
-    #   if i == N:
-    #     print(f'+{"="*50}')
+    treesum = len(tree_dictionary) + sum(
+        [len([i for i in v if i > N]) for k, v in tree_dictionary.items()]
+    )
+    print(f"TREE NODES: {treesum}")
+    print(f"TREE REF ARRAY: {d1}/{len(tree_idx[N:])}  @ {d1/len(tree_idx[N:])} density")
+    print(
+        f"TREE DATA ARRAY:{d2}/{len(global_data[N:])} @ {d2/len(global_data[N:])} density"
+    )
+    clusters = gather_clustered_data(tree_dictionary, global_data, N, k)
+    print(clusters)
+    draw_cluster_points(clusters)
+    f = open("tree_stats.txt",'w')
+    f.write(f"N={N},k={k}\n")
 
-    #   print(f'| {i}:\t{tree_idx[i]}\t{global_data[i]}')
+    f.write(f'+{"="*50}\n')
+    for i,e in enumerate(global_data):
+      if i == N:
+        f.write(f'+{"="*50}\n')
+
+      f.write(f'| {i}:\t{tree_idx[i]} \t{global_data[i]}\n')
+    f.close()
     # print(tree_dictionary)
     # level_order_traversal(tree_dictionary, tree_idx,global_data, N,k)
 
