@@ -4,6 +4,9 @@ import torch
 from collections import deque
 from fast_pytorch_kmeans import KMeans
 
+from aux_functions import *
+from debugging import *
+from torch_traversal import *
 
 def get_data_terms(data, k=2,max_t = 15):
     # initialize kvalues
@@ -18,7 +21,6 @@ def get_data_terms(data, k=2,max_t = 15):
     # add one extra to prevent corruption
     terms.extend([np.sum(a * k ** kterms[0 : i + 1])])
     return terms
-
 
 def scatter_tree_build(data, k=2):
     # TODO: preprocess data
@@ -46,7 +48,7 @@ def scatter_tree_build(data, k=2):
     global_data[0 : 0 + len(data)] = data
 
     base_offt = len(data)
-
+    counter = 0
     while len(local_block_q):
         while local_block_q[0] != None:
             # pop elements from queues
@@ -70,9 +72,8 @@ def scatter_tree_build(data, k=2):
             #     for i in range(len(data_indices)):
             #         tree_idx[wstart + i] = -1 * (data_indices[i] + 1)
             #     continue
-
+            
             # perform kmeans
-
             kmeans = KMeans(n_clusters=k,max_iter =300)
             labels = kmeans.fit_predict(data[data_indices])
 
@@ -84,28 +85,22 @@ def scatter_tree_build(data, k=2):
             idx = []
             for i, c in enumerate(kmeans.centroids):
                 if torch.all(torch.eq(c, 0)):
-                    # skipped.append(i)
-                    # hold -=1
-                    # last = i
                     continue
                 sm[i] = len(idx)
                 idx.append(i)
-                print(wstart)
-                print(len(global_data))
                 global_data[wstart + sm[i]] = c
                 tree_idx[wstart + sm[i]] = sm[i]
             # collect cluster members
             associated_data = [deque() for _ in range(len(kmeans.centroids))]
-            print(idx)
             for i, elem in enumerate(labels):
                 associated_data[elem].append(data_indices[i])
+            
             # calculate radii
-
             for i,c in enumerate(kmeans.centroids):
                 if torch.all(torch.eq(c, 0)):
                     continue
                 # print(associated_data[i])
-                radius_data[wstart+sm[i]] = torch.max(calculate_distance(c, data[torch.tensor(associated_data[i])],0))
+                radius_data[wstart+sm[i]] = torch.max(calculate_radius(c, data[torch.tensor(associated_data[i])],0))
             # handle each cluster
             for i,elem in enumerate(associated_data):
                 if len(elem) == 0:
@@ -146,7 +141,6 @@ def scatter_tree_build(data, k=2):
             data_idx_q.append(None)
 
     return tree_idx, global_data,radius_data, kt, row_lens
-
 
 def gather_tree_dictionary(tree_idx, global_data, base_offt, k, kt, row_lens):
     local_block_q = deque([i for i in range(1)])
@@ -215,106 +209,6 @@ def gather_tree_dictionary(tree_idx, global_data, base_offt, k, kt, row_lens):
             base_addr_q.append(None)
     return tree_dict
 
-
-def check_count(arr):
-    count = 0
-    for i in range(len(arr)):
-        if type(arr[i]) == type(None):
-            continue
-        count += 1
-    return count
-
-def repl_tensor(arr,flag):
-    count = 0
-    for i in range(len(arr)):
-        if type(arr[i]) == type(None):
-            arr[i] = torch.empty(arr[0].shape)
-            continue
-        count += 1
-    return count
-
-def level_order_traversal(tree_dictionary, tree_idx, global_data, N, k):
-    # create numpy array for indexing
-    gd = torch.tensor(global_data)
-    # initialize node queue with initial indices
-    node_q = deque([N + i for i in range(k)])
-    node_q.append(None)
-    # level counter
-    lc = 0
-    # perform level order traversal
-    while len(node_q):
-        # storage array for level values
-        # NOTE: NOT storage for images. not immediately.
-        level_vals = []
-        while node_q[0] != None:
-            # make sure node is actually a real node
-            if node_q[0] in tree_dictionary:
-                val = node_q.popleft()
-                # if node is a direct path to a leaf, go to the leaf
-                if len(tree_dictionary[v]) == 1 and tree_dictionary[v][0] < N:
-                    v = tree_dictionary[v][0]
-                level_vals.extend([v])
-            else:
-                # bypass any weird phantom nodes
-                pass
-                # print("???\n\n\n")
-                # print(node_q.popleft())
-        lc += 1
-        # print(f"{lc}-{level_vals}")
-        # init storage array for images
-        images = []
-        # populate image array with actual images(centroids and leaves)
-        # if len(level_vals):
-        #     images.extend(gd[torch.tensor(level_vals)])
-        # print(images)
-        # add new references to node q if they are not phantom nodes
-        for i in level_vals:
-            if i in tree_dictionary:
-                node_q.extend(tree_dictionary[i])
-        # handle end of level
-        node_q.popleft()
-        if len(node_q):
-            node_q.append(None)
-
-def gather_clustered_data(tree_dictionary, global_data, N, k):
-    #puts all members of a cluster into the same array
-    # initialize global data as numpy array for indexing
-    gd = torch.tensor([i for i in global_data], dtype=object)
-    # this will hold the clusters
-    clusters = []
-
-    # each element in the tree dictionary is (arguably) a cluster
-    for elem in list(tree_dictionary):
-        point_array = []
-        # if elem is a leaf, pass it through
-        if elem in tree_dictionary and len(tree_dictionary[elem]) == 1:
-            elem = tree_dictionary[elem][0]
-        if elem < N: # if elem < N, it's a leaf
-            point_array.append(elem)
-            clusters.append(gd[torch.tensor(point_array)])
-            continue
-        # normal level order traversal
-        node_q = deque([elem, None])
-        while len(node_q):
-            while node_q[0] != None:
-                if node_q[0] in tree_dictionary:
-                    v = node_q.popleft()
-                    if len(tree_dictionary[v]) == 1 and tree_dictionary[v][0] < N:
-                        v = tree_dictionary[v][0]
-                    point_array.append(v)
-                    if v >= N:
-                        node_q.extend(tree_dictionary[v])
-                else:
-                    print("???\n\n\n")
-                    print(node_q.popleft())
-
-            node_q.popleft()
-            if len(node_q):
-                node_q.append(None)
-        # gather cluster values
-        clusters.append(gd[torch.tensor(point_array)])
-    return clusters
-
 def tree_minimize(data, tree_dict, tree_idx, global_data, radius_data, N, k):
     new_tree_dict = {}
     new_global_data = []
@@ -335,8 +229,7 @@ def tree_minimize(data, tree_dict, tree_idx, global_data, radius_data, N, k):
             new_global_data.append(global_data[k])
             new_tree_dict[node_lookup[k]] = []
             new_radius_data.append(radius_data[k])
-    # print(tree_dict)
-    # print(new_tree_dict)
+
     for k,v in tree_dict.items():
         if k in node_blacklist:
             continue
@@ -347,84 +240,5 @@ def tree_minimize(data, tree_dict, tree_idx, global_data, radius_data, N, k):
                 if val not in node_lookup:
                     continue
                 new_tree_dict[node_lookup[k]].append(node_lookup[val])
-                # .append(node_lookup[val])
     return new_tree_dict,new_global_data,new_radius_data
             
-r2c = lambda x: x.view(torch.cfloat).view(-1, 128, 128)
-
-from debugging import *
-from torchsearch import *
-c2r = lambda x: (
-    torch.stack((x.real, x.imag), dim=-1)
-    if x.dtype == torch.complex64
-    else torch.stack((x.real, 0), dim=-1)
-)
-def main():
-    N = 200
-    D = 128
-    simulated = torch.randn(N,D*D,dtype=torch.complex64)#torch.tensor([i.ravel() for i in np.random.rand(N, 16384)])
-    experimental = torch.randn(N,D*D,dtype=torch.complex64)#torch.tensor([i.ravel() for i in np.random.rand(N, 16384)])
-    ctfs = torch.randn(N,D*D,dtype=torch.complex64)
-    experimental = c2r(experimental).view(experimental.shape[0], -1)
-    simulated = c2r(simulated).view(simulated.shape[0], -1)
-    # noises = c2r(noises).view(noises.shape[0], -1)
-    ctfs = c2r(ctfs).view(ctfs.shape[0], -1)
-    print(ctfs.shape)
-    #d = data#torch.tensor([i.ravel() for i in np.random.rand(1, 2)])*10
-    # ctfs = torch.tensor([i.ravel() for i in np.ones((N,D))])
-    k = 6
-    tree_idx, global_data,radius_data, kt, row_lens = scatter_tree_build(simulated, k)
-    print(f"Tree build complete. \n\t{len(tree_idx)}")
-    tree_dictionary = gather_tree_dictionary(tree_idx, global_data, N, k, kt, row_lens)
-    tree_dictionary, global_data, radius_data = tree_minimize(simulated, tree_dictionary,tree_idx, global_data, radius_data, N,k)
-    
-    print(f"Valid_CHECK: {sum(tree_idx[0:N])}")
-    d1 = check_count(global_data[N:])
-    d2 = check_count(global_data[N:])
-    treesum = len(tree_dictionary) + sum(
-        [len([i for i in v if i > N]) for k, v in tree_dictionary.items()]
-    )
-    print(f"TREE NODES: {treesum}")
-    print(f"TREE REF ARRAY: {d1}/{len(global_data[N:])}  @ {d1/len(global_data[N:])} density")
-    print(
-        f"TREE DATA ARRAY:{d2}/{len(global_data[N:])} @ {d2/len(global_data[N:])} density"
-    )
-    # clusters = gather_clustered_data(tree_dictionary, global_data, N, k)
-    # print(clusters)
-    # draw_cluster_points(clusters)
-    with open("tree_stats.txt", 'w') as f:
-        f.write(f"N={N}, k={k}\n")
-        f.write(f'+{"="*50}+\n')
-        for i, e in enumerate(global_data):
-            if i == N:
-                f.write(f'+{"="*50}+\n')
-
-            tree_idx_str = str(tree_dictionary[i]) if i in tree_dictionary else "None"
-            radius_data_str = str(radius_data[i].item()) if radius_data[i] is not None else "None"
-            global_data_str = str(global_data[i]) if global_data[i] is not None else "None"
-            # if i < N:
-            #     global_data_str = "DATA"
-
-            
-            f.write(f"| {i}:\t{tree_idx_str}\t{radius_data_str}\t{global_data_str}\n")
-    # print("prepping...")
-    # print(tree_dictionary)
-    # exit()
-    print(global_data[0].shape)
-    repl_tensor(global_data,1)
-    gd = torch.stack(global_data)
-    rd = prep(global_data,radius_data)
-    # #v1
-    
-    # gd = gd.cuda()
-    # print("starting search")
-    ctfs = r2c(ctfs)
-    for i,d in enumerate(r2c(experimental)):
-        print(f'{i}:{len(compact_level_order_search(d,tree_dictionary, rd, r2c(gd),ctfs[i], N, k, 1800))}')
-
-    # print(tree_dictionary)
-    # level_order_traversal(tree_dictionary, tree_idx,global_data, N,k)
-
-
-if __name__ == "__main__":
-    main()
