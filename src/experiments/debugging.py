@@ -1,10 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+
 colors = list(set(mcolors.CSS4_COLORS))
+
+
 # Function to calculate polar angle between points
 def polar_angle(p0, p1):
     return np.arctan2(p1[1] - p0[1], p1[0] - p0[0])
+
 
 def graham_scan_convex_hull(points):
     def cross_product(p, q, r):
@@ -32,40 +36,49 @@ def graham_scan_convex_hull(points):
         ):
             convex_hull.pop()
         convex_hull.append(point)
-    
+
     return convex_hull
+
 
 def display_convex_hulls(clusters):
     height = len(clusters)
     colors.reverse()
     ci = 0
-    plt.figure(facecolor='black')
-    plt.gca().set_facecolor('black')
-    for i,points in enumerate(reversed(clusters)):
+    plt.figure(facecolor="black")
+    plt.gca().set_facecolor("black")
+    for i, points in enumerate(reversed(clusters)):
         width = len(points)
         # print(width)
         # List of numpy arrays representing points
         # points = [np.array([1, 2]), np.array([3, 4]), np.array([5, 6]), np.array([7, 8])]
 
         # Find the convex hull
-        convex_hull_points = graham_scan_convex_hull(points) if len(points) > 2 else list(points)
+        convex_hull_points = (
+            graham_scan_convex_hull(points) if len(points) > 2 else list(points)
+        )
         convex_hull_points.append(convex_hull_points[0])
         # Plot the original points
         # plt.scatter(*zip(*points), color='blue', label='Points')
 
-    # Plot the convex hull
+        # Plot the convex hull
         x_coords = [p[0] for p in convex_hull_points]
         y_coords = [p[1] for p in convex_hull_points]
         # hull_points = [arr[0],arr[1] convex_hull_points# Closing the loop
         # print(hull_points)
-        plt.plot(x_coords, y_coords, color=colors[(i) % len(colors)],linewidth=len(x_coords)/10)
+        plt.plot(
+            x_coords,
+            y_coords,
+            color=colors[(i) % len(colors)],
+            linewidth=len(x_coords) / 10,
+        )
 
-    plt.xlabel('X')
-    plt.ylabel('Y')
+    plt.xlabel("X")
+    plt.ylabel("Y")
     # plt.background()
-    plt.title('Convex Hull using Graham Scan')
+    plt.title("Convex Hull using Graham Scan")
     # plt.legend()
     plt.show()
+
 
 def draw_cluster_points(pointlist):
     pl = []

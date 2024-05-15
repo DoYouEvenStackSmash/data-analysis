@@ -8,7 +8,8 @@ from aux_functions import *
 from debugging import *
 from torch_traversal import *
 
-def get_data_terms(data, k=2,max_t = 15):
+
+def get_data_terms(data, k=2, max_t=15):
     # initialize kvalues
     kterms = np.arange(max_t)
     terms = []
@@ -21,6 +22,7 @@ def get_data_terms(data, k=2,max_t = 15):
     # add one extra to prevent corruption
     terms.extend([np.sum(a * k ** kterms[0 : i + 1])])
     return terms
+
 
 def scatter_tree_build(data, k=2):
     # TODO: preprocess data
@@ -72,9 +74,9 @@ def scatter_tree_build(data, k=2):
             #     for i in range(len(data_indices)):
             #         tree_idx[wstart + i] = -1 * (data_indices[i] + 1)
             #     continue
-            
+
             # perform kmeans
-            kmeans = KMeans(n_clusters=k,max_iter =300)
+            kmeans = KMeans(n_clusters=k, max_iter=300)
             labels = kmeans.fit_predict(data[data_indices])
 
             # assign cluster centers and their indices to global_data and
@@ -94,15 +96,17 @@ def scatter_tree_build(data, k=2):
             associated_data = [deque() for _ in range(len(kmeans.centroids))]
             for i, elem in enumerate(labels):
                 associated_data[elem].append(data_indices[i])
-            
+
             # calculate radii
-            for i,c in enumerate(kmeans.centroids):
+            for i, c in enumerate(kmeans.centroids):
                 if torch.all(torch.eq(c, 0)):
                     continue
                 # print(associated_data[i])
-                radius_data[wstart+sm[i]] = torch.max(calculate_radius(c, data[torch.tensor(associated_data[i])],0))
+                radius_data[wstart + sm[i]] = torch.max(
+                    calculate_radius(c, data[torch.tensor(associated_data[i])], 0)
+                )
             # handle each cluster
-            for i,elem in enumerate(associated_data):
+            for i, elem in enumerate(associated_data):
                 if len(elem) == 0:
                     continue
                 # special case for when the cluster is less than k
@@ -140,7 +144,8 @@ def scatter_tree_build(data, k=2):
             base_addr_q.append(None)
             data_idx_q.append(None)
 
-    return tree_idx, global_data,radius_data, kt, row_lens
+    return tree_idx, global_data, radius_data, kt, row_lens
+
 
 def gather_tree_dictionary(tree_idx, global_data, base_offt, k, kt, row_lens):
     local_block_q = deque([i for i in range(1)])
@@ -209,13 +214,14 @@ def gather_tree_dictionary(tree_idx, global_data, base_offt, k, kt, row_lens):
             base_addr_q.append(None)
     return tree_dict
 
+
 def tree_minimize(data, tree_dict, tree_idx, global_data, radius_data, N, k):
     new_tree_dict = {}
     new_global_data = []
     new_radius_data = []
     node_lookup = {}
     new_global_data.extend(data)
-    new_radius_data.extend([None]*len(data))
+    new_radius_data.extend([None] * len(data))
     # print(list(tree_dict))
     node_blacklist = set()
     for k in list(tree_dict):
@@ -230,15 +236,14 @@ def tree_minimize(data, tree_dict, tree_idx, global_data, radius_data, N, k):
             new_tree_dict[node_lookup[k]] = []
             new_radius_data.append(radius_data[k])
 
-    for k,v in tree_dict.items():
+    for k, v in tree_dict.items():
         if k in node_blacklist:
             continue
-        for i,val in enumerate(v):
+        for i, val in enumerate(v):
             if val < N:
                 new_tree_dict[node_lookup[k]].append(val)
             else:
                 if val not in node_lookup:
                     continue
                 new_tree_dict[node_lookup[k]].append(node_lookup[val])
-    return new_tree_dict,new_global_data,new_radius_data
-            
+    return new_tree_dict, new_global_data, new_radius_data
